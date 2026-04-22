@@ -1,0 +1,10 @@
+node_modules
+build
+coverage
+tests
+docs
+.git
+.github
+.vscode
+.idea
+*.md
