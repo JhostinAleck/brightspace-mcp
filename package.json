@@ -4,8 +4,16 @@
   "description": "MCP server for D2L Brightspace (multi-auth, opt-in writes, session cache)",
   "type": "module",
   "main": "build/cli/main.js",
-  "bin": { "brightspace-mcp": "build/cli/main.js" },
-  "files": ["build", "docker", "README.md", "LICENSE", "CHANGELOG.md"],
+  "bin": {
+    "brightspace-mcp": "build/cli/main.js"
+  },
+  "files": [
+    "build",
+    "docker",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc",
     "build:clean": "rm -rf build && tsc",
@@ -28,18 +36,21 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^4.0.0",
     "dependency-cruiser": "^16.0.0",
     "eslint": "^9.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
     "nock": "^14.0.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.0.0",
     "typescript": "^5.9.0",
     "vitest": "^4.0.0"
   },
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "license": "MIT"
 }
