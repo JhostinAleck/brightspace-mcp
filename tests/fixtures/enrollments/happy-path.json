@@ -1,0 +1,6 @@
+{
+  "Items": [
+    { "OrgUnit": { "Id": 101, "Name": "ECE 264", "Code": "ECE26400", "Type": { "Id": 3, "Code": "Course" } }, "Access": { "IsActive": true, "StartDate": "2026-01-10T00:00:00Z", "EndDate": "2026-05-05T00:00:00Z" } },
+    { "OrgUnit": { "Id": 202, "Name": "MA 261", "Code": "MA26100", "Type": { "Id": 3, "Code": "Course" } }, "Access": { "IsActive": false, "StartDate": "2025-08-20T00:00:00Z", "EndDate": "2025-12-15T00:00:00Z" } }
+  ]
+}
