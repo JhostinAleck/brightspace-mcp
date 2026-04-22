@@ -15,7 +15,7 @@
     "test:run": "vitest run",
     "test:ci": "vitest run --coverage && npm run check:deps",
     "test:e2e": "vitest run tests/e2e",
-    "lint": "eslint src tests",
+    "lint": "eslint src tests --no-error-on-unmatched-pattern",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "check:deps": "depcruise --config .dependency-cruiser.cjs src",
