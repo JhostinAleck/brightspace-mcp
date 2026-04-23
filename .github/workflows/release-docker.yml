@@ -17,8 +17,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.push.outputs.digest }}
+      image: ${{ steps.image.outputs.image }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Compute lowercase image path
+        id: image
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=ghcr.io/${OWNER_LC}/brightspace-mcp" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -34,7 +41,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/brightspace-mcp
+          images: ${{ steps.image.outputs.image }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -60,7 +67,7 @@ jobs:
       - name: Generate build provenance attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/brightspace-mcp
+          subject-name: ${{ steps.image.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
@@ -87,14 +94,14 @@ jobs:
       - name: Sign the image with cosign keyless (Fulcio/Rekor)
         env:
           DIGEST: ${{ needs.build-and-push.outputs.digest }}
-          IMAGE: ghcr.io/${{ github.repository_owner }}/brightspace-mcp
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
         run: |
           cosign sign --yes "${IMAGE}@${DIGEST}"
 
       - name: Verify the signature
         env:
           DIGEST: ${{ needs.build-and-push.outputs.digest }}
-          IMAGE: ghcr.io/${{ github.repository_owner }}/brightspace-mcp
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
         run: |
           cosign verify "${IMAGE}@${DIGEST}" \
             --certificate-identity-regexp="^https://github\.com/${{ github.repository }}/" \
