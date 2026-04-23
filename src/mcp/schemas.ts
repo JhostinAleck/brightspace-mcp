@@ -33,3 +33,11 @@ export const getFeedbackSchema = z.object({
 }).strict();
 
 export type GetFeedbackInputSchema = z.infer<typeof getFeedbackSchema>;
+
+export const getAssignmentsSchema = z.object({
+  course_id: z.number().int().positive(),
+  include_past: z.boolean().default(false),
+  format: z.enum(['compact', 'detailed']).default('compact'),
+}).strict();
+
+export type GetAssignmentsInputSchema = z.infer<typeof getAssignmentsSchema>;
