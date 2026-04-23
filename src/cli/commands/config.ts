@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-import { parse as parseYaml } from 'yaml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 import { loadConfig } from '@/shared-kernel/config/loader.js';
 
@@ -52,8 +52,27 @@ export async function runConfigValidate(opts: ConfigValidateOptions): Promise<vo
   process.stdout.write(`Config at ${path} is valid.\n`);
 }
 
-export async function runConfigShow(_opts: ConfigShowOptions): Promise<void> {
-  throw new Error('config show not yet implemented');
+export async function runConfigShow(opts: ConfigShowOptions): Promise<void> {
+  const path = resolveConfigPath(opts.config);
+  const raw = readFileSync(path, 'utf8');
+  const yaml = parseYaml(raw) as Record<string, unknown>;
+
+  const output = opts.resolved ? redactResolved(yaml) : yaml;
+  process.stdout.write(stringifyYaml(output));
+}
+
+function redactResolved(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map((v) => redactResolved(v));
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (k.endsWith('_ref') || k === 'token' || k === 'password' || k === 'secret') {
+      out[k] = '[redacted]';
+    } else {
+      out[k] = redactResolved(v);
+    }
+  }
+  return out;
 }
 
 export async function runConfigSet(_path: string, _value: string, _opts: ConfigSetOptions): Promise<void> {
