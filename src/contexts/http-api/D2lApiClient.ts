@@ -106,6 +106,43 @@ export class D2lApiClient {
     return result;
   }
 
+  async postMultipart<T>(path: string, formData: FormData): Promise<T> {
+    const token = await this.opts.getToken();
+    return this.withMiddlewares(() => this.postMultipartOnce<T>(path, formData, token));
+  }
+
+  private async postMultipartOnce<T>(
+    path: string,
+    formData: FormData,
+    token: AccessToken,
+  ): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    this.transport.validate(url);
+    const { name, value } = token.toAuthHeader();
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { [name]: value, 'User-Agent': this.userAgent },
+        body: formData,
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (err) {
+      throw new NetworkError(`POST ${path} failed`, err instanceof Error ? err : undefined);
+    }
+
+    if (response.status === 429) {
+      const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
+      throw new RateLimitedError(path, retryAfterMs);
+    }
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new D2lApiError(response.status, path, body);
+    }
+    return (await response.json()) as T;
+  }
+
   private async withMiddlewares<T>(op: () => Promise<T>): Promise<T> {
     const bulkhead = this.bulkhead;
     const retry = this.retry;

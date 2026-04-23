@@ -52,8 +52,28 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     return folders.map((folder) => this.toAssignment(folder, orgUnit));
   }
 
-  async submit(_input: SubmitInput): Promise<SubmitResult> {
-    throw new Error('D2lAssignmentRepository.submit not yet implemented (Task 7)');
+  async submit(input: SubmitInput): Promise<SubmitResult> {
+    const orgUnit = String(input.courseId);
+    const path = `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${input.folderId}/submissions/mysubmissions/`;
+
+    const formData = new FormData();
+    formData.append(
+      'file',
+      new Blob([input.draft.content as BlobPart], {
+        type: input.draft.mimeType ?? 'application/octet-stream',
+      }),
+      input.draft.filename,
+    );
+
+    const response = await this.client.postMultipart<{
+      SubmissionId: string;
+      SubmittedOn: string;
+    }>(path, formData);
+
+    return {
+      submissionId: response.SubmissionId,
+      submittedAt: new Date(response.SubmittedOn),
+    };
   }
 
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {
