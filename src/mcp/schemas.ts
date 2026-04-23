@@ -41,3 +41,10 @@ export const getAssignmentsSchema = z.object({
 }).strict();
 
 export type GetAssignmentsInputSchema = z.infer<typeof getAssignmentsSchema>;
+
+export const getUpcomingDueDatesSchema = z.object({
+  days: z.number().int().positive().max(365).default(14),
+  format: z.enum(['compact', 'detailed']).default('compact'),
+}).strict();
+
+export type GetUpcomingDueDatesInputSchema = z.infer<typeof getUpcomingDueDatesSchema>;
