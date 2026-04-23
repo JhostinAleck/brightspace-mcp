@@ -21,6 +21,7 @@ program
   .option('--profile <name>', 'Profile to use')
   .option('--config <path>', 'Path to config YAML')
   .option('--log-level <level>', 'debug | info | warn | error')
+  .option('--enable-writes', 'Enable write operations (requires writes.enabled: true in config)')
   .action(async (opts) => {
     try {
       await runServe(opts);
