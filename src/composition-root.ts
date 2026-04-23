@@ -268,7 +268,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const versions = await discoverVersions(baseUrl);
   logger.info('Discovered D2L API versions', { lp: versions.lp, le: versions.le });
 
-  const rawCourseRepo = new D2lCourseRepository(apiClient, { le: versions.le });
+  const rawCourseRepo = new D2lCourseRepository(apiClient, { le: versions.le, lp: versions.lp });
   const courseRepo = new CachedCourseRepository(rawCourseRepo, domainCacheBacking, {
     listTtlMs: 5 * 60 * 1000,
     byIdTtlMs: 10 * 60 * 1000,

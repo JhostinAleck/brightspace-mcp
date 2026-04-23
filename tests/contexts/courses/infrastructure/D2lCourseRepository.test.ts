@@ -16,7 +16,7 @@ describe('D2lCourseRepository.findMyCourses', () => {
   it('parses enrollments and returns Course[]', async () => {
     nock(BASE).get(/\/d2l\/api\/le\/1\.91\/enrollments\/myenrollments\/.*/).reply(200, fixture);
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
-    const repo = new D2lCourseRepository(client, { le: '1.91' });
+    const repo = new D2lCourseRepository(client, { le: '1.91', lp: '1.56' });
     const courses = await repo.findMyCourses();
     expect(courses).toHaveLength(2);
     expect(courses[0]?.name).toBe('ECE 264');
@@ -26,7 +26,7 @@ describe('D2lCourseRepository.findMyCourses', () => {
   it('filters by activeOnly', async () => {
     nock(BASE).get(/\/d2l\/api\/le\/1\.91\/enrollments\/myenrollments\/.*/).reply(200, fixture);
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
-    const repo = new D2lCourseRepository(client, { le: '1.91' });
+    const repo = new D2lCourseRepository(client, { le: '1.91', lp: '1.56' });
     const courses = await repo.findMyCourses({ activeOnly: true });
     expect(courses).toHaveLength(1);
     expect(courses[0]?.name).toBe('ECE 264');
