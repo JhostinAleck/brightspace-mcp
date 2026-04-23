@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (Plan 6)
+
+- `brightspace-mcp setup` — interactive wizard that asks base URL, auth strategy, MFA, credential storage; writes `~/.brightspace-mcp/config.yaml` (0600 perms); auto-detects Claude Desktop / Cursor / Windsurf and offers to register.
+- `brightspace-mcp auth` — exercises the `EnsureAuthenticated` chain for the active profile.
+- `brightspace-mcp config show [--resolved]` — prints the config (redacting secrets).
+- `brightspace-mcp config validate` — parses and schema-checks the config file.
+- `brightspace-mcp config set <path> <value>` — edits a nested config field programmatically; validates before writing.
+- `brightspace-mcp cache clear [--context <name>]` — clears memory + file cache backends.
+- `@inquirer/prompts` runtime dep for wizard prompts.
+
 ## [0.8.4] - 2026-04-23
 
 ### Fixed

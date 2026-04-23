@@ -67,6 +67,31 @@ export BRIGHTSPACE_API_TOKEN="<your-token>"
 npx brightspace-mcp serve
 ```
 
+## Setup wizard (easiest path)
+
+Run the interactive setup:
+
+```bash
+npx brightspace-mcp setup
+```
+
+The wizard:
+- Asks for your Brightspace base URL and chosen auth strategy (API token, browser, OAuth, etc.)
+- If TOTP MFA, walks through saving the secret via env var / keychain / encrypted file
+- Writes `~/.brightspace-mcp/config.yaml` with 0600 permissions
+- Auto-detects Claude Desktop, Cursor, and Windsurf — offers to register this server in each
+
+Other CLI commands:
+
+```bash
+brightspace-mcp auth                    # Re-authenticate (test config)
+brightspace-mcp config show             # Print current config (secrets redacted)
+brightspace-mcp config show --resolved  # Show secret refs as [redacted]
+brightspace-mcp config validate         # Validate config without running server
+brightspace-mcp config set <path> <value>
+brightspace-mcp cache clear             # Clear both memory and file cache
+```
+
 ## Register with an MCP client
 
 See [`docs/clients.md`](./docs/clients.md) for Claude Desktop, Cursor, and Windsurf snippets.
