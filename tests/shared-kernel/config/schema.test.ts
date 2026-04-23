@@ -143,8 +143,8 @@ describe('ConfigSchema', () => {
         mfa_submit: '#idSubmit_SAOTCC_Continue',
         post_login: '.d2l-navigation',
       });
-      expect(() => ConfigSchema.parse(cfg)).not.toThrow();
       const parsed = ConfigSchema.parse(cfg);
+      expect(parsed).toBeDefined();
       expect(parsed.profiles['p'].auth.browser!.selectors.password_submit).toBe('#idSIButton9');
       expect(parsed.profiles['p'].auth.browser!.selectors.pre_mfa_clicks).toHaveLength(2);
     });
