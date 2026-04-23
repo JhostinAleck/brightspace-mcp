@@ -11,7 +11,7 @@ jobs:
         node: [20, 22]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with: { node-version: '${{ matrix.node }}', cache: 'npm' }
       - run: npm ci
@@ -22,7 +22,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with: { node-version: 22, cache: 'npm' }
       - run: npm ci
@@ -30,7 +30,7 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run actionlint
         uses: raven-actions/actionlint@v2
         with:
