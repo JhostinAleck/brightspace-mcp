@@ -1,4 +1,9 @@
-import type { CommunicationsRepository } from '@/contexts/communications/domain/CommunicationsRepository.js';
+import type {
+  CommunicationsRepository,
+  MarkAnnouncementReadInput,
+  PostReplyInput,
+  PostReplyResult,
+} from '@/contexts/communications/domain/CommunicationsRepository.js';
 import { Announcement } from '@/contexts/communications/domain/Announcement.js';
 import { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import { DiscussionTopic } from '@/contexts/communications/domain/DiscussionTopic.js';
@@ -117,5 +122,13 @@ export class CachedCommunicationsRepository implements CommunicationsRepository 
     const fresh = await this.inner.findDiscussions(courseId);
     await this.cache.set(key, fresh.map(forumToPlain), this.ttls.discussionsTtlMs);
     return fresh;
+  }
+
+  async postReply(input: PostReplyInput): Promise<PostReplyResult> {
+    return this.inner.postReply(input);
+  }
+
+  async markAnnouncementRead(input: MarkAnnouncementReadInput): Promise<void> {
+    return this.inner.markAnnouncementRead(input);
   }
 }

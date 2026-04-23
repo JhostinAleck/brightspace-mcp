@@ -143,6 +143,46 @@ export class D2lApiClient {
     return (await response.json()) as T;
   }
 
+  async postJson<T>(path: string, body: unknown): Promise<T> {
+    const token = await this.opts.getToken();
+    return this.withMiddlewares(() => this.postJsonOnce<T>(path, body, token));
+  }
+
+  private async postJsonOnce<T>(path: string, body: unknown, token: AccessToken): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    this.transport.validate(url);
+    const { name, value } = token.toAuthHeader();
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          [name]: value,
+          'User-Agent': this.userAgent,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (err) {
+      throw new NetworkError(`POST ${path} failed`, err instanceof Error ? err : undefined);
+    }
+
+    if (response.status === 429) {
+      const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
+      throw new RateLimitedError(path, retryAfterMs);
+    }
+    if (!response.ok) {
+      const responseBody = await response.text().catch(() => '');
+      throw new D2lApiError(response.status, path, responseBody);
+    }
+
+    const text = await response.text();
+    if (text.length === 0) return {} as T;
+    return JSON.parse(text) as T;
+  }
+
   private async withMiddlewares<T>(op: () => Promise<T>): Promise<T> {
     const bulkhead = this.bulkhead;
     const retry = this.retry;

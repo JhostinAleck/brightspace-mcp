@@ -1,4 +1,9 @@
-import type { CommunicationsRepository } from '@/contexts/communications/domain/CommunicationsRepository.js';
+import type {
+  CommunicationsRepository,
+  MarkAnnouncementReadInput,
+  PostReplyInput,
+  PostReplyResult,
+} from '@/contexts/communications/domain/CommunicationsRepository.js';
 import { Announcement } from '@/contexts/communications/domain/Announcement.js';
 import { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import { DiscussionTopic } from '@/contexts/communications/domain/DiscussionTopic.js';
@@ -80,5 +85,25 @@ export class D2lCommunicationsRepository implements CommunicationsRepository {
         });
       }),
     );
+  }
+
+  async postReply(input: PostReplyInput): Promise<PostReplyResult> {
+    const orgUnit = String(input.courseId);
+    const path = `/d2l/api/le/${this.versions.le}/${orgUnit}/discussions/forums/${input.forumId}/topics/${input.topicId}/posts/`;
+    const response = await this.client.postJson<{ Id: number; DatePosted: string }>(path, {
+      ParentPostId: null,
+      Subject: null,
+      Message: { Html: input.body, Text: input.body },
+    });
+    return {
+      postId: String(response.Id),
+      postedAt: new Date(response.DatePosted),
+    };
+  }
+
+  async markAnnouncementRead(input: MarkAnnouncementReadInput): Promise<void> {
+    const orgUnit = String(input.courseId);
+    const path = `/d2l/api/le/${this.versions.le}/${orgUnit}/news/${input.announcementId}/mark-read`;
+    await this.client.postJson(path, {});
   }
 }
