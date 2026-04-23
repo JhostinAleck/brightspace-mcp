@@ -29,6 +29,14 @@ import { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { discoverVersions } from '@/contexts/http-api/VersionDiscovery.js';
 import { callWhoAmI } from '@/contexts/http-api/whoami.js';
 import { D2lCourseRepository } from '@/contexts/courses/infrastructure/D2lCourseRepository.js';
+import { InMemoryCache } from '@/shared-kernel/cache/InMemoryCache.js';
+import { FileCache } from '@/shared-kernel/cache/FileCache.js';
+import { LayeredCache } from '@/shared-kernel/cache/LayeredCache.js';
+import { HttpResponseCache } from '@/contexts/http-api/cache/HttpResponseCache.js';
+import { CachedCourseRepository } from '@/contexts/courses/infrastructure/CachedCourseRepository.js';
+import { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
+import { RequestCoalescer } from '@/contexts/http-api/resilience/RequestCoalescer.js';
+import { Bulkhead } from '@/contexts/http-api/resilience/Bulkhead.js';
 import type { ToolDeps } from '@/mcp/registry.js';
 import type { AuthStrategyKind } from '@/contexts/authentication/domain/Session.js';
 import type { Prompter } from '@/contexts/authentication/infrastructure/mfa/ManualPromptMfaStrategy.js';
@@ -231,20 +239,42 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
 
   const ensureAuth = new EnsureAuthenticated(sessionCache, resolver);
 
+  const metrics = new MetricsRegistry();
+  const httpCacheBacking = new InMemoryCache();
+  const httpCache = new HttpResponseCache(httpCacheBacking);
+  const domainCacheBacking = new LayeredCache({
+    memory: new InMemoryCache(),
+    persistent: new FileCache({ path: join(homedir(), '.brightspace-mcp', 'domain-cache.json') }),
+  });
+
   const apiClient = new D2lApiClient({
     baseUrl,
     getToken: async () => (await ensureAuth.execute({ profile: profileName, baseUrl })).token,
+    retry: { maxAttempts: 3, initialMs: 250, maxMs: 5_000 },
+    circuit: { failureThreshold: 5, resetTimeoutMs: 30_000 },
+    coalescer: new RequestCoalescer(),
+    bulkhead: new Bulkhead({ maxConcurrent: 5 }),
+    cache: httpCache,
+    cacheTtlMs: 60_000,
   });
 
   const versions = await discoverVersions(baseUrl);
   logger.info('Discovered D2L API versions', { lp: versions.lp, le: versions.le });
 
-  const courseRepo = new D2lCourseRepository(apiClient, { le: versions.le });
+  const rawCourseRepo = new D2lCourseRepository(apiClient, { le: versions.le });
+  const courseRepo = new CachedCourseRepository(rawCourseRepo, domainCacheBacking, {
+    listTtlMs: 5 * 60 * 1000,
+    byIdTtlMs: 10 * 60 * 1000,
+  });
 
   return {
     ensureAuth,
     profile: profileName,
     baseUrl,
     courseRepo,
+    httpCache,
+    domainCaches: { courses: domainCacheBacking },
+    metrics,
+    staticInfo: { profile: profileName, baseUrl, versions: { lp: versions.lp, le: versions.le } },
   };
 }
