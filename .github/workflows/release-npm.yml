@@ -15,7 +15,7 @@ jobs:
       name: production
       url: https://www.npmjs.com/package/brightspace-mcp
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
