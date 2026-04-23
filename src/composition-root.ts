@@ -205,6 +205,10 @@ async function buildStrategies(
         username: profile.auth.browser.selectors.username,
         password: profile.auth.browser.selectors.password,
         submit: profile.auth.browser.selectors.submit,
+        ...(profile.auth.browser.selectors.password_submit !== undefined
+          ? { passwordSubmit: profile.auth.browser.selectors.password_submit }
+          : {}),
+        preMfaClicks: profile.auth.browser.selectors.pre_mfa_clicks,
         mfaInput: profile.auth.browser.selectors.mfa_input,
         mfaSubmit: profile.auth.browser.selectors.mfa_submit,
         postLogin: profile.auth.browser.selectors.post_login,
