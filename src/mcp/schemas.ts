@@ -17,3 +17,5 @@ export const clearCacheSchema = z.object({
 }).strict();
 
 export type ClearCacheInput = z.infer<typeof clearCacheSchema>;
+
+export const getDiagnosticsSchema = z.object({}).strict();
