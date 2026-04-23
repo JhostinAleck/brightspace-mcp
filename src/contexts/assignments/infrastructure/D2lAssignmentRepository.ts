@@ -1,4 +1,8 @@
-import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
+import type {
+  AssignmentRepository,
+  SubmitInput,
+  SubmitResult,
+} from '@/contexts/assignments/domain/AssignmentRepository.js';
 import { Assignment } from '@/contexts/assignments/domain/Assignment.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
@@ -46,6 +50,10 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/`,
     );
     return folders.map((folder) => this.toAssignment(folder, orgUnit));
+  }
+
+  async submit(_input: SubmitInput): Promise<SubmitResult> {
+    throw new Error('D2lAssignmentRepository.submit not yet implemented (Task 7)');
   }
 
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {

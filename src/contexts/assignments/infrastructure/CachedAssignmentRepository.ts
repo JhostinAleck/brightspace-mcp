@@ -1,4 +1,8 @@
-import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
+import type {
+  AssignmentRepository,
+  SubmitInput,
+  SubmitResult,
+} from '@/contexts/assignments/domain/AssignmentRepository.js';
 import { Assignment } from '@/contexts/assignments/domain/Assignment.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
@@ -103,6 +107,11 @@ export class CachedAssignmentRepository implements AssignmentRepository {
     const fresh = await this.inner.findByCourse(courseId);
     await this.cache.set(key, fresh.map(assignmentToPlain), this.ttls.listTtlMs);
     return fresh;
+  }
+
+  async submit(input: SubmitInput): Promise<SubmitResult> {
+    // Writes bypass the cache — delegate directly to the inner repo.
+    return this.inner.submit(input);
   }
 
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {

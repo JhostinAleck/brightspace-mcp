@@ -1,6 +1,10 @@
 import type { Assignment } from '@/contexts/assignments/domain/Assignment.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
-import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
+import type {
+  AssignmentRepository,
+  SubmitInput,
+  SubmitResult,
+} from '@/contexts/assignments/domain/AssignmentRepository.js';
 import type { Feedback } from '@/contexts/assignments/domain/Feedback.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 
@@ -17,5 +21,9 @@ export class FakeAssignmentRepository implements AssignmentRepository {
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {
     const key = `${OrgUnitId.toNumber(courseId)}:${AssignmentId.toNumber(assignmentId)}`;
     return this.feedbackByAssignment.get(key) ?? null;
+  }
+
+  async submit(_input: SubmitInput): Promise<SubmitResult> {
+    throw new Error('FakeAssignmentRepository.submit is not implemented — stub for interface completeness');
   }
 }
