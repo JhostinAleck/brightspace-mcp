@@ -31,6 +31,11 @@ import { handleGetCourseContent, type GetCourseContentDeps } from './tools/get-c
 import { handleGetAnnouncements, type GetAnnouncementsDeps } from './tools/get-announcements.tool.js';
 import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discussions.tool.js';
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
+import {
+  handleSubmitAssignment,
+  submitAssignmentSchema,
+  type SubmitAssignmentParams,
+} from './tools/submit-assignment.tool.js';
 import type { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import type { IdempotencyStore } from '@/shared-kernel/idempotency/IdempotencyStore.js';
 import type { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
@@ -248,10 +253,11 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       'submit_assignment',
       {
         title: 'Submit Assignment',
-        description: 'Submit a file to a Brightspace Dropbox Folder (writes).',
-        inputSchema: {},
+        description:
+          'Upload a file to a Brightspace Dropbox Folder. Writes: require --enable-writes + config writes.enabled: true.',
+        inputSchema: submitAssignmentSchema.shape,
       },
-      async () => ({ content: [{ type: 'text', text: 'stub' }] }),
+      async (args) => handleSubmitAssignment(args as SubmitAssignmentParams, deps),
     );
 
     server.registerTool(
