@@ -73,4 +73,47 @@ describe('EncryptedFileCredentialStore', () => {
     const mode = statSync(path).mode & 0o777;
     expect(mode).toBe(0o600);
   });
+
+  it('handles multiple entries in the same file', async () => {
+    const store = new EncryptedFileCredentialStore({
+      path: join(dir, 'creds.enc'),
+      passphrase: new SecretValue('p'),
+    });
+    await store.set('file:a', new SecretValue('one'));
+    await store.set('file:b', new SecretValue('two'));
+    expect((await store.get('file:a'))?.reveal()).toBe('one');
+    expect((await store.get('file:b'))?.reveal()).toBe('two');
+  });
+
+  it('different instance with same passphrase reads persisted data', async () => {
+    const path = join(dir, 'creds.enc');
+    const writer = new EncryptedFileCredentialStore({
+      path,
+      passphrase: new SecretValue('shared'),
+    });
+    await writer.set('file:k', new SecretValue('persisted'));
+    const reader = new EncryptedFileCredentialStore({
+      path,
+      passphrase: new SecretValue('shared'),
+    });
+    expect((await reader.get('file:k'))?.reveal()).toBe('persisted');
+  });
+
+  it('throws a clear error on corrupted JSON', async () => {
+    const path = join(dir, 'creds.enc');
+    await (await import('node:fs/promises')).writeFile(path, 'not valid json{{{');
+    const store = new EncryptedFileCredentialStore({
+      path,
+      passphrase: new SecretValue('p'),
+    });
+    await expect(store.get('file:k')).rejects.toThrow(/corrupted|not valid json/i);
+  });
+
+  it('throws a clear error on wrong passphrase (not cryptic crypto error)', async () => {
+    const path = join(dir, 'creds.enc');
+    const a = new EncryptedFileCredentialStore({ path, passphrase: new SecretValue('right') });
+    await a.set('file:k', new SecretValue('v'));
+    const b = new EncryptedFileCredentialStore({ path, passphrase: new SecretValue('wrong') });
+    await expect(b.get('file:k')).rejects.toThrow(/wrong passphrase|corrupted file/i);
+  });
 });

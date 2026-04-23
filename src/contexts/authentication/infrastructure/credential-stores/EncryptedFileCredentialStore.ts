@@ -21,6 +21,26 @@ export interface EncryptedFileCredentialStoreOptions {
 
 const SCHEME_PREFIX = 'file:';
 
+// Pinned scrypt params — part of the v1 on-disk format contract. If these
+// change, bump EncryptedFile.version. OWASP 2024 "interactive" tier: balances
+// cold-start latency against attacker cost for an offline credential file.
+const SCRYPT_PARAMS = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 } as const;
+
+/**
+ * AES-256-GCM encrypted on-disk credential store.
+ *
+ * Concurrency: this store is safe for a single writer. Two MCP server
+ * processes writing to the same file concurrently will race — one will
+ * silently lose data. The plan trades this off because credential writes
+ * are rare (setup wizard, occasional rotation). If you need multi-writer
+ * safety, wrap the store with `proper-lockfile` or use the OS keychain
+ * (KeychainCredentialStore) instead.
+ *
+ * Security: AES-256-GCM (authenticated), per-entry random 12-byte IV,
+ * scrypt KDF with pinned OWASP 2024 interactive params, per-file 16-byte
+ * salt. File perms 0600 on POSIX. Format version 1 — if params change,
+ * the version bumps and a migration is required.
+ */
 export class EncryptedFileCredentialStore implements CredentialStore {
   constructor(private readonly opts: EncryptedFileCredentialStoreOptions) {}
 
@@ -32,19 +52,39 @@ export class EncryptedFileCredentialStore implements CredentialStore {
   }
 
   private deriveKey(salt: Buffer): Buffer {
-    return scryptSync(this.opts.passphrase.reveal(), salt, 32);
+    return scryptSync(this.opts.passphrase.reveal(), salt, 32, SCRYPT_PARAMS);
   }
 
   private async loadFile(): Promise<EncryptedFile> {
     if (!existsSync(this.opts.path)) {
       return { version: 1, salt: randomBytes(16).toString('hex'), entries: {} };
     }
-    const text = await readFile(this.opts.path, 'utf8');
-    const parsed = JSON.parse(text) as EncryptedFile;
-    if (parsed.version !== 1) {
-      throw new Error(`Unsupported encrypted file version ${String(parsed.version)}`);
+    let text: string;
+    try {
+      text = await readFile(this.opts.path, 'utf8');
+    } catch (err) {
+      throw new Error(`Failed to read credential file "${this.opts.path}": ${err instanceof Error ? err.message : String(err)}`);
     }
-    return parsed;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (err) {
+      throw new Error(`Credential file at "${this.opts.path}" is corrupted (not valid JSON): ${err instanceof Error ? err.message : String(err)}`);
+    }
+    if (
+      typeof parsed !== 'object' || parsed === null ||
+      !('version' in parsed) || !('salt' in parsed) || !('entries' in parsed) ||
+      typeof (parsed as { salt: unknown }).salt !== 'string' ||
+      typeof (parsed as { entries: unknown }).entries !== 'object' ||
+      (parsed as { entries: unknown }).entries === null
+    ) {
+      throw new Error(`Credential file at "${this.opts.path}" has invalid shape (missing version/salt/entries)`);
+    }
+    const validated = parsed as EncryptedFile;
+    if (validated.version !== 1) {
+      throw new Error(`Unsupported encrypted file version ${String(validated.version)}`);
+    }
+    return validated;
   }
 
   private async saveFile(file: EncryptedFile): Promise<void> {
@@ -52,7 +92,12 @@ export class EncryptedFileCredentialStore implements CredentialStore {
     const tmp = `${this.opts.path}.tmp-${randomBytes(4).toString('hex')}`;
     await writeFile(tmp, JSON.stringify(file), { encoding: 'utf8' });
     if (process.platform !== 'win32') await chmod(tmp, 0o600);
-    await rename(tmp, this.opts.path);
+    try {
+      await rename(tmp, this.opts.path);
+    } catch (err) {
+      await unlink(tmp).catch(() => { /* best-effort cleanup */ });
+      throw err;
+    }
   }
 
   async get(key: CredentialKey): Promise<SecretValue | null> {
@@ -65,10 +110,18 @@ export class EncryptedFileCredentialStore implements CredentialStore {
     const iv = Buffer.from(entry.iv, 'hex');
     const decipher = createDecipheriv('aes-256-gcm', aesKey, iv);
     decipher.setAuthTag(Buffer.from(entry.authTag, 'hex'));
-    const plaintext = Buffer.concat([
-      decipher.update(Buffer.from(entry.ciphertext, 'hex')),
-      decipher.final(),
-    ]);
+    let plaintext: Buffer;
+    try {
+      plaintext = Buffer.concat([
+        decipher.update(Buffer.from(entry.ciphertext, 'hex')),
+        decipher.final(),
+      ]);
+    } catch (err) {
+      throw new Error(
+        `Failed to decrypt credential "${logical}" — wrong passphrase or corrupted file`,
+        { cause: err instanceof Error ? err : undefined },
+      );
+    }
     return new SecretValue(plaintext.toString('utf8'));
   }
 
