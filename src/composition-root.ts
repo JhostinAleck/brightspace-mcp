@@ -48,6 +48,7 @@ import { CachedCalendarRepository } from '@/contexts/calendar/infrastructure/Cac
 import { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
 import { RequestCoalescer } from '@/contexts/http-api/resilience/RequestCoalescer.js';
 import { Bulkhead } from '@/contexts/http-api/resilience/Bulkhead.js';
+import { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import type { ToolDeps } from '@/mcp/registry.js';
 import type { AuthStrategyKind } from '@/contexts/authentication/domain/Session.js';
 import type { Prompter } from '@/contexts/authentication/infrastructure/mfa/ManualPromptMfaStrategy.js';
@@ -306,6 +307,13 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     ttlMs: 5 * 60 * 1000,
   });
 
+  // Writes gate starts closed: cliFlag defaults to false here and is wired from the CLI in Task 9.
+  const writesGate = new WritesGate({
+    configEnabled: config.writes?.enabled ?? false,
+    cliFlag: false,
+    configDryRun: config.writes?.dry_run ?? false,
+  });
+
   return {
     ensureAuth,
     profile: profileName,
@@ -320,5 +328,6 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     domainCaches: { courses: domainCacheBacking },
     metrics,
     staticInfo: { profile: profileName, baseUrl, versions: { lp: versions.lp, le: versions.le } },
+    writesGate,
   };
 }

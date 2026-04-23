@@ -31,6 +31,7 @@ import { handleGetCourseContent, type GetCourseContentDeps } from './tools/get-c
 import { handleGetAnnouncements, type GetAnnouncementsDeps } from './tools/get-announcements.tool.js';
 import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discussions.tool.js';
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
+import type { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 
 export interface ToolDeps
   extends CheckAuthDeps,
@@ -47,7 +48,9 @@ export interface ToolDeps
     GetCourseContentDeps,
     GetAnnouncementsDeps,
     GetDiscussionsDeps,
-    GetCalendarEventsDeps {}
+    GetCalendarEventsDeps {
+  writesGate: WritesGate;
+}
 
 export function registerAllTools(server: McpServer, deps: ToolDeps): void {
   server.registerTool(
@@ -233,4 +236,38 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
     },
     async (input: unknown) => handleGetCalendarEvents(deps, input),
   );
+
+  if (deps.writesGate.allowsWrites) {
+    // Stub write tools — real handlers land in Tasks 10-12. For now, register 3 placeholder
+    // tools so the gate visibly governs what the MCP surface exposes.
+    server.registerTool(
+      'submit_assignment',
+      {
+        title: 'Submit Assignment',
+        description: 'Submit a file to a Brightspace Dropbox Folder (writes).',
+        inputSchema: {},
+      },
+      async () => ({ content: [{ type: 'text', text: 'stub' }] }),
+    );
+
+    server.registerTool(
+      'post_discussion_reply',
+      {
+        title: 'Post Discussion Reply',
+        description: 'Post a reply to a discussion topic (writes).',
+        inputSchema: {},
+      },
+      async () => ({ content: [{ type: 'text', text: 'stub' }] }),
+    );
+
+    server.registerTool(
+      'mark_announcement_read',
+      {
+        title: 'Mark Announcement Read',
+        description: 'Mark an announcement as read (writes).',
+        inputSchema: {},
+      },
+      async () => ({ content: [{ type: 'text', text: 'stub' }] }),
+    );
+  }
 }
