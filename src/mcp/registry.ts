@@ -41,6 +41,11 @@ import {
   postDiscussionReplySchema,
   type PostDiscussionReplyParams,
 } from './tools/post-discussion-reply.tool.js';
+import {
+  handleMarkAnnouncementRead,
+  markAnnouncementReadSchema,
+  type MarkAnnouncementReadParams,
+} from './tools/mark-announcement-read.tool.js';
 import type { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import type { IdempotencyStore } from '@/shared-kernel/idempotency/IdempotencyStore.js';
 import type { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
@@ -280,10 +285,10 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       'mark_announcement_read',
       {
         title: 'Mark Announcement Read',
-        description: 'Mark an announcement as read (writes).',
-        inputSchema: {},
+        description: 'Mark a Brightspace announcement as read. Writes: require --enable-writes + config writes.enabled: true.',
+        inputSchema: markAnnouncementReadSchema.shape,
       },
-      async () => ({ content: [{ type: 'text', text: 'stub' }] }),
+      async (args) => handleMarkAnnouncementRead(args as MarkAnnouncementReadParams, deps),
     );
   }
 }
