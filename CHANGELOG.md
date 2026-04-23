@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-04-23
+
+### Fixed
+
+- `tests/release/npm-pack.test.ts` now auto-builds when `build/cli/main.js` is missing. Previously it passed locally (where `build/` was always present) but failed in fresh CI runs because the `check` step ran before `build`.
+
 ## [0.8.1] - 2026-04-23
 
 ### Fixed
