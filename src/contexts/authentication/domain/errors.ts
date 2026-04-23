@@ -24,3 +24,13 @@ export class AuthStrategyFailedError extends DomainError {
     super(userMessage, cause);
   }
 }
+
+export class FallbackChainExhaustedError extends DomainError {
+  readonly code = 'AUTH_FALLBACK_EXHAUSTED';
+  constructor(
+    readonly userMessage: string,
+    cause?: Error,
+  ) {
+    super(userMessage, cause);
+  }
+}
