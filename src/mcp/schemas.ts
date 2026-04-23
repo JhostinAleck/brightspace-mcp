@@ -11,3 +11,9 @@ export const listMyCoursesSchema = z
   .strict();
 
 export type ListMyCoursesInput = z.infer<typeof listMyCoursesSchema>;
+
+export const clearCacheSchema = z.object({
+  scope: z.enum(['all', 'http', 'courses']).default('all'),
+}).strict();
+
+export type ClearCacheInput = z.infer<typeof clearCacheSchema>;
