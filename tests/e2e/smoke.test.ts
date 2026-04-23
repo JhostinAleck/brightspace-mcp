@@ -76,4 +76,23 @@ profiles:
     const text = ((r.content as Array<{ text: string }>)[0])?.text ?? '';
     expect(text).toContain('Smoke Assignment');
   });
+
+  it('exposes get_roster and lists Test User', async () => {
+    const r = await client.callTool({ name: 'get_roster', arguments: { course_id: 1 } });
+    const text = ((r.content as Array<{ text: string }>)[0])?.text ?? '';
+    expect(text).toContain('Test User');
+  });
+
+  it('exposes get_syllabus and returns the overview', async () => {
+    const r = await client.callTool({ name: 'get_syllabus', arguments: { course_id: 1 } });
+    const text = ((r.content as Array<{ text: string }>)[0])?.text ?? '';
+    expect(text).toContain('Smoke syllabus body');
+  });
+
+  it('exposes get_announcements and get_calendar_events', async () => {
+    const a = await client.callTool({ name: 'get_announcements', arguments: { course_id: 1 } });
+    expect(((a.content as Array<{ text: string }>)[0])?.text ?? '').toContain('Smoke Announcement');
+    const c = await client.callTool({ name: 'get_calendar_events', arguments: { course_id: 1 } });
+    expect(((c.content as Array<{ text: string }>)[0])?.text ?? '').toContain('Smoke Midterm');
+  });
 });

@@ -62,6 +62,28 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
         ]));
         return;
       }
+      if (req.url?.match(/\/d2l\/api\/lp\/1\.56\/1\/classlist\/$/)) {
+        res.end(JSON.stringify([
+          { Identifier: '42', DisplayName: 'Test User', UserName: 'test', Email: 'test@x.edu', RoleId: 109 },
+        ]));
+        return;
+      }
+      if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/overview$/)) {
+        res.end(JSON.stringify({ Description: { Html: '<p>Smoke syllabus body</p>' } }));
+        return;
+      }
+      if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/news\/$/)) {
+        res.end(JSON.stringify([
+          { Id: 900, Title: 'Smoke Announcement', Body: { Html: '<p>hi</p>' }, Author: { DisplayName: 'Prof' }, StartDate: new Date().toISOString() },
+        ]));
+        return;
+      }
+      if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/calendar\/events\//)) {
+        res.end(JSON.stringify([
+          { Id: 9500, Name: 'Smoke Midterm', Description: null, StartDate: new Date(Date.now() + 86400000).toISOString(), EndDate: null, Location: 'Smoke Hall' },
+        ]));
+        return;
+      }
       res.statusCode = 404;
       res.end('{}');
     });
