@@ -5,6 +5,36 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       res.setHeader('content-type', 'application/json');
+      if (req.method === 'POST') {
+        // POST: submit assignment (multipart body — ignored, just return canned response)
+        if (req.url?.match(/\/d2l\/api\/le\/[^/]+\/[^/]+\/dropbox\/folders\/[^/]+\/submissions\/mysubmissions\/$/)) {
+          // Drain body but don't parse it
+          req.on('data', () => {});
+          req.on('end', () => {
+            res.end(JSON.stringify({ SubmissionId: 'sub-e2e', SubmittedOn: '2026-04-23T10:00:00Z' }));
+          });
+          return;
+        }
+        // POST: discussion reply
+        if (req.url?.match(/\/d2l\/api\/le\/[^/]+\/[^/]+\/discussions\/forums\/[^/]+\/topics\/[^/]+\/posts\/$/)) {
+          req.on('data', () => {});
+          req.on('end', () => {
+            res.end(JSON.stringify({ Id: 999, DatePosted: '2026-04-23T10:00:00Z' }));
+          });
+          return;
+        }
+        // POST: mark announcement read
+        if (req.url?.match(/\/d2l\/api\/le\/[^/]+\/[^/]+\/news\/[^/]+\/mark-read$/)) {
+          req.on('data', () => {});
+          req.on('end', () => {
+            res.end('{}');
+          });
+          return;
+        }
+        res.statusCode = 404;
+        res.end('{}');
+        return;
+      }
       if (req.url === '/d2l/api/versions/') {
         res.end(
           JSON.stringify([
