@@ -1,0 +1,4 @@
+[
+  { "Id": 8001, "Name": "Midterm Exam", "Description": { "Text": "In-person, bring scantron" }, "StartDate": "2026-05-01T14:00:00Z", "EndDate": "2026-05-01T16:00:00Z", "Location": "MSEE B012" },
+  { "Id": 8002, "Name": "Office hours", "Description": null, "StartDate": "2026-04-25T15:00:00Z", "EndDate": "2026-04-25T17:00:00Z", "Location": null }
+]
