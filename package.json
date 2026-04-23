@@ -2,6 +2,24 @@
   "name": "brightspace-mcp",
   "version": "0.1.0",
   "description": "MCP server for D2L Brightspace (multi-auth, opt-in writes, session cache)",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "brightspace",
+    "d2l",
+    "lms",
+    "education",
+    "claude"
+  ],
+  "homepage": "https://github.com/JhostinAleck/brightspace-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JhostinAleck/brightspace-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JhostinAleck/brightspace-mcp/issues"
+  },
+  "author": "Jhostin Aleck",
   "type": "module",
   "main": "build/cli/main.js",
   "bin": {
@@ -27,7 +45,8 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "check:deps": "depcruise --config .dependency-cruiser.cjs src",
-    "check": "npm-run-all -p lint typecheck test:run check:deps"
+    "check": "npm-run-all -p lint typecheck test:run check:deps",
+    "prepublishOnly": "npm run check && npm run build:clean"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
