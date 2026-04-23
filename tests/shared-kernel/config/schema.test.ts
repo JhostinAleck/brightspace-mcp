@@ -98,3 +98,33 @@ describe('ConfigSchema', () => {
     expect(() => ConfigSchema.parse(cfg)).toThrow();
   });
 });
+
+describe('writes config block', () => {
+  it('defaults writes.enabled to false and writes.dry_run to false', () => {
+    const parsed = ConfigSchema.parse({
+      default_profile: 'p',
+      profiles: {
+        p: {
+          base_url: 'https://x.com',
+          auth: { strategy: 'api_token', api_token: { token_ref: 'env:X' } },
+        },
+      },
+    });
+    expect(parsed.writes).toEqual({ enabled: false, dry_run: false });
+  });
+
+  it('accepts explicit writes.enabled true', () => {
+    const parsed = ConfigSchema.parse({
+      default_profile: 'p',
+      profiles: {
+        p: {
+          base_url: 'https://x.com',
+          auth: { strategy: 'api_token', api_token: { token_ref: 'env:X' } },
+        },
+      },
+      writes: { enabled: true, dry_run: true },
+    });
+    expect(parsed.writes.enabled).toBe(true);
+    expect(parsed.writes.dry_run).toBe(true);
+  });
+});

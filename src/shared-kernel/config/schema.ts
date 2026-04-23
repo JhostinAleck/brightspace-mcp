@@ -120,10 +120,18 @@ export const LoggingSchema = z.object({
   level: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 
+const WritesConfigSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    dry_run: z.boolean().default(false),
+  })
+  .default({ enabled: false, dry_run: false });
+
 export const ConfigSchema = z.object({
   default_profile: z.string(),
   profiles: z.record(z.string(), ProfileSchema),
   logging: LoggingSchema.default({ level: 'info' }),
+  writes: WritesConfigSchema,
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
