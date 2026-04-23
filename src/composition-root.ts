@@ -37,6 +37,8 @@ import { HttpResponseCache } from '@/contexts/http-api/cache/HttpResponseCache.j
 import { CachedCourseRepository } from '@/contexts/courses/infrastructure/CachedCourseRepository.js';
 import { D2lGradeRepository } from '@/contexts/grades/infrastructure/D2lGradeRepository.js';
 import { CachedGradeRepository } from '@/contexts/grades/infrastructure/CachedGradeRepository.js';
+import { D2lAssignmentRepository } from '@/contexts/assignments/infrastructure/D2lAssignmentRepository.js';
+import { CachedAssignmentRepository } from '@/contexts/assignments/infrastructure/CachedAssignmentRepository.js';
 import { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
 import { RequestCoalescer } from '@/contexts/http-api/resilience/RequestCoalescer.js';
 import { Bulkhead } from '@/contexts/http-api/resilience/Bulkhead.js';
@@ -275,12 +277,19 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const rawGradeRepo = new D2lGradeRepository(apiClient, { le: versions.le });
   const gradeRepo = new CachedGradeRepository(rawGradeRepo, domainCacheBacking, { ttlMs: 60 * 1000 });
 
+  const rawAssignmentRepo = new D2lAssignmentRepository(apiClient, { le: versions.le });
+  const assignmentRepo = new CachedAssignmentRepository(rawAssignmentRepo, domainCacheBacking, {
+    listTtlMs: 60 * 1000,
+    feedbackTtlMs: 5 * 60 * 1000,
+  });
+
   return {
     ensureAuth,
     profile: profileName,
     baseUrl,
     courseRepo,
     gradeRepo,
+    assignmentRepo,
     httpCache,
     domainCaches: { courses: domainCacheBacking },
     metrics,
