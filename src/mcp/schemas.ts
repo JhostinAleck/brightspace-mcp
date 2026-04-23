@@ -19,3 +19,10 @@ export const clearCacheSchema = z.object({
 export type ClearCacheInput = z.infer<typeof clearCacheSchema>;
 
 export const getDiagnosticsSchema = z.object({}).strict();
+
+export const getMyGradesSchema = z.object({
+  course_id: z.number().int().positive(),
+  format: z.enum(['compact', 'detailed']).default('compact'),
+}).strict();
+
+export type GetMyGradesInput = z.infer<typeof getMyGradesSchema>;
