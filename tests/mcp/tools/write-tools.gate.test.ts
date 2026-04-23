@@ -21,6 +21,13 @@ function mockServer(): { server: unknown; registered: string[] } {
 function baseDeps(gate: WritesGate): ToolDeps {
   return {
     writesGate: gate,
+    idempotencyStore: {
+      get: async () => null,
+      put: async () => undefined,
+    },
+    auditLogger: {
+      recordWriteAttempt: () => undefined,
+    },
   } as unknown as ToolDeps;
 }
 

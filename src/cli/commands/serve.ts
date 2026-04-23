@@ -11,6 +11,7 @@ export interface ServeOptions {
   profile?: string;
   config?: string;
   logLevel?: string;
+  enableWrites?: boolean;
 }
 
 function defaultConfigPath(): string {
@@ -35,6 +36,7 @@ export async function runServe(opts: ServeOptions): Promise<void> {
   const deps = await buildDependencies({
     config,
     transportPolicy: allowLocalHttp ? TransportPolicy.allowHttpForLocalhost() : TransportPolicy.strict(),
+    enableWrites: opts.enableWrites ?? false,
   });
   await startServer(deps);
 }

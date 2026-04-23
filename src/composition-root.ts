@@ -49,6 +49,8 @@ import { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.j
 import { RequestCoalescer } from '@/contexts/http-api/resilience/RequestCoalescer.js';
 import { Bulkhead } from '@/contexts/http-api/resilience/Bulkhead.js';
 import { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
+import { InMemoryIdempotencyStore } from '@/shared-kernel/idempotency/IdempotencyStore.js';
+import { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
 import type { ToolDeps } from '@/mcp/registry.js';
 import type { AuthStrategyKind } from '@/contexts/authentication/domain/Session.js';
 import type { Prompter } from '@/contexts/authentication/infrastructure/mfa/ManualPromptMfaStrategy.js';
@@ -58,6 +60,7 @@ export interface BuildDependenciesInput {
   encryptedFilePassphrase?: SecretValue;
   prompter?: Prompter;
   transportPolicy?: TransportPolicy;
+  enableWrites?: boolean;
 }
 
 async function buildCredentialStore(
@@ -307,12 +310,15 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     ttlMs: 5 * 60 * 1000,
   });
 
-  // Writes gate starts closed: cliFlag defaults to false here and is wired from the CLI in Task 9.
+  // Writes gate: requires BOTH the config switch AND the --enable-writes CLI flag to open.
   const writesGate = new WritesGate({
     configEnabled: config.writes?.enabled ?? false,
-    cliFlag: false,
+    cliFlag: input.enableWrites ?? false,
     configDryRun: config.writes?.dry_run ?? false,
   });
+
+  const idempotencyStore = new InMemoryIdempotencyStore();
+  const auditLogger = new AuditLogger({ logger });
 
   return {
     ensureAuth,
@@ -329,5 +335,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     metrics,
     staticInfo: { profile: profileName, baseUrl, versions: { lp: versions.lp, le: versions.le } },
     writesGate,
+    idempotencyStore,
+    auditLogger,
   };
 }

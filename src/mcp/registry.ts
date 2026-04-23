@@ -32,6 +32,8 @@ import { handleGetAnnouncements, type GetAnnouncementsDeps } from './tools/get-a
 import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discussions.tool.js';
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
 import type { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
+import type { IdempotencyStore } from '@/shared-kernel/idempotency/IdempotencyStore.js';
+import type { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
 
 export interface ToolDeps
   extends CheckAuthDeps,
@@ -50,6 +52,8 @@ export interface ToolDeps
     GetDiscussionsDeps,
     GetCalendarEventsDeps {
   writesGate: WritesGate;
+  idempotencyStore: IdempotencyStore;
+  auditLogger: AuditLogger;
 }
 
 export function registerAllTools(server: McpServer, deps: ToolDeps): void {
