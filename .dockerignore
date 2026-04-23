@@ -7,4 +7,4 @@ docs
 .github
 .vscode
 .idea
-*.md
+*.log
