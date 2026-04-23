@@ -57,7 +57,7 @@ describe('buildMicrosoftSsoSelectors', () => {
     expect(sel.pre_mfa_clicks).toHaveLength(2);
     expect(sel.mfa_input).toBe('#idTxtBx_SAOTCC_OTC');
     expect(sel.mfa_submit).toBe('#idSubmit_SAOTCC_Continue');
-    expect(sel.post_login).toBe('.d2l-navigation');
+    expect(sel.post_login).toBe('d2l-labs-navigation');
   });
 });
 

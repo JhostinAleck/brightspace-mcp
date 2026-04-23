@@ -73,7 +73,7 @@ export function buildMicrosoftSsoSelectors(): {
     ],
     mfa_input: '#idTxtBx_SAOTCC_OTC',
     mfa_submit: '#idSubmit_SAOTCC_Continue',
-    post_login: '.d2l-navigation',
+    post_login: 'd2l-labs-navigation',
   };
 }
 
