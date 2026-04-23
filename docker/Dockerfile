@@ -20,6 +20,6 @@ COPY package.json README.md LICENSE ./
 RUN chown -R node:node /app
 USER node
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "process.exit(0)" || exit 1
+  CMD node build/cli/main.js --version || exit 1
 ENTRYPOINT ["node", "build/cli/main.js"]
 CMD ["serve"]
