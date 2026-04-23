@@ -37,6 +37,8 @@ const BrowserSelectorsSchema = z.object({
   username: z.string(),
   password: z.string(),
   submit: z.string(),
+  password_submit: z.string().optional(),
+  pre_mfa_clicks: z.array(z.string()).default([]),
   mfa_input: z.string(),
   mfa_submit: z.string(),
   post_login: z.string(),

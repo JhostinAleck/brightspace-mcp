@@ -97,6 +97,67 @@ describe('ConfigSchema', () => {
     };
     expect(() => ConfigSchema.parse(cfg)).toThrow();
   });
+
+  describe('BrowserSelectorsSchema multi-step extensions', () => {
+    function makeBrowserProfile(selectors: Record<string, unknown>) {
+      return {
+        default_profile: 'p',
+        profiles: {
+          p: {
+            base_url: 'https://x.com',
+            auth: {
+              strategy: 'browser',
+              browser: {
+                login_url: 'https://x.com/login',
+                selectors,
+                username_ref: 'env:U',
+                password_ref: 'env:P',
+                headless: true,
+                mfa: { strategy: 'none' },
+              },
+            },
+          },
+        },
+      };
+    }
+
+    it('accepts browser config without password_submit or pre_mfa_clicks (backwards compat)', () => {
+      const cfg = makeBrowserProfile({
+        username: '#user', password: '#pw', submit: '#s',
+        mfa_input: '#code', mfa_submit: '#ms', post_login: '#home',
+      });
+      expect(() => ConfigSchema.parse(cfg)).not.toThrow();
+    });
+
+    it('accepts browser config with password_submit and pre_mfa_clicks', () => {
+      const cfg = makeBrowserProfile({
+        username: '#i0116',
+        password: '#i0118',
+        submit: '#idSIButton9',
+        password_submit: '#idSIButton9',
+        pre_mfa_clicks: [
+          "a:has-text(\"can't use\")",
+          'div[role="button"]:has-text("Use a verification code")',
+        ],
+        mfa_input: '#idTxtBx_SAOTCC_OTC',
+        mfa_submit: '#idSubmit_SAOTCC_Continue',
+        post_login: '.d2l-navigation',
+      });
+      expect(() => ConfigSchema.parse(cfg)).not.toThrow();
+      const parsed = ConfigSchema.parse(cfg);
+      expect(parsed.profiles['p'].auth.browser!.selectors.password_submit).toBe('#idSIButton9');
+      expect(parsed.profiles['p'].auth.browser!.selectors.pre_mfa_clicks).toHaveLength(2);
+    });
+
+    it('pre_mfa_clicks defaults to empty array when omitted', () => {
+      const cfg = makeBrowserProfile({
+        username: '#u', password: '#p', submit: '#s',
+        mfa_input: '#m', mfa_submit: '#ms', post_login: '#h',
+      });
+      const parsed = ConfigSchema.parse(cfg);
+      expect(parsed.profiles['p'].auth.browser!.selectors.pre_mfa_clicks).toEqual([]);
+    });
+  });
 });
 
 describe('writes config block', () => {
