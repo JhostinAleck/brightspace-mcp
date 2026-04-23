@@ -16,6 +16,8 @@ export interface BrowserSelectors {
   username: string;
   password: string;
   submit: string;
+  passwordSubmit?: string;    // if present → multi-step mode
+  preMfaClicks?: string[];    // best-effort clicks before MFA input
   mfaInput: string;
   mfaSubmit: string;
   postLogin: string;
@@ -53,9 +55,31 @@ export class BrowserAuthStrategy implements AuthStrategy {
     try {
       const page = await browser.newPage();
       await page.goto(this.opts.loginUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
-      await page.fill(this.opts.selectors.username, username);
-      await page.fill(this.opts.selectors.password, password);
-      await page.click(this.opts.selectors.submit);
+
+      const { selectors } = this.opts;
+      if (selectors.passwordSubmit !== undefined) {
+        // Multi-step: email page → navigate → password page
+        await page.fill(selectors.username, username);
+        await page.click(selectors.submit);
+        await page.waitForSelector(selectors.password, { timeout: 10_000 });
+        await page.fill(selectors.password, password);
+        await page.click(selectors.passwordSubmit);
+      } else {
+        // Single-page form: fill both then submit
+        await page.fill(selectors.username, username);
+        await page.fill(selectors.password, password);
+        await page.click(selectors.submit);
+      }
+
+      // Pre-MFA navigation (best-effort: skip selectors that time out)
+      for (const sel of selectors.preMfaClicks ?? []) {
+        try {
+          await page.waitForSelector(sel, { timeout: 5_000 });
+          await page.click(sel);
+        } catch {
+          // selector not present in this flow variant — skip
+        }
+      }
 
       try {
         await page.waitForSelector(this.opts.selectors.mfaInput, { timeout: 5_000 });
