@@ -19,14 +19,7 @@
   "bugs": {
     "url": "https://github.com/JhostinAleck/brightspace-mcp/issues"
   },
-  "author": {
-    "name": "Jhostin Aleck Sanchez Mora",
-    "url": "https://github.com/JhostinAleck"
-  },
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/sponsors/JhostinAleck"
-  },
+  "author": "Jhostin Aleck",
   "type": "module",
   "main": "build/cli/main.js",
   "bin": {
