@@ -1,6 +1,6 @@
 {
   "name": "brightspace-mcp",
-  "version": "0.11.4",
+  "version": "0.11.5",
   "description": "MCP server for D2L Brightspace (multi-auth, opt-in writes, session cache)",
   "keywords": [
     "mcp",
@@ -82,8 +82,7 @@
   "optionalDependencies": {
     "ioredis": "^5.4.0",
     "keytar": "^7.9.0",
-    "otplib": "^12.0.1",
-    "playwright": "^1.59.1"
+    "otplib": "^12.0.1"
   },
   "engines": {
     "node": ">=20.0.0"
