@@ -28,9 +28,11 @@ export function createPlaywrightLoader(
   return async () => {
     try {
       if (inner) return await inner();
-      const moduleName = 'playwright';
-      const mod = (await import(moduleName)) as unknown as PlaywrightModule;
-      return mod;
+      // Use createRequire to load playwright as CJS — avoids ESM/CJS interop issues
+      // where dynamic import() wraps the module differently depending on the runtime context.
+      const { createRequire } = await import('module');
+      const require = createRequire(import.meta.url);
+      return require('playwright') as PlaywrightModule;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(

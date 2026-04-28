@@ -10,6 +10,7 @@ interface EnrollmentDto {
   Access: { IsActive: boolean; StartDate?: string | null; EndDate?: string | null };
 }
 interface EnrollmentsPage {
+  PagingInfo: { Bookmark: string; HasMoreItems: boolean };
   Items: EnrollmentDto[];
 }
 
@@ -39,21 +40,41 @@ export class D2lCourseRepository implements CourseRepository {
   ) {}
 
   async findMyCourses(opts?: { activeOnly?: boolean }): Promise<Course[]> {
-    const page = await this.client.get<EnrollmentsPage>(
-      `/d2l/api/le/${this.versions.le}/enrollments/myenrollments/`,
-    );
-    const courses = page.Items.filter((e) => e.OrgUnit.Type.Code === 'Course').map((e) => {
-      const props: CourseProps = {
-        id: CourseId.of(e.OrgUnit.Id),
-        name: e.OrgUnit.Name,
-        code: e.OrgUnit.Code,
-        active: e.Access.IsActive,
-      };
-      if (e.Access.StartDate) props.startDate = new Date(e.Access.StartDate);
-      if (e.Access.EndDate) props.endDate = new Date(e.Access.EndDate);
-      return new Course(props);
+    const allItems: EnrollmentDto[] = [];
+    let bookmark: string | undefined;
+    do {
+      const qs = bookmark ? `?bookmark=${encodeURIComponent(bookmark)}` : '';
+      const page = await this.client.get<EnrollmentsPage>(
+        `/d2l/api/lp/${this.versions.lp}/enrollments/myenrollments/${qs}`,
+      );
+      allItems.push(...page.Items);
+      bookmark = page.PagingInfo.HasMoreItems ? page.PagingInfo.Bookmark : undefined;
+    } while (bookmark !== undefined);
+
+    const now = new Date();
+    const courses = allItems
+      .filter((e) => {
+        const code = e.OrgUnit.Type.Code;
+        return code === 'Course' || code === 'Course Offering';
+      })
+      .map((e) => {
+        const props: CourseProps = {
+          id: CourseId.of(e.OrgUnit.Id),
+          name: e.OrgUnit.Name,
+          code: e.OrgUnit.Code,
+          active: e.Access.IsActive,
+        };
+        if (e.Access.StartDate) props.startDate = new Date(e.Access.StartDate);
+        if (e.Access.EndDate) props.endDate = new Date(e.Access.EndDate);
+        return new Course(props);
+      });
+
+    if (!opts?.activeOnly) return courses;
+    return courses.filter((c) => {
+      if (c.active) return true;
+      if (c.startDate && c.endDate) return now >= c.startDate && now <= c.endDate;
+      return false;
     });
-    return opts?.activeOnly ? courses.filter((c) => c.active) : courses;
   }
 
   async findById(id: CourseId): Promise<Course | null> {
