@@ -26,14 +26,25 @@ export class D2lCalendarRepository implements CalendarRepository {
     const dtos = await this.client.get<CalendarEventDto[]>(
       `/d2l/api/le/${this.versions.le}/${orgUnit}/calendar/events/?${qs}`,
     );
-    return dtos.map((dto) => new CalendarEvent({
-      id: dto.Id,
-      courseOrgUnitId: orgUnit,
-      title: dto.Name,
-      description: dto.Description?.Text ?? null,
-      startAt: new Date(dto.StartDate),
-      endAt: dto.EndDate ? new Date(dto.EndDate) : null,
-      location: dto.Location ?? null,
-    }));
+    const parseDate = (s: string | null | undefined): Date | null => {
+      if (!s) return null;
+      const d = new Date(s);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+    return dtos
+      .map((dto) => {
+        const startAt = parseDate(dto.StartDate);
+        if (!startAt) return null;
+        return new CalendarEvent({
+          id: dto.Id,
+          courseOrgUnitId: orgUnit,
+          title: dto.Name,
+          description: dto.Description?.Text ?? null,
+          startAt,
+          endAt: parseDate(dto.EndDate),
+          location: dto.Location ?? null,
+        });
+      })
+      .filter((e): e is CalendarEvent => e !== null);
   }
 }
