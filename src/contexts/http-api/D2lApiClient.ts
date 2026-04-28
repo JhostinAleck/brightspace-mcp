@@ -106,6 +106,58 @@ export class D2lApiClient {
     return result;
   }
 
+  async getHtml(path: string): Promise<string> {
+    const token = await this.opts.getToken();
+    return this.withMiddlewares(() => this.fetchText(path, token));
+  }
+
+  async getRaw(path: string): Promise<Buffer> {
+    const token = await this.opts.getToken();
+    return this.withMiddlewares(() => this.fetchBinary(path, token));
+  }
+
+  private async fetchText(path: string, token: AccessToken): Promise<string> {
+    const url = `${this.baseUrl}${path}`;
+    this.transport.validate(url);
+    const { name, value } = token.toAuthHeader();
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: { [name]: value, 'User-Agent': this.userAgent },
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (err) {
+      throw new NetworkError(`GET ${path} failed`, err instanceof Error ? err : undefined);
+    }
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new D2lApiError(response.status, path, body);
+    }
+    return response.text();
+  }
+
+  private async fetchBinary(path: string, token: AccessToken): Promise<Buffer> {
+    const url = `${this.baseUrl}${path}`;
+    this.transport.validate(url);
+    const { name, value } = token.toAuthHeader();
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: { [name]: value, 'User-Agent': this.userAgent },
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (err) {
+      throw new NetworkError(`GET ${path} failed`, err instanceof Error ? err : undefined);
+    }
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new D2lApiError(response.status, path, body);
+    }
+    return Buffer.from(await response.arrayBuffer());
+  }
+
   async postMultipart<T>(path: string, formData: FormData): Promise<T> {
     const token = await this.opts.getToken();
     return this.withMiddlewares(() => this.postMultipartOnce<T>(path, formData, token));

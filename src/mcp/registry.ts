@@ -15,6 +15,7 @@ import {
   getAnnouncementsSchema,
   getDiscussionsSchema,
   getCalendarEventsSchema,
+  getAssignmentFilesSchema,
 } from './schemas.js';
 import { handleCheckAuth, type CheckAuthDeps } from './tools/check-auth.tool.js';
 import { handleListMyCourses, type ListMyCoursesDeps } from './tools/list-my-courses.tool.js';
@@ -31,6 +32,7 @@ import { handleGetCourseContent, type GetCourseContentDeps } from './tools/get-c
 import { handleGetAnnouncements, type GetAnnouncementsDeps } from './tools/get-announcements.tool.js';
 import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discussions.tool.js';
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
+import { handleGetAssignmentFiles, type GetAssignmentFilesDeps } from './tools/get-assignment-files.tool.js';
 import {
   handleSubmitAssignment,
   submitAssignmentSchema,
@@ -65,7 +67,8 @@ export interface ToolDeps
     GetCourseContentDeps,
     GetAnnouncementsDeps,
     GetDiscussionsDeps,
-    GetCalendarEventsDeps {
+    GetCalendarEventsDeps,
+    GetAssignmentFilesDeps {
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
@@ -254,6 +257,19 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getCalendarEventsSchema.shape,
     },
     async (input: unknown) => handleGetCalendarEvents(deps, input),
+  );
+
+  server.registerTool(
+    'get_assignment_files',
+    {
+      title: 'Get Assignment Files',
+      description:
+        'Download and read the attachments (instructions, templates) posted on a Brightspace assignment.\n' +
+        'Returns the text content of DOCX files and file info for other formats.\n' +
+        'Use when the user asks "what do I have to do", "download the assignment", or "read the instructions".',
+      inputSchema: getAssignmentFilesSchema.shape,
+    },
+    async (input: unknown) => handleGetAssignmentFiles(deps, input),
   );
 
   if (deps.writesGate.allowsWrites) {

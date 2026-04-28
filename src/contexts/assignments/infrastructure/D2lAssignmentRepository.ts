@@ -1,5 +1,6 @@
 import type {
   AssignmentRepository,
+  AssignmentFilesResult,
   SubmitInput,
   SubmitResult,
 } from '@/contexts/assignments/domain/AssignmentRepository.js';
@@ -38,6 +39,54 @@ export interface D2lAssignmentRepositoryOptions {
   le: string;
 }
 
+async function extractDocxText(buf: Buffer): Promise<string> {
+  try {
+    // DOCX is a ZIP — extract word/document.xml using node:zlib approach
+    const { unzipSync } = await import('node:zlib');
+    // Find PK local file headers and extract word/document.xml
+    const xml = extractZipEntry(buf, 'word/document.xml');
+    if (!xml) return '[DOCX: could not read content]';
+    // Strip XML tags, decode common entities
+    return xml
+      .replace(/<w:br[^>]*/g, '\n')
+      .replace(/<w:p[ >][^>]*>/g, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&apos;/g, "'").replace(/&quot;/g, '"').replace(/&#xA;/g, '\n')
+      .replace(/\n{3,}/g, '\n\n').trim();
+  } catch {
+    return '[DOCX: extraction failed]';
+  }
+}
+
+function extractZipEntry(buf: Buffer, target: string): string | null {
+  // Parse ZIP local file headers (PK\x03\x04) to find and decompress entries
+  let offset = 0;
+  while (offset < buf.length - 30) {
+    if (buf[offset] !== 0x50 || buf[offset+1] !== 0x4B || buf[offset+2] !== 0x03 || buf[offset+3] !== 0x04) {
+      offset++;
+      continue;
+    }
+    const compression = buf.readUInt16LE(offset + 8);
+    const compressedSize = buf.readUInt32LE(offset + 18);
+    const filenameLen = buf.readUInt16LE(offset + 26);
+    const extraLen = buf.readUInt16LE(offset + 28);
+    const filename = buf.slice(offset + 30, offset + 30 + filenameLen).toString('utf8');
+    const dataStart = offset + 30 + filenameLen + extraLen;
+    if (filename === target) {
+      const compressedData = buf.slice(dataStart, dataStart + compressedSize);
+      if (compression === 0) return compressedData.toString('utf8');
+      if (compression === 8) {
+        const { inflateRawSync } = require('node:zlib');
+        return inflateRawSync(compressedData).toString('utf8');
+      }
+      return null;
+    }
+    offset = dataStart + compressedSize;
+  }
+  return null;
+}
+
 export class D2lAssignmentRepository implements AssignmentRepository {
   constructor(
     private readonly client: D2lApiClient,
@@ -74,6 +123,54 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       submissionId: response.SubmissionId,
       submittedAt: new Date(response.SubmittedOn),
     };
+  }
+
+  async findFiles(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<AssignmentFilesResult> {
+    const orgUnit = OrgUnitId.toNumber(courseId);
+    const folderId = AssignmentId.toNumber(assignmentId);
+    const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
+    const html = await this.client.getHtml(pageUrl);
+
+    // Extract assignment name from <title>
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+    const rawTitle = titleMatch?.[1] ?? '';
+    const assignmentName = rawTitle.split(' - ')[0]?.trim() ?? rawTitle;
+
+    // Extract plain-text instructions (strip HTML tags)
+    const instrMatch = html.match(/Instrucciones[\s\S]{0,500}?<div[^>]*>([\s\S]{10,3000}?)<\/div>/i);
+    const instructions = instrMatch?.[1]
+      ? instrMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      : '';
+
+    // Find attachment file links (D2L viewFile pattern)
+    const fileRe = /href="(\/d2l\/common\/viewFile[^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"[^>]*>([^<]*)</gi;
+    const files: Array<{ name: string; url: string }> = [];
+    let m: RegExpExecArray | null;
+    while ((m = fileRe.exec(html)) !== null) {
+      const url = (m[1] ?? '').replace(/&amp;/g, '&');
+      const rawName = (m[2] ?? '').trim();
+      if (rawName && !files.some(f => f.url === url)) {
+        files.push({ name: rawName, url });
+      }
+    }
+
+    // Download and extract text content from each file
+    const fileContents: Record<string, string> = {};
+    for (const file of files) {
+      try {
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+        const buf = await this.client.getRaw(file.url);
+        if (ext === 'docx') {
+          fileContents[file.name] = await extractDocxText(buf);
+        } else {
+          fileContents[file.name] = `[${ext.toUpperCase()} file — ${buf.length} bytes]`;
+        }
+      } catch {
+        fileContents[file.name] = '[download failed]';
+      }
+    }
+
+    return { assignmentId: String(folderId), assignmentName, instructions, files, fileContents };
   }
 
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {
