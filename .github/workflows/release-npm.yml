@@ -11,9 +11,6 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://www.npmjs.com/package/brightspace-mcp
     steps:
       - uses: actions/checkout@v6
         with:
@@ -41,3 +38,5 @@ jobs:
 
       - name: Publish to npm with provenance
         run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
