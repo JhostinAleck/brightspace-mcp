@@ -16,8 +16,22 @@ export interface SubmitResult {
   submittedAt: Date;
 }
 
+export interface AssignmentFile {
+  name: string;
+  url: string;
+}
+
+export interface AssignmentFilesResult {
+  assignmentId: string;
+  assignmentName: string;
+  instructions: string;
+  files: AssignmentFile[];
+  fileContents: Record<string, string>;
+}
+
 export interface AssignmentRepository {
   findByCourse(courseId: OrgUnitId): Promise<Assignment[]>;
   findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null>;
+  findFiles(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<AssignmentFilesResult>;
   submit(input: SubmitInput): Promise<SubmitResult>;
 }

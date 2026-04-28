@@ -1,5 +1,6 @@
 import type {
   AssignmentRepository,
+  AssignmentFilesResult,
   SubmitInput,
   SubmitResult,
 } from '@/contexts/assignments/domain/AssignmentRepository.js';
@@ -107,6 +108,11 @@ export class CachedAssignmentRepository implements AssignmentRepository {
     const fresh = await this.inner.findByCourse(courseId);
     await this.cache.set(key, fresh.map(assignmentToPlain), this.ttls.listTtlMs);
     return fresh;
+  }
+
+  async findFiles(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<AssignmentFilesResult> {
+    // Files are not cached — always fetch fresh to get latest attachments.
+    return this.inner.findFiles(courseId, assignmentId);
   }
 
   async submit(input: SubmitInput): Promise<SubmitResult> {

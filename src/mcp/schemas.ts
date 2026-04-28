@@ -89,3 +89,9 @@ export const getCalendarEventsSchema = z.object({
   days: z.number().int().positive().max(365).default(30),
 }).strict();
 export type GetCalendarEventsInputSchema = z.infer<typeof getCalendarEventsSchema>;
+
+export const getAssignmentFilesSchema = z.object({
+  course_id: z.number().int().positive(),
+  assignment_id: z.number().int().positive(),
+}).strict();
+export type GetAssignmentFilesInputSchema = z.infer<typeof getAssignmentFilesSchema>;
