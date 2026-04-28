@@ -98,3 +98,30 @@ describe('D2lApiClient.get', () => {
     });
   });
 });
+
+describe('D2lApiClient.getHtml / getRaw', () => {
+  beforeEach(() => nock.disableNetConnect());
+  afterEach(() => { nock.cleanAll(); nock.enableNetConnect(); });
+
+  it('getHtml returns response body as string', async () => {
+    nock(BASE).get('/page.html').reply(200, '<html>hello</html>', { 'Content-Type': 'text/html' });
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const html = await client.getHtml('/page.html');
+    expect(html).toBe('<html>hello</html>');
+  });
+
+  it('getHtml throws D2lApiError on non-2xx', async () => {
+    nock(BASE).get('/missing.html').reply(404, 'not found');
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    await expect(client.getHtml('/missing.html')).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('getRaw returns a Buffer', async () => {
+    const data = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+    nock(BASE).get('/file.docx').reply(200, data, { 'Content-Type': 'application/octet-stream' });
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const buf = await client.getRaw('/file.docx');
+    expect(Buffer.isBuffer(buf)).toBe(true);
+    expect(buf.length).toBeGreaterThan(0);
+  });
+});
