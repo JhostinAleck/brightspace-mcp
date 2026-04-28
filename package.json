@@ -1,6 +1,6 @@
 {
   "name": "brightspace-mcp",
-  "version": "0.11.5",
+  "version": "0.11.6",
   "description": "MCP server for D2L Brightspace (multi-auth, opt-in writes, session cache)",
   "keywords": [
     "mcp",
