@@ -10,7 +10,7 @@ interface EnrollmentDto {
   Access: { IsActive: boolean; StartDate?: string | null; EndDate?: string | null };
 }
 interface EnrollmentsPage {
-  PagingInfo: { Bookmark: string; HasMoreItems: boolean };
+  PagingInfo?: { Bookmark?: string; HasMoreItems?: boolean };
   Items: EnrollmentDto[];
 }
 
@@ -48,7 +48,7 @@ export class D2lCourseRepository implements CourseRepository {
         `/d2l/api/lp/${this.versions.lp}/enrollments/myenrollments/${qs}`,
       );
       allItems.push(...page.Items);
-      bookmark = page.PagingInfo.HasMoreItems ? page.PagingInfo.Bookmark : undefined;
+      bookmark = page.PagingInfo?.HasMoreItems ? page.PagingInfo.Bookmark : undefined;
     } while (bookmark !== undefined);
 
     const now = new Date();

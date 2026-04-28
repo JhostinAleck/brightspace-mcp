@@ -9,6 +9,7 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
 import { Feedback } from '@/contexts/assignments/domain/Feedback.js';
+import { inflateRawSync } from 'node:zlib';
 import type { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { D2lApiError } from '@/contexts/http-api/errors.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
@@ -41,9 +42,6 @@ export interface D2lAssignmentRepositoryOptions {
 
 async function extractDocxText(buf: Buffer): Promise<string> {
   try {
-    // DOCX is a ZIP — extract word/document.xml using node:zlib approach
-    const { unzipSync } = await import('node:zlib');
-    // Find PK local file headers and extract word/document.xml
     const xml = extractZipEntry(buf, 'word/document.xml');
     if (!xml) return '[DOCX: could not read content]';
     // Strip XML tags, decode common entities
@@ -77,7 +75,6 @@ function extractZipEntry(buf: Buffer, target: string): string | null {
       const compressedData = buf.slice(dataStart, dataStart + compressedSize);
       if (compression === 0) return compressedData.toString('utf8');
       if (compression === 8) {
-        const { inflateRawSync } = require('node:zlib');
         return inflateRawSync(compressedData).toString('utf8');
       }
       return null;

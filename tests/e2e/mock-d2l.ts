@@ -55,7 +55,7 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
         );
         return;
       }
-      if (req.url?.startsWith('/d2l/api/le/1.91/enrollments/myenrollments/')) {
+      if (req.url?.startsWith('/d2l/api/lp/1.56/enrollments/myenrollments/')) {
         res.end(
           JSON.stringify({
             Items: [
