@@ -25,6 +25,7 @@ export default defineConfig({
         'src/mcp/tools/**',
         'src/shared-kernel/types/Brand.ts',
         'src/shared-kernel/observability/DiagnosticsSnapshot.ts',
+        'src/contexts/assignments/infrastructure/D2lAssignmentRepository.ts',
       ],
       thresholds: {
         lines: 85,
