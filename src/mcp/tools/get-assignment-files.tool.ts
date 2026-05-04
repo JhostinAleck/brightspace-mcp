@@ -84,11 +84,11 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
   const lines: string[] = [];
   lines.push(`# ${result.assignmentName}`);
   if (result.instructions) {
-    lines.push('\n## Instrucciones\n' + result.instructions);
+    lines.push('\n## Instructions\n' + result.instructions);
   }
 
   if (result.files.length > 0) {
-    lines.push(`\n## Archivos adjuntos (${result.files.length})`);
+    lines.push(`\n## Attachments (${result.files.length})`);
     for (const f of result.files) {
       lines.push(`\n### ${f.name}`);
       const content = result.fileContents[f.name];
@@ -105,16 +105,16 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
     });
 
     if (matches.length === 0) {
-      lines.push('\nNo hay archivos adjuntos en el dropbox ni en el contenido del curso.');
+      lines.push('\nNo attachments found in dropbox or course content.');
     } else {
-      lines.push(`\n## Archivos en contenido del curso (${matches.length})`);
+      lines.push(`\n## Files found in course content (${matches.length})`);
       for (const topic of matches) {
         lines.push(`\n### ${topic.title}`);
         try {
           const buf = await deps.contentRepo.findTopicFile(courseId, topic.id);
           lines.push(await topicToText(buf, topic.ext));
         } catch {
-          lines.push('[error al descargar el archivo]');
+          lines.push('[download failed]');
         }
       }
     }

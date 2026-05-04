@@ -30,18 +30,18 @@ function extractZipEntry(buf: Buffer, target: string): string | null {
 }
 
 function bufToText(buf: Buffer, contentType: string): string {
-  if (contentType.includes('pdf')) return `[PDF — ${buf.length} bytes — usa una herramienta de PDF para leerlo]`;
+  if (contentType.includes('pdf')) return `[PDF — ${buf.length} bytes]`;
   if (contentType.includes('wordprocessingml') || contentType.includes('docx')) {
     try {
       const xml = extractZipEntry(buf, 'word/document.xml');
-      if (!xml) return '[DOCX: no se pudo extraer contenido]';
+      if (!xml) return '[DOCX: could not read content]';
       return xml
         .replace(/<w:br[^>]*/g, '\n').replace(/<w:p[ >][^>]*>/g, '\n')
         .replace(/<[^>]+>/g, '')
         .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
         .replace(/&apos;/g, "'").replace(/&quot;/g, '"').replace(/&#xA;/g, '\n')
         .replace(/\n{3,}/g, '\n\n').trim();
-    } catch { return '[DOCX: extracción fallida]'; }
+    } catch { return '[DOCX: extraction failed]'; }
   }
   if (contentType.includes('text') || contentType.includes('html')) return buf.toString('utf8').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 5000);
   return `[${contentType} — ${buf.length} bytes]`;

@@ -133,7 +133,7 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const folderId = AssignmentId.toNumber(assignmentId);
 
-    // Fetch folder details via API — includes Attachments and CustomInstructions
+    // Primary: fetch folder via API to get Attachments[] and CustomInstructions
     const folder = await this.client.get<FolderDto>(
       `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/`,
     );
@@ -143,28 +143,53 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       ? folder.CustomInstructions.Html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
       : '';
 
-    const attachments = folder.Attachments ?? [];
-    const files: Array<{ name: string; url: string }> = attachments.map((a) => ({
+    let files: Array<{ name: string; url: string }> = (folder.Attachments ?? []).map((a) => ({
       name: a.FileName,
       url: `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/attachments/${a.FileId}`,
     }));
+
+    // Fallback: HTML scrape the submit page when API returns no Attachments
+    // (some D2L versions don't include Attachments in the folder object)
+    if (files.length === 0) {
+      const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
+      const html = await this.client.getHtml(pageUrl);
+
+      // Match by title attribute (has full filename with extension even when link text is truncated)
+      const byTitle = /href="([^"]*\/(?:viewFile|file)[^"]*)"[^>]*title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
+      // Match by extension in URL (classic pattern)
+      const byUrl = /href="(\/d2l\/[^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)(?:[^"]*))"/gi;
+
+      const seen = new Set<string>();
+      const tryAdd = (url: string, name: string) => {
+        const cleanUrl = url.replace(/&amp;/g, '&');
+        if (name && !seen.has(cleanUrl)) { seen.add(cleanUrl); files.push({ name, url: cleanUrl }); }
+      };
+
+      let m: RegExpExecArray | null;
+      while ((m = byTitle.exec(html)) !== null) tryAdd(m[1] ?? '', (m[2] ?? '').trim());
+      while ((m = byUrl.exec(html)) !== null) {
+        const url = (m[1] ?? '').replace(/&amp;/g, '&');
+        const name = decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? '');
+        tryAdd(url, name);
+      }
+    }
 
     const fileContents: Record<string, string> = {};
     for (const file of files) {
       try {
         const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
         const buf = await this.client.getRaw(file.url);
-        if (ext === 'docx') {
+        if (ext === 'docx' || ext === 'doc') {
           fileContents[file.name] = await extractDocxText(buf);
         } else if (ext === 'pdf') {
-          fileContents[file.name] = `[PDF — ${buf.length} bytes — pide get_topic_file o abre Brightspace para leerlo]`;
+          fileContents[file.name] = `[PDF — ${buf.length} bytes]`;
         } else if (ext === 'xlsx' || ext === 'xls') {
           fileContents[file.name] = `[Excel — ${buf.length} bytes]`;
         } else {
-          fileContents[file.name] = `[${ext.toUpperCase() || 'archivo'} — ${buf.length} bytes]`;
+          fileContents[file.name] = `[${ext.toUpperCase() || 'file'} — ${buf.length} bytes]`;
         }
       } catch {
-        fileContents[file.name] = '[error al descargar]';
+        fileContents[file.name] = '[download failed]';
       }
     }
 
