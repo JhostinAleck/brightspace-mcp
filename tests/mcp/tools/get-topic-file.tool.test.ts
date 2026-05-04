@@ -19,8 +19,6 @@ describe('get_topic_file tool', () => {
   });
 
   it('detects DOCX and extracts text', async () => {
-    // Minimal valid ZIP with word/document.xml entry
-    const xmlContent = '<w:document><w:body><w:p><w:r><w:t>Hello course</w:t></w:r></w:p></w:body></w:document>';
     // Build a fake PK zip header that would trigger DOCX detection
     const buf = Buffer.alloc(600);
     buf[0] = 0x50; buf[1] = 0x4B; buf[2] = 0x03; buf[3] = 0x04;
