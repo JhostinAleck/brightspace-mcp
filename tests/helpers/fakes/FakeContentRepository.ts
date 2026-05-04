@@ -20,4 +20,8 @@ export class FakeContentRepository implements ContentRepository {
   async findTopicFile(_courseId: OrgUnitId, _topicId: number): Promise<Buffer> {
     return Buffer.alloc(0);
   }
+
+  async findTopicRenderedText(_courseId: OrgUnitId, _topicId: number): Promise<string> {
+    return '';
+  }
 }

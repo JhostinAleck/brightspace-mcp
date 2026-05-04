@@ -78,6 +78,13 @@ export async function handleGetTopicFile(deps: GetTopicFileDeps, rawInput: unkno
   const buf = await deps.contentRepo.findTopicFile(courseId, input.topic_id);
 
   const contentType = detectContentType(buf);
+
+  // For unrecognized binary (D2L internal format / JS-rendered pages), fall back to rendered text
+  if (contentType === 'application/octet-stream') {
+    const rendered = await deps.contentRepo.findTopicRenderedText(courseId, input.topic_id);
+    if (rendered) return { content: [{ type: 'text' as const, text: rendered }] };
+  }
+
   const text = bufToText(buf, contentType);
   return { content: [{ type: 'text' as const, text }] };
 }

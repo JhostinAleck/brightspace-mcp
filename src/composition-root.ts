@@ -26,6 +26,7 @@ import type { SecretValue } from '@/contexts/authentication/domain/SecretValue.j
 import { EnsureAuthenticated } from '@/contexts/authentication/application/EnsureAuthenticated.js';
 import { ConfigBackedStrategyResolver } from '@/contexts/authentication/application/ConfigBackedStrategyResolver.js';
 import { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
+import { PlaywrightPageRenderer } from '@/contexts/http-api/PlaywrightPageRenderer.js';
 import type { TransportPolicy } from '@/contexts/http-api/transport/TransportPolicy.js';
 import { discoverVersions } from '@/contexts/http-api/VersionDiscovery.js';
 import { callWhoAmI } from '@/contexts/http-api/whoami.js';
@@ -267,9 +268,16 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     persistent: new FileCache({ path: join(homedir(), '.brightspace-mcp', 'domain-cache.json') }),
   });
 
+  const getToken = async () => (await ensureAuth.execute({ profile: profileName, baseUrl })).token;
+
+  // Wire up Playwright renderer when browser auth is configured — enables JS-rendered page scraping
+  const pageRenderer = profile.auth.browser
+    ? new PlaywrightPageRenderer(createPlaywrightLoader(), getToken, baseUrl)
+    : undefined;
+
   const apiClient = new D2lApiClient({
     baseUrl,
-    getToken: async () => (await ensureAuth.execute({ profile: profileName, baseUrl })).token,
+    getToken,
     retry: { maxAttempts: 3, initialMs: 250, maxMs: 5_000 },
     circuit: { failureThreshold: 5, resetTimeoutMs: 30_000 },
     coalescer: new RequestCoalescer(),
@@ -277,6 +285,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     cache: httpCache,
     cacheTtlMs: 60_000,
     ...(input.transportPolicy ? { transportPolicy: input.transportPolicy } : {}),
+    ...(pageRenderer ? { pageRenderer } : {}),
   });
 
   const versions = await discoverVersions(baseUrl);

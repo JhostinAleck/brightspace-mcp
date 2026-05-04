@@ -168,10 +168,10 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       } catch { /* endpoint may not exist — continue to HTML scrape */ }
     }
 
-    // Strategy C: HTML scrape the submit page with multiple regex patterns
+    // Strategy C: scrape the submit page — uses Playwright renderer if available (handles JS components)
     if (files.length === 0) {
       const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
-      const html = await this.client.getHtml(pageUrl);
+      const html = await this.client.getRenderedHtml(pageUrl);
 
       const seen = new Set<string>();
       const addFile = (url: string, name: string) => {

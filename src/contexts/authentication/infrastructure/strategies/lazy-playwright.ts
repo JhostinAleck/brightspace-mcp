@@ -1,5 +1,19 @@
+export interface PlaywrightCookieParam {
+  name: string;
+  value: string;
+  domain: string;
+  path: string;
+}
+
+export interface PlaywrightBrowserContext {
+  addCookies(cookies: PlaywrightCookieParam[]): Promise<void>;
+  newPage(): Promise<PlaywrightPage>;
+  close(): Promise<void>;
+}
+
 export interface PlaywrightBrowser {
   newPage(): Promise<PlaywrightPage>;
+  newContext(): Promise<PlaywrightBrowserContext>;
   close(): Promise<void>;
 }
 

@@ -6,4 +6,5 @@ export interface ContentRepository {
   findSyllabus(courseId: OrgUnitId): Promise<Syllabus | null>;
   findModules(courseId: OrgUnitId): Promise<Module[]>;
   findTopicFile(courseId: OrgUnitId, topicId: number): Promise<Buffer>;
+  findTopicRenderedText(courseId: OrgUnitId, topicId: number): Promise<string>;
 }

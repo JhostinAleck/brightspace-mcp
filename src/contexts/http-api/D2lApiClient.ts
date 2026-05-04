@@ -7,6 +7,7 @@ import { CircuitBreaker, CircuitOpenError } from './resilience/CircuitBreaker.js
 import type { RequestCoalescer } from './resilience/RequestCoalescer.js';
 import { RetryPolicy, type RetryDecision } from './resilience/RetryPolicy.js';
 import { TransportPolicy } from './transport/TransportPolicy.js';
+import type { PlaywrightPageRenderer } from './PlaywrightPageRenderer.js';
 
 export interface RetryConfig {
   maxAttempts: number;
@@ -31,6 +32,7 @@ export interface D2lApiClientOptions {
   bulkhead?: Bulkhead;
   cache?: HttpResponseCache;
   cacheTtlMs?: number;
+  pageRenderer?: PlaywrightPageRenderer;
 }
 
 const DEFAULT_UA =
@@ -114,6 +116,17 @@ export class D2lApiClient {
   async getRaw(path: string): Promise<Buffer> {
     const token = await this.opts.getToken();
     return this.withMiddlewares(() => this.fetchBinary(path, token));
+  }
+
+  async getRenderedHtml(path: string): Promise<string> {
+    if (this.opts.pageRenderer) return this.opts.pageRenderer.getRenderedHtml(path);
+    return this.getHtml(path);
+  }
+
+  async getRenderedText(path: string): Promise<string> {
+    if (this.opts.pageRenderer) return this.opts.pageRenderer.getRenderedText(path);
+    const html = await this.getHtml(path);
+    return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
   }
 
   private async fetchText(path: string, token: AccessToken): Promise<string> {

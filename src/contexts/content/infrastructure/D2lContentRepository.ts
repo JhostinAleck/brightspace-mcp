@@ -63,6 +63,11 @@ export class D2lContentRepository implements ContentRepository {
     return this.client.getRaw(`/d2l/api/le/${this.versions.le}/${orgUnit}/content/topics/${topicId}/file`);
   }
 
+  async findTopicRenderedText(courseId: OrgUnitId, topicId: number): Promise<string> {
+    const orgUnit = OrgUnitId.toNumber(courseId);
+    return this.client.getRenderedText(`/d2l/le/content/${orgUnit}/viewContent/${topicId}/View`);
+  }
+
   async findModules(courseId: OrgUnitId): Promise<Module[]> {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const roots = await this.client.get<ModuleDto[]>(
