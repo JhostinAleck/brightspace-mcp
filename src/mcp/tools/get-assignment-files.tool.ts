@@ -16,14 +16,12 @@ function normalize(s: string): string {
 
 interface TopicRef { id: number; title: string; ext: string | null }
 
-function collectFileTopics(modules: readonly Module[], out: TopicRef[] = []): TopicRef[] {
+function collectAllTopics(modules: readonly Module[], out: TopicRef[] = []): TopicRef[] {
   for (const m of modules) {
     for (const t of m.topics) {
-      if (t.kind === 'file' || (t.fileExtension !== null)) {
-        out.push({ id: t.id, title: t.title, ext: t.fileExtension });
-      }
+      out.push({ id: t.id, title: t.title, ext: t.fileExtension });
     }
-    collectFileTopics(m.submodules, out);
+    collectAllTopics(m.submodules, out);
   }
   return out;
 }
@@ -99,7 +97,7 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
   } else {
     // Fallback: search course content for topics matching the assignment name
     const modules = await deps.contentRepo.findModules(courseId);
-    const allTopics = collectFileTopics(modules);
+    const allTopics = collectAllTopics(modules);
     const needle = normalize(result.assignmentName);
     const matches = allTopics.filter(t => {
       const hay = normalize(t.title);
