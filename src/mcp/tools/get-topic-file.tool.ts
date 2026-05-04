@@ -43,8 +43,33 @@ function bufToText(buf: Buffer, contentType: string): string {
         .replace(/\n{3,}/g, '\n\n').trim();
     } catch { return '[DOCX: extraction failed]'; }
   }
+  if (contentType.includes('spreadsheetml')) return `[Excel — ${buf.length} bytes]`;
+  if (contentType.includes('presentationml')) return `[PowerPoint — ${buf.length} bytes]`;
+  if (contentType.includes('zip')) return `[ZIP — ${buf.length} bytes]`;
   if (contentType.includes('text') || contentType.includes('html')) return buf.toString('utf8').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 5000);
   return `[${contentType} — ${buf.length} bytes]`;
+}
+
+function detectContentType(buf: Buffer): string {
+  if (buf.length < 4) return 'application/octet-stream';
+  // PDF
+  if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) return 'application/pdf';
+  // ZIP-based (DOCX, XLSX, PPTX) — differentiate by internal entry names
+  if (buf[0] === 0x50 && buf[1] === 0x4B) {
+    const header = buf.slice(0, Math.min(buf.length, 200)).toString('latin1');
+    if (header.includes('word/')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (header.includes('xl/')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    if (header.includes('ppt/')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    return 'application/zip';
+  }
+  // HTML / XML — check first 512 bytes as text
+  const head = buf.slice(0, 512).toString('utf8');
+  if (head.includes('<!DOCTYPE') || head.includes('<html') || head.includes('<?xml')) return 'text/html';
+  // Heuristic: if all bytes are printable ASCII or common UTF-8 control chars, treat as text
+  const sample = buf.slice(0, 256);
+  const printable = [...sample].filter(b => b >= 0x09 && b <= 0x7E).length;
+  if (printable / sample.length > 0.85) return 'text/plain';
+  return 'application/octet-stream';
 }
 
 export async function handleGetTopicFile(deps: GetTopicFileDeps, rawInput: unknown) {
@@ -52,12 +77,7 @@ export async function handleGetTopicFile(deps: GetTopicFileDeps, rawInput: unkno
   const courseId = OrgUnitId.of(input.course_id);
   const buf = await deps.contentRepo.findTopicFile(courseId, input.topic_id);
 
-  // Detect content type from magic bytes
-  let contentType = 'application/octet-stream';
-  if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) contentType = 'application/pdf';
-  else if (buf[0] === 0x50 && buf[1] === 0x4B) contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-  else if (buf.slice(0, 5).toString() === '<?xml' || buf.slice(0, 14).toString().includes('html')) contentType = 'text/html';
-
+  const contentType = detectContentType(buf);
   const text = bufToText(buf, contentType);
   return { content: [{ type: 'text' as const, text }] };
 }
