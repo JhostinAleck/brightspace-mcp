@@ -22,6 +22,7 @@ export interface PlaywrightPage {
   fill(selector: string, value: string): Promise<void>;
   click(selector: string): Promise<void>;
   waitForSelector(selector: string, opts?: { timeout?: number }): Promise<void>;
+  waitForTimeout(ms: number): Promise<void>;
   content(): Promise<string>;
   evaluate<T>(fn: () => T): Promise<T>;
   context(): { cookies(): Promise<Array<{ name: string; value: string; domain: string; path: string }>> };

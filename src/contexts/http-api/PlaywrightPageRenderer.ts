@@ -28,9 +28,12 @@ export class PlaywrightPageRenderer {
       await ctx.addCookies(cookies);
       const page = await ctx.newPage();
       await page.goto(`${this.baseUrl.replace(/\/$/, '')}${path}`, {
-        waitUntil: 'networkidle',
+        waitUntil: 'load',
         timeout: 30_000,
       });
+      // Wait for JS components to render (Brightspace SPA does continuous polling
+      // so 'networkidle' never fires; a fixed delay after 'load' is more reliable)
+      await page.waitForTimeout(5000);
       return await page.content();
     } finally {
       await browser.close();
