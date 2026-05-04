@@ -112,7 +112,7 @@ export function courseContentToText(modules: readonly Module[], depth: number): 
     const out: string[] = [];
     for (const m of mods) {
       out.push(`${'  '.repeat(level)}📁 ${m.title}`);
-      for (const t of m.topics) out.push(`${'  '.repeat(level + 1)}· ${t.title} [${t.kind}]`);
+      for (const t of m.topics) out.push(`${'  '.repeat(level + 1)}· ${t.title} [${t.kind}] (id=${t.id})`);
       if (level < depth) out.push(...render(m.submodules, level + 1));
     }
     return out;

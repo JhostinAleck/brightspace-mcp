@@ -16,6 +16,7 @@ import {
   getDiscussionsSchema,
   getCalendarEventsSchema,
   getAssignmentFilesSchema,
+  getTopicFileSchema,
 } from './schemas.js';
 import { handleCheckAuth, type CheckAuthDeps } from './tools/check-auth.tool.js';
 import { handleListMyCourses, type ListMyCoursesDeps } from './tools/list-my-courses.tool.js';
@@ -33,6 +34,7 @@ import { handleGetAnnouncements, type GetAnnouncementsDeps } from './tools/get-a
 import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discussions.tool.js';
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
 import { handleGetAssignmentFiles, type GetAssignmentFilesDeps } from './tools/get-assignment-files.tool.js';
+import { handleGetTopicFile, type GetTopicFileDeps } from './tools/get-topic-file.tool.js';
 import {
   handleSubmitAssignment,
   submitAssignmentSchema,
@@ -68,7 +70,8 @@ export interface ToolDeps
     GetAnnouncementsDeps,
     GetDiscussionsDeps,
     GetCalendarEventsDeps,
-    GetAssignmentFilesDeps {
+    GetAssignmentFilesDeps,
+    GetTopicFileDeps {
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
@@ -270,6 +273,19 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getAssignmentFilesSchema.shape,
     },
     async (input: unknown) => handleGetAssignmentFiles(deps, input),
+  );
+
+  server.registerTool(
+    'get_topic_file',
+    {
+      title: 'Get Topic File',
+      description:
+        'Download and read a content topic file from a Brightspace course.\n' +
+        'Use get_course_content first to find the topic id (shown as id=XXXX next to each topic).\n' +
+        'Use when the user wants to read a specific file posted in the course content (PDFs, DOCX, etc.).',
+      inputSchema: getTopicFileSchema.shape,
+    },
+    async (input: unknown) => handleGetTopicFile(deps, input),
   );
 
   if (deps.writesGate.allowsWrites) {

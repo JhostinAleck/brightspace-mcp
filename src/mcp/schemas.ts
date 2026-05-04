@@ -95,3 +95,9 @@ export const getAssignmentFilesSchema = z.object({
   assignment_id: z.number().int().positive(),
 }).strict();
 export type GetAssignmentFilesInputSchema = z.infer<typeof getAssignmentFilesSchema>;
+
+export const getTopicFileSchema = z.object({
+  course_id: z.number().int().positive(),
+  topic_id: z.number().int().positive(),
+}).strict();
+export type GetTopicFileInputSchema = z.infer<typeof getTopicFileSchema>;
