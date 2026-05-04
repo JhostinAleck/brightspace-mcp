@@ -21,12 +21,19 @@ interface SubmissionDto {
   Comments?: { Text?: string | null } | null;
 }
 
+interface AttachmentDto {
+  FileId: string;
+  FileName: string;
+  Size?: number | null;
+}
+
 interface FolderDto {
   Id: number;
   Name: string;
   CustomInstructions?: { Html?: string | null } | null;
   DueDate?: string | null;
   Submissions?: SubmissionDto[] | null;
+  Attachments?: AttachmentDto[] | null;
 }
 
 interface FeedbackDto {
@@ -125,33 +132,23 @@ export class D2lAssignmentRepository implements AssignmentRepository {
   async findFiles(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<AssignmentFilesResult> {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const folderId = AssignmentId.toNumber(assignmentId);
-    const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
-    const html = await this.client.getHtml(pageUrl);
 
-    // Extract assignment name from <title>
-    const titleMatch = html.match(/<title>([^<]+)<\/title>/);
-    const rawTitle = titleMatch?.[1] ?? '';
-    const assignmentName = rawTitle.split(' - ')[0]?.trim() ?? rawTitle;
+    // Fetch folder details via API — includes Attachments and CustomInstructions
+    const folder = await this.client.get<FolderDto>(
+      `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/`,
+    );
 
-    // Extract plain-text instructions (strip HTML tags)
-    const instrMatch = html.match(/Instrucciones[\s\S]{0,500}?<div[^>]*>([\s\S]{10,3000}?)<\/div>/i);
-    const instructions = instrMatch?.[1]
-      ? instrMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    const assignmentName = folder.Name;
+    const instructions = folder.CustomInstructions?.Html
+      ? folder.CustomInstructions.Html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
       : '';
 
-    // Find attachment file links (D2L viewFile pattern)
-    const fileRe = /href="(\/d2l\/common\/viewFile[^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"[^>]*>([^<]*)</gi;
-    const files: Array<{ name: string; url: string }> = [];
-    let m: RegExpExecArray | null;
-    while ((m = fileRe.exec(html)) !== null) {
-      const url = (m[1] ?? '').replace(/&amp;/g, '&');
-      const rawName = (m[2] ?? '').trim();
-      if (rawName && !files.some(f => f.url === url)) {
-        files.push({ name: rawName, url });
-      }
-    }
+    const attachments = folder.Attachments ?? [];
+    const files: Array<{ name: string; url: string }> = attachments.map((a) => ({
+      name: a.FileName,
+      url: `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/attachments/${a.FileId}`,
+    }));
 
-    // Download and extract text content from each file
     const fileContents: Record<string, string> = {};
     for (const file of files) {
       try {
@@ -159,11 +156,15 @@ export class D2lAssignmentRepository implements AssignmentRepository {
         const buf = await this.client.getRaw(file.url);
         if (ext === 'docx') {
           fileContents[file.name] = await extractDocxText(buf);
+        } else if (ext === 'pdf') {
+          fileContents[file.name] = `[PDF — ${buf.length} bytes — pide get_topic_file o abre Brightspace para leerlo]`;
+        } else if (ext === 'xlsx' || ext === 'xls') {
+          fileContents[file.name] = `[Excel — ${buf.length} bytes]`;
         } else {
-          fileContents[file.name] = `[${ext.toUpperCase()} file — ${buf.length} bytes]`;
+          fileContents[file.name] = `[${ext.toUpperCase() || 'archivo'} — ${buf.length} bytes]`;
         }
       } catch {
-        fileContents[file.name] = '[download failed]';
+        fileContents[file.name] = '[error al descargar]';
       }
     }
 
