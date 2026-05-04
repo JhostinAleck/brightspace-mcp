@@ -1,5 +1,21 @@
-import type { PlaywrightLoader, PlaywrightCookieParam } from '@/contexts/authentication/infrastructure/strategies/lazy-playwright.js';
 import type { AccessToken } from '@/contexts/authentication/domain/AccessToken.js';
+
+// Minimal Playwright interface — defined locally to avoid cross-context imports
+interface PlaywrightCookieParam { name: string; value: string; domain: string; path: string }
+interface PlaywrightPage {
+  goto(url: string, opts?: { waitUntil?: string; timeout?: number }): Promise<void>;
+  waitForTimeout(ms: number): Promise<void>;
+  content(): Promise<string>;
+}
+interface PlaywrightBrowserContext {
+  addCookies(cookies: PlaywrightCookieParam[]): Promise<void>;
+  newPage(): Promise<PlaywrightPage>;
+}
+interface PlaywrightBrowser {
+  newContext(): Promise<PlaywrightBrowserContext>;
+  close(): Promise<void>;
+}
+export type PlaywrightLoader = () => Promise<{ chromium: { launch(opts?: { headless?: boolean }): Promise<PlaywrightBrowser> } }>;
 
 export class PlaywrightPageRenderer {
   constructor(
