@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-05-04
+
+### Added
+
+- `get_topic_file` — new MCP tool to download and read any content topic file by topic ID. Returns extracted text for DOCX, size info for PDF/Excel/PowerPoint, and falls back to Playwright-rendered text for D2L-internal binary topics (`other` kind).
+- `get_course_content` now shows `(id=XXXX)` next to each topic, enabling direct use with `get_topic_file`.
+- `PlaywrightPageRenderer` — reuses browser-auth session cookies to render JavaScript-heavy Brightspace pages with a full Chromium instance, solving JS web-component rendering that `fetch()` cannot see.
+- `D2lApiClient.getRenderedHtml` / `getRenderedText` — fall back to `PlaywrightPageRenderer` when browser auth is configured, otherwise use plain `fetch`.
+- `ContentRepository.findTopicRenderedText` — renders a topic's view URL via Playwright and returns stripped text.
+- `PlaywrightBrowserContext` interface (with `addCookies` / `newPage`) and `waitForTimeout` on `PlaywrightPage`.
+
+### Fixed
+
+- `get_assignment_files`: instructor-posted attachments are now found via three-strategy lookup: (A) `Attachments[]` in folder list response, (B) dedicated `/attachments/` endpoint, (C) Playwright-rendered HTML scraping with four regex patterns including `title` attribute matching for truncated link text.
+- `get_assignment_files` strategy C now uses `getRenderedHtml` (Playwright) instead of `fetch`, capturing links rendered by D2L web components.
+- `get_my_grades`: `LetterGrade.fromPercent` no longer throws on grades above 100% (bonus points). Values > 100 are clamped to `A`; the raw percent is preserved.
+- `get_topic_file`: robust content-type detection via magic bytes distinguishes DOCX, XLSX, PPTX, ZIP, PDF, HTML, and plain text; falls back to Playwright-rendered text for unrecognised D2L binary formats.
+- `findFiles` (D2lAssignmentRepository): individual folder endpoint (`/dropbox/folders/{id}/`) 404s for students; now uses the list endpoint for metadata and scrapes the submit page for attachments.
+- All user-facing strings moved to English (MCP is global, not Spanish-only).
+- Pre-existing `getAssignments` test fixed (due date was already past); `FakeAssignmentRepository` now implements `findFiles` stub.
+
 ## [0.10.0] - 2026-04-23
 
 ### Added (Plan 7)
