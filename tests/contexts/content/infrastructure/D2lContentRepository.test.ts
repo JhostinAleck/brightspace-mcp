@@ -50,4 +50,27 @@ describe('D2lContentRepository', () => {
     expect(modules[0]?.topics[0]?.kind).toBe('file');
     expect(modules[0]?.topics[1]?.kind).toBe('quiz');
   });
+
+  it('findTopicFile returns the raw binary buffer', async () => {
+    const body = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
+    nock(BASE).get('/d2l/api/le/1.91/101/content/topics/42/file').reply(200, body);
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lContentRepository(client, { le: '1.91' });
+    const buf = await repo.findTopicFile(OrgUnitId.of(101), 42);
+    expect(buf[0]).toBe(0x25);
+  });
+
+  it('findTopicRenderedText returns rendered text via getRenderedText', async () => {
+    const client = new D2lApiClient({
+      baseUrl: BASE,
+      getToken: async () => AccessToken.bearer('t'),
+      pageRenderer: {
+        getRenderedHtml: async () => '<html><body>Course program text</body></html>',
+        getRenderedText: async () => 'Course program text',
+      } as never,
+    });
+    const repo = new D2lContentRepository(client, { le: '1.91' });
+    const text = await repo.findTopicRenderedText(OrgUnitId.of(101), 42);
+    expect(text).toBe('Course program text');
+  });
 });
