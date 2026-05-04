@@ -2,6 +2,7 @@ import type { ContentRepository } from '@/contexts/content/domain/ContentReposit
 import { getTopicFileSchema } from '@/mcp/schemas.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { inflateRawSync } from 'node:zlib';
+import { PDFParse } from 'pdf-parse';
 
 export interface GetTopicFileDeps { contentRepo: ContentRepository; }
 
@@ -79,7 +80,19 @@ export async function handleGetTopicFile(deps: GetTopicFileDeps, rawInput: unkno
 
   const contentType = detectContentType(buf);
 
-  // For unrecognized binary (D2L internal format / JS-rendered pages), fall back to rendered text
+  // For PDFs: extract text directly from the binary
+  if (contentType === 'application/pdf') {
+    try {
+      const parser = new PDFParse({ data: buf });
+      const result = await parser.getText();
+      await parser.destroy();
+      const text = result.text.replace(/\s+/g, ' ').trim().slice(0, 12000);
+      if (text) return { content: [{ type: 'text' as const, text }] };
+    } catch { /* fall through to size report */ }
+    return { content: [{ type: 'text' as const, text: `[PDF — ${buf.length} bytes, text extraction failed]` }] };
+  }
+
+  // For unrecognized binary (D2L internal format), fall back to Playwright-rendered view URL
   if (contentType === 'application/octet-stream') {
     const rendered = await deps.contentRepo.findTopicRenderedText(courseId, input.topic_id);
     if (rendered) return { content: [{ type: 'text' as const, text: rendered }] };

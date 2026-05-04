@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-05-04
+
+### Added
+
+- `get_topic_file` now extracts text from PDF files using `pdf-parse` (pdfjs-dist under the hood). Previously PDFs returned only a size label; now the full text content is returned up to 12 000 characters.
+
+### Changed
+
+- `get_topic_file` fallback order for `application/octet-stream` topics is unchanged; PDFs are now handled before the octet-stream branch with a dedicated extraction path.
+
 ## [0.12.1] - 2026-05-04
 
 ### Fixed

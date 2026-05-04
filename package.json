@@ -1,6 +1,6 @@
 {
   "name": "brightspace-mcp",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "description": "MCP server for D2L Brightspace (multi-auth, opt-in writes, session cache)",
   "keywords": [
     "mcp",
@@ -52,6 +52,7 @@
     "@inquirer/prompts": "^7.10.1",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "commander": "^12.0.0",
+    "pdf-parse": "^2.4.5",
     "proper-lockfile": "^4.1.2",
     "yaml": "^2.5.0",
     "zod": "^4.0.0"
