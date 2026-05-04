@@ -18,7 +18,7 @@ const a = (id: number, name: string, due: Date | null) =>
 
 describe('getAssignments', () => {
   it('returns assignments for the given course', async () => {
-    const repo = new FakeAssignmentRepository(new Map([[101, [a(1, 'Essay', new Date('2026-05-01'))]]]));
+    const repo = new FakeAssignmentRepository(new Map([[101, [a(1, 'Essay', new Date('2030-01-01'))]]]));
     const result = await getAssignments({ repo, courseId: OrgUnitId.of(101) });
     expect(result).toHaveLength(1);
     expect(result[0]?.name).toBe('Essay');
