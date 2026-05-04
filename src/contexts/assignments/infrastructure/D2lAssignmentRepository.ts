@@ -133,45 +133,42 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const folderId = AssignmentId.toNumber(assignmentId);
 
-    // Primary: fetch folder via API to get Attachments[] and CustomInstructions
-    const folder = await this.client.get<FolderDto>(
-      `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/`,
+    // Get folder name + instructions from the list endpoint (student-accessible)
+    const allFolders = await this.client.get<FolderDto[]>(
+      `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/`,
     );
-
-    const assignmentName = folder.Name;
-    const instructions = folder.CustomInstructions?.Html
+    const folder = allFolders.find((f) => f.Id === folderId);
+    const assignmentName = folder?.Name ?? String(folderId);
+    const instructions = folder?.CustomInstructions?.Html
       ? folder.CustomInstructions.Html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
       : '';
 
-    let files: Array<{ name: string; url: string }> = (folder.Attachments ?? []).map((a) => ({
-      name: a.FileName,
-      url: `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/attachments/${a.FileId}`,
-    }));
+    // Scrape the submit page for instructor-posted attachments
+    const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
+    const html = await this.client.getHtml(pageUrl);
 
-    // Fallback: HTML scrape the submit page when API returns no Attachments
-    // (some D2L versions don't include Attachments in the folder object)
-    if (files.length === 0) {
-      const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
-      const html = await this.client.getHtml(pageUrl);
+    const files: Array<{ name: string; url: string }> = [];
+    const seen = new Set<string>();
+    const addFile = (url: string, name: string) => {
+      const clean = url.replace(/&amp;/g, '&');
+      if (name && !seen.has(clean)) { seen.add(clean); files.push({ name, url: clean }); }
+    };
 
-      // Match by title attribute (has full filename with extension even when link text is truncated)
-      const byTitle = /href="([^"]*\/(?:viewFile|file)[^"]*)"[^>]*title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
-      // Match by extension in URL (classic pattern)
-      const byUrl = /href="(\/d2l\/[^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)(?:[^"]*))"/gi;
+    // Strategy 1: href + title attribute (title has full filename even when link text is truncated)
+    const byTitle = /href="([^"]*\/(?:viewFile|file)[^"]*)"[^>]*title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
+    let m: RegExpExecArray | null;
+    while ((m = byTitle.exec(html)) !== null) addFile(m[1] ?? '', (m[2] ?? '').trim());
 
-      const seen = new Set<string>();
-      const tryAdd = (url: string, name: string) => {
-        const cleanUrl = url.replace(/&amp;/g, '&');
-        if (name && !seen.has(cleanUrl)) { seen.add(cleanUrl); files.push({ name, url: cleanUrl }); }
-      };
+    // Strategy 2: title first, then href (different attribute order in some D2L versions)
+    const byTitleFirst = /title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip))"[^>]*href="([^"]*\/(?:viewFile|file)[^"]*)"/gi;
+    while ((m = byTitleFirst.exec(html)) !== null) addFile(m[2] ?? '', (m[1] ?? '').trim());
 
-      let m: RegExpExecArray | null;
-      while ((m = byTitle.exec(html)) !== null) tryAdd(m[1] ?? '', (m[2] ?? '').trim());
-      while ((m = byUrl.exec(html)) !== null) {
-        const url = (m[1] ?? '').replace(/&amp;/g, '&');
-        const name = decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? '');
-        tryAdd(url, name);
-      }
+    // Strategy 3: extension visible in URL path
+    const byUrl = /href="(\/d2l\/[^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
+    while ((m = byUrl.exec(html)) !== null) {
+      const url = m[1] ?? '';
+      const name = decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? '');
+      addFile(url, name);
     }
 
     const fileContents: Record<string, string> = {};
