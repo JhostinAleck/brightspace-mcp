@@ -133,7 +133,7 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const folderId = AssignmentId.toNumber(assignmentId);
 
-    // Get folder name + instructions from the list endpoint (student-accessible)
+    // Fetch all folders — list endpoint is student-accessible and includes CustomInstructions + Attachments
     const allFolders = await this.client.get<FolderDto[]>(
       `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/`,
     );
@@ -143,32 +143,62 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       ? folder.CustomInstructions.Html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
       : '';
 
-    // Scrape the submit page for instructor-posted attachments
-    const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
-    const html = await this.client.getHtml(pageUrl);
+    let files: Array<{ name: string; url: string }> = [];
 
-    const files: Array<{ name: string; url: string }> = [];
-    const seen = new Set<string>();
-    const addFile = (url: string, name: string) => {
-      const clean = url.replace(/&amp;/g, '&');
-      if (name && !seen.has(clean)) { seen.add(clean); files.push({ name, url: clean }); }
-    };
+    // Strategy A: Attachments embedded in the list-endpoint folder object
+    if (folder?.Attachments && folder.Attachments.length > 0) {
+      files = folder.Attachments.map((a) => ({
+        name: a.FileName,
+        url: `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/attachments/${a.FileId}`,
+      }));
+    }
 
-    // Strategy 1: href + title attribute (title has full filename even when link text is truncated)
-    const byTitle = /href="([^"]*\/(?:viewFile|file)[^"]*)"[^>]*title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
-    let m: RegExpExecArray | null;
-    while ((m = byTitle.exec(html)) !== null) addFile(m[1] ?? '', (m[2] ?? '').trim());
+    // Strategy B: Dedicated attachments endpoint (may work even when list doesn't embed them)
+    if (files.length === 0) {
+      try {
+        const attachments = await this.client.get<AttachmentDto[]>(
+          `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/attachments/`,
+        );
+        if (Array.isArray(attachments) && attachments.length > 0) {
+          files = attachments.map((a) => ({
+            name: a.FileName,
+            url: `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/attachments/${a.FileId}`,
+          }));
+        }
+      } catch { /* endpoint may not exist — continue to HTML scrape */ }
+    }
 
-    // Strategy 2: title first, then href (different attribute order in some D2L versions)
-    const byTitleFirst = /title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip))"[^>]*href="([^"]*\/(?:viewFile|file)[^"]*)"/gi;
-    while ((m = byTitleFirst.exec(html)) !== null) addFile(m[2] ?? '', (m[1] ?? '').trim());
+    // Strategy C: HTML scrape the submit page with multiple regex patterns
+    if (files.length === 0) {
+      const pageUrl = `/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${folderId}&grpid=0&isprv=0&bp=0&ou=${orgUnit}`;
+      const html = await this.client.getHtml(pageUrl);
 
-    // Strategy 3: extension visible in URL path
-    const byUrl = /href="(\/d2l\/[^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
-    while ((m = byUrl.exec(html)) !== null) {
-      const url = m[1] ?? '';
-      const name = decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? '');
-      addFile(url, name);
+      const seen = new Set<string>();
+      const addFile = (url: string, name: string) => {
+        const clean = url.replace(/&amp;/g, '&');
+        if (name && !seen.has(clean)) { seen.add(clean); files.push({ name, url: clean }); }
+      };
+
+      // title + href (covers truncated link text where title has full filename)
+      const pat1 = /href="([^"]*\/(?:viewFile|file|d2lfile)[^"]*)"[^>]*title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
+      const pat2 = /title="([^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip))"[^>]*href="([^"]*\/(?:viewFile|file|d2lfile)[^"]*)"/gi;
+      // extension directly in URL
+      const pat3 = /href="(\/d2l\/[^"]+\.(?:pdf|docx?|xlsx?|pptx?|zip)[^"]*)"/gi;
+      // any d2l link with a download attribute
+      const pat4 = /href="(\/d2l\/[^"]+)"[^>]*download(?:="([^"]*)")?\s/gi;
+
+      let m: RegExpExecArray | null;
+      while ((m = pat1.exec(html)) !== null) addFile(m[1] ?? '', (m[2] ?? '').trim());
+      while ((m = pat2.exec(html)) !== null) addFile(m[2] ?? '', (m[1] ?? '').trim());
+      while ((m = pat3.exec(html)) !== null) {
+        const url = m[1] ?? '';
+        addFile(url, decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? ''));
+      }
+      while ((m = pat4.exec(html)) !== null) {
+        const url = m[1] ?? '';
+        const name = (m[2] ?? '').trim() || decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? '');
+        if (name) addFile(url, name);
+      }
     }
 
     const fileContents: Record<string, string> = {};
