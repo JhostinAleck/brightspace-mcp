@@ -7,14 +7,16 @@ export class LetterGrade {
   ) {}
 
   static fromPercent(percent: number): LetterGrade {
-    if (percent < 0 || percent > 100) {
-      throw new Error(`LetterGrade: percent must be in [0, 100], got ${percent}`);
+    if (percent < 0) {
+      throw new Error(`LetterGrade: percent must be >= 0, got ${percent}`);
     }
+    // Clamp to 100 for letter assignment; grades > 100 are valid (bonus points) and map to A
+    const clamped = Math.min(percent, 100);
     let letter: LetterGradeKind;
-    if (percent >= 90) letter = 'A';
-    else if (percent >= 80) letter = 'B';
-    else if (percent >= 70) letter = 'C';
-    else if (percent >= 60) letter = 'D';
+    if (clamped >= 90) letter = 'A';
+    else if (clamped >= 80) letter = 'B';
+    else if (clamped >= 70) letter = 'C';
+    else if (clamped >= 60) letter = 'D';
     else letter = 'F';
     return new LetterGrade(letter, percent);
   }

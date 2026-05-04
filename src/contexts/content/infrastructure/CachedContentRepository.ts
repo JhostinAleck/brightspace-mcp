@@ -106,6 +106,10 @@ export class CachedContentRepository implements ContentRepository {
     return fresh;
   }
 
+  async findTopicFile(courseId: OrgUnitId, topicId: number): Promise<Buffer> {
+    return this.inner.findTopicFile(courseId, topicId);
+  }
+
   async findModules(courseId: OrgUnitId): Promise<Module[]> {
     const key = `${PREFIX}modules:${OrgUnitId.toNumber(courseId)}`;
     const cached = await this.cache.get<ModulePlain[]>(key);

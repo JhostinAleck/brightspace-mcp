@@ -22,8 +22,11 @@ describe('LetterGrade', () => {
     expect(LetterGrade.fromPercent(65).isPassing).toBe(true);
     expect(LetterGrade.fromPercent(50).isPassing).toBe(false);
   });
-  it('throws on percent outside [0, 100]', () => {
+  it('throws on negative percent', () => {
     expect(() => LetterGrade.fromPercent(-1)).toThrow();
-    expect(() => LetterGrade.fromPercent(101)).toThrow();
+  });
+  it('clamps percent > 100 to A (bonus points)', () => {
+    expect(LetterGrade.fromPercent(102).letter).toBe('A');
+    expect(LetterGrade.fromPercent(102).percent).toBe(102);
   });
 });

@@ -16,4 +16,8 @@ export class FakeContentRepository implements ContentRepository {
   async findModules(courseId: OrgUnitId): Promise<Module[]> {
     return this.modulesByCourse.get(OrgUnitId.toNumber(courseId)) ?? [];
   }
+
+  async findTopicFile(_courseId: OrgUnitId, _topicId: number): Promise<Buffer> {
+    return Buffer.alloc(0);
+  }
 }
