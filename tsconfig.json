@@ -19,7 +19,8 @@
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"]
     },
-    "baseUrl": "."
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build", "tests"]

@@ -36,6 +36,7 @@ export async function promptAuthStrategy(): Promise<string> {
     choices: [
       { name: 'API Token (simplest, requires Valence token)', value: 'api_token' },
       { name: 'Browser (Playwright, solves MFA automatically)', value: 'browser' },
+      { name: 'Headless (username + password, supports Duo Push / TOTP)', value: 'headless' },
       { name: 'Session Cookie (paste cookies from browser)', value: 'session_cookie' },
     ],
   });

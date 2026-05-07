@@ -53,6 +53,8 @@ export async function runSetup(opts: SetupOptions): Promise<void> {
     };
   } else if (authStrategy === 'browser') {
     await configureBrowser(auth, baseUrl);
+  } else if (authStrategy === 'headless') {
+    await configureHeadless(auth);
   } else if (authStrategy === 'session_cookie') {
     await configureSessionCookie(auth);
   }
@@ -125,6 +127,8 @@ async function configureBrowser(auth: Record<string, unknown>, baseUrl: string):
     mfaBlock['totp'] = {
       secret_ref: chooseSecretRef({ strategy: 'env', varName: 'BRIGHTSPACE_TOTP_SECRET' }),
     };
+  } else if (mfaStrategy === 'duo_push') {
+    mfaBlock['duo_push'] = {};
   }
 
   auth['browser'] = {
@@ -133,6 +137,48 @@ async function configureBrowser(auth: Record<string, unknown>, baseUrl: string):
     username_ref: chooseSecretRef({ strategy: 'env', varName: usernameVarName }),
     password_ref: chooseSecretRef({ strategy: 'env', varName: passwordVarName }),
     headless: true,
+    mfa: mfaBlock,
+  };
+
+  process.stdout.write('\nNote: set these env vars before starting the server:\n');
+  process.stdout.write(`  export ${usernameVarName}="your-username"\n`);
+  process.stdout.write(`  export ${passwordVarName}="your-password"\n`);
+  if (mfaStrategy === 'totp') {
+    process.stdout.write('  export BRIGHTSPACE_TOTP_SECRET="your-totp-base32-secret"\n');
+  }
+}
+
+async function configureHeadless(auth: Record<string, unknown>): Promise<void> {
+  process.stdout.write('\nHeadless strategy automates login via HTTP — no browser window needed.\n');
+  process.stdout.write('Supports Duo Push, TOTP, and Manual Prompt MFA.\n\n');
+
+  const loginUrl = await promptLoginUrl();
+
+  const usernameVarName = await promptUsernameRef();
+  const username = await promptUsername();
+  process.env[usernameVarName] = username;
+
+  const passwordVarName = await promptPasswordRef();
+  const passwordValue = await promptPasswordValue();
+  process.env[passwordVarName] = passwordValue;
+
+  const mfaStrategy = await promptMfaStrategy();
+  const mfaBlock: Record<string, unknown> = { strategy: mfaStrategy };
+  if (mfaStrategy === 'totp') {
+    const secret = await promptTotpSecret();
+    process.env['BRIGHTSPACE_TOTP_SECRET'] = secret;
+    mfaBlock['totp'] = {
+      secret_ref: chooseSecretRef({ strategy: 'env', varName: 'BRIGHTSPACE_TOTP_SECRET' }),
+    };
+  } else if (mfaStrategy === 'duo_push') {
+    mfaBlock['duo_push'] = {};
+    process.stdout.write('\nDuo Push: the server will poll for mobile approval automatically.\n');
+  }
+
+  auth['headless'] = {
+    login_url: loginUrl,
+    username_ref: chooseSecretRef({ strategy: 'env', varName: usernameVarName }),
+    password_ref: chooseSecretRef({ strategy: 'env', varName: passwordVarName }),
     mfa: mfaBlock,
   };
 

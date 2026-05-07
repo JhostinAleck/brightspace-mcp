@@ -12,6 +12,7 @@ import { EncryptedFileCredentialStore } from '@/contexts/authentication/infrastr
 import { CompositeCredentialStore } from '@/contexts/authentication/infrastructure/credential-stores/CompositeCredentialStore.js';
 import { InMemorySessionCache } from '@/contexts/authentication/infrastructure/session-caches/InMemorySessionCache.js';
 import { FileSessionCache } from '@/contexts/authentication/infrastructure/session-caches/FileSessionCache.js';
+import { RedisSessionCache } from '@/contexts/authentication/infrastructure/session-caches/RedisSessionCache.js';
 import { NoMfaStrategy } from '@/contexts/authentication/infrastructure/mfa/NoMfaStrategy.js';
 import { TotpMfaStrategy } from '@/contexts/authentication/infrastructure/mfa/TotpMfaStrategy.js';
 import { ManualPromptMfaStrategy } from '@/contexts/authentication/infrastructure/mfa/ManualPromptMfaStrategy.js';
@@ -34,6 +35,7 @@ import { D2lCourseRepository } from '@/contexts/courses/infrastructure/D2lCourse
 import { InMemoryCache } from '@/shared-kernel/cache/InMemoryCache.js';
 import { FileCache } from '@/shared-kernel/cache/FileCache.js';
 import { LayeredCache } from '@/shared-kernel/cache/LayeredCache.js';
+import { RedisCache, type RedisLikeClient } from '@/shared-kernel/cache/RedisCache.js';
 import { HttpResponseCache } from '@/contexts/http-api/cache/HttpResponseCache.js';
 import { CachedCourseRepository } from '@/contexts/courses/infrastructure/CachedCourseRepository.js';
 import { D2lGradeRepository } from '@/contexts/grades/infrastructure/D2lGradeRepository.js';
@@ -130,13 +132,41 @@ function buildMfa(
   throw new Error(`Unsupported MFA strategy: "${kind}"`);
 }
 
-async function buildSessionCache(profile: Profile): Promise<SessionCache> {
+function buildRedisLoader(
+  redisConfig: NonNullable<Config['redis']>,
+): () => Promise<RedisLikeClient> {
+  let clientPromise: Promise<RedisLikeClient> | null = null;
+  return () => {
+    if (!clientPromise) {
+      clientPromise = (async () => {
+        const ioredis = await import('ioredis').catch(() => {
+          throw new Error('ioredis is not installed. Run: npm install ioredis');
+        });
+        return new ioredis.Redis(redisConfig.url) as unknown as RedisLikeClient;
+      })();
+    }
+    return clientPromise;
+  };
+}
+
+async function buildSessionCache(
+  profile: Profile,
+  redisConfig: Config['redis'],
+): Promise<SessionCache> {
   if (profile.session.cache_backend === 'file') {
     const path = profile.session.file_path ?? join(homedir(), '.brightspace-mcp', 'sessions.json');
     return new FileSessionCache({ path });
   }
   if (profile.session.cache_backend === 'redis') {
-    throw new Error('redis session cache is not available until Plan 3');
+    if (!redisConfig) {
+      throw new Error(
+        'session.cache_backend=redis requires a [redis] section in config with at least a url.',
+      );
+    }
+    return new RedisSessionCache({
+      loader: buildRedisLoader(redisConfig),
+      keyPrefix: redisConfig.key_prefix,
+    });
   }
   return new InMemorySessionCache();
 }
@@ -237,7 +267,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const logger = new StructuredLogger(config.logging.level);
   const baseUrl = profile.base_url;
   const credStore = await buildCredentialStore(input);
-  const sessionCache = await buildSessionCache(profile);
+  const sessionCache = await buildSessionCache(profile, config.redis);
 
   const strategies = await buildStrategies(profile, profileName, baseUrl, credStore, input);
 
@@ -265,7 +295,12 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const httpCache = new HttpResponseCache(httpCacheBacking);
   const domainCacheBacking = new LayeredCache({
     memory: new InMemoryCache(),
-    persistent: new FileCache({ path: join(homedir(), '.brightspace-mcp', 'domain-cache.json') }),
+    persistent: config.redis
+      ? new RedisCache({
+          loader: buildRedisLoader(config.redis),
+          keyPrefix: `${config.redis.key_prefix}domain:`,
+        })
+      : new FileCache({ path: join(homedir(), '.brightspace-mcp', 'domain-cache.json') }),
   });
 
   const getToken = async () => (await ensureAuth.execute({ profile: profileName, baseUrl })).token;
