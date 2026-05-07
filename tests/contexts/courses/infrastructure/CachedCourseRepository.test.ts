@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CachedCourseRepository } from '@/contexts/courses/infrastructure/CachedCourseRepository.js';
 import { FakeCourseRepository } from '@tests/helpers/fakes/FakeCourseRepository.js';
 import { InMemoryCache } from '@/shared-kernel/cache/InMemoryCache.js';
-import { Course } from '@/contexts/courses/Course.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
+import { Course } from '@/contexts/courses/domain/Course.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 
 const c = (id: number, name: string, active = true) =>
   new Course({ id: CourseId.of(id), name, code: `C${id}`, active });

@@ -1,6 +1,9 @@
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Config, Profile } from '@/shared-kernel/config/schema.js';
+import { Paths } from '@/shared-kernel/config/paths.js';
+import { Disposables } from '@/shared-kernel/lifecycle/Disposables.js';
 import { StructuredLogger } from '@/shared-kernel/logging/StructuredLogger.js';
 import type { CredentialStore } from '@/contexts/authentication/domain/CredentialStore.js';
 import type { SessionCache } from '@/contexts/authentication/domain/SessionCache.js';
@@ -52,7 +55,6 @@ import { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.j
 import { RequestCoalescer } from '@/contexts/http-api/resilience/RequestCoalescer.js';
 import { Bulkhead } from '@/contexts/http-api/resilience/Bulkhead.js';
 import { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
-import { InMemoryIdempotencyStore } from '@/shared-kernel/idempotency/IdempotencyStore.js';
 import { CachedIdempotencyStore } from '@/shared-kernel/idempotency/CachedIdempotencyStore.js';
 import { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
 import type { ToolDeps } from '@/mcp/registry.js';
@@ -67,6 +69,32 @@ export interface BuildDependenciesInput {
   enableWrites?: boolean;
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+let cachedPackageVersion: string | null = null;
+function readPackageVersion(): string {
+  if (cachedPackageVersion) return cachedPackageVersion;
+  // composition-root sits at build/composition-root.js → ../package.json
+  const candidates = [
+    join(__dirname, '..', 'package.json'),
+    join(__dirname, '..', '..', 'package.json'),
+  ];
+  for (const p of candidates) {
+    try {
+      const pkg = JSON.parse(readFileSync(p, 'utf8')) as { version?: string };
+      if (pkg.version) {
+        cachedPackageVersion = pkg.version;
+        return cachedPackageVersion;
+      }
+    } catch {
+      /* try next candidate */
+    }
+  }
+  cachedPackageVersion = '0.0.0';
+  return cachedPackageVersion;
+}
+
 async function buildCredentialStore(
   input: BuildDependenciesInput,
 ): Promise<CredentialStore> {
@@ -74,7 +102,7 @@ async function buildCredentialStore(
   const keychain = new KeychainCredentialStore();
   const file: CredentialStore = input.encryptedFilePassphrase
     ? new EncryptedFileCredentialStore({
-        path: join(homedir(), '.brightspace-mcp', 'credentials.enc'),
+        path: Paths.credentialsEnc(),
         passphrase: input.encryptedFilePassphrase,
       })
     : {
@@ -133,8 +161,16 @@ function buildMfa(
   throw new Error(`Unsupported MFA strategy: "${kind}"`);
 }
 
-function buildRedisLoader(
+/**
+ * Single Redis client per build. Previously each consumer
+ * (sessions, domain cache, idempotency) called `buildRedisLoader` on the
+ * same config separately, opening N connections and exposing N orphaned
+ * sockets on shutdown. Now we share one connection and register a single
+ * `quit()` disposer.
+ */
+function makeSharedRedisLoader(
   redisConfig: NonNullable<Config['redis']>,
+  disposables: Disposables,
 ): () => Promise<RedisLikeClient> {
   let clientPromise: Promise<RedisLikeClient> | null = null;
   return () => {
@@ -143,7 +179,15 @@ function buildRedisLoader(
         const ioredis = await import('ioredis').catch(() => {
           throw new Error('ioredis is not installed. Run: npm install ioredis');
         });
-        return new ioredis.Redis(redisConfig.url) as unknown as RedisLikeClient;
+        const client = new ioredis.Redis(redisConfig.url) as unknown as RedisLikeClient;
+        disposables.add(async () => {
+          try {
+            await client.quit();
+          } catch {
+            /* best-effort */
+          }
+        });
+        return client;
       })();
     }
     return clientPromise;
@@ -153,19 +197,20 @@ function buildRedisLoader(
 async function buildSessionCache(
   profile: Profile,
   redisConfig: Config['redis'],
+  redisLoader: (() => Promise<RedisLikeClient>) | null,
 ): Promise<SessionCache> {
   if (profile.session.cache_backend === 'file') {
-    const path = profile.session.file_path ?? join(homedir(), '.brightspace-mcp', 'sessions.json');
+    const path = profile.session.file_path ?? Paths.sessionsJson();
     return new FileSessionCache({ path });
   }
   if (profile.session.cache_backend === 'redis') {
-    if (!redisConfig) {
+    if (!redisConfig || !redisLoader) {
       throw new Error(
         'session.cache_backend=redis requires a [redis] section in config with at least a url.',
       );
     }
     return new RedisSessionCache({
-      loader: buildRedisLoader(redisConfig),
+      loader: redisLoader,
       keyPrefix: redisConfig.key_prefix,
     });
   }
@@ -178,9 +223,11 @@ async function buildStrategies(
   baseUrl: string,
   credStore: CredentialStore,
   input: BuildDependenciesInput,
+  lpVersion: string,
+  playwrightLoader: ReturnType<typeof createPlaywrightLoader>,
 ): Promise<Partial<Record<AuthStrategyKind, AuthStrategy>>> {
   const out: Partial<Record<AuthStrategyKind, AuthStrategy>> = {};
-  const whoami = (token: Parameters<typeof callWhoAmI>[0]) => callWhoAmI(token, baseUrl);
+  const whoami = (token: Parameters<typeof callWhoAmI>[0]) => callWhoAmI(token, baseUrl, lpVersion);
 
   if (profile.auth.api_token) {
     out.api_token = new ApiTokenStrategy({
@@ -249,7 +296,7 @@ async function buildStrategies(
       passwordRef: profile.auth.browser.password_ref,
       credentialStore: credStore,
       mfa,
-      playwrightLoader: createPlaywrightLoader(),
+      playwrightLoader,
       headless: profile.auth.browser.headless,
       whoami,
       sessionTtlMs: profile.auth.browser.session_ttl_seconds * 1000,
@@ -258,7 +305,11 @@ async function buildStrategies(
   return out;
 }
 
-export async function buildDependencies(input: BuildDependenciesInput): Promise<ToolDeps> {
+export interface BuiltDependencies extends ToolDeps {
+  disposables: Disposables;
+}
+
+export async function buildDependencies(input: BuildDependenciesInput): Promise<BuiltDependencies> {
   const { config } = input;
   const profileName = config.default_profile;
   const profile = config.profiles[profileName];
@@ -268,9 +319,27 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const logger = new StructuredLogger(config.logging.level);
   const baseUrl = profile.base_url;
   const credStore = await buildCredentialStore(input);
-  const sessionCache = await buildSessionCache(profile, config.redis);
 
-  const strategies = await buildStrategies(profile, profileName, baseUrl, credStore, input);
+  const disposables = new Disposables();
+  const redisLoader = config.redis ? makeSharedRedisLoader(config.redis, disposables) : null;
+
+  const sessionCache = await buildSessionCache(profile, config.redis, redisLoader);
+
+  // Discover versions BEFORE building strategies so whoami uses the live LP.
+  const versions = await discoverVersions(baseUrl);
+  logger.info('Discovered D2L API versions', { lp: versions.lp, le: versions.le });
+
+  const playwrightLoader = createPlaywrightLoader();
+
+  const strategies = await buildStrategies(
+    profile,
+    profileName,
+    baseUrl,
+    credStore,
+    input,
+    versions.lp,
+    playwrightLoader,
+  );
 
   const resolver = new ConfigBackedStrategyResolver({
     profile,
@@ -294,26 +363,35 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const metrics = new MetricsRegistry();
   const httpCacheBacking = new InMemoryCache();
   const httpCache = new HttpResponseCache(httpCacheBacking);
+  const persistentDomainCache = redisLoader
+    ? new RedisCache({
+        loader: redisLoader,
+        keyPrefix: `${config.redis!.key_prefix}domain:`,
+      })
+    : new FileCache({ path: Paths.domainCacheJson() });
   const domainCacheBacking = new LayeredCache({
     memory: new InMemoryCache(),
-    persistent: config.redis
-      ? new RedisCache({
-          loader: buildRedisLoader(config.redis),
-          keyPrefix: `${config.redis.key_prefix}domain:`,
-        })
-      : new FileCache({ path: join(homedir(), '.brightspace-mcp', 'domain-cache.json') }),
+    persistent: persistentDomainCache,
   });
 
   const getToken = async () => (await ensureAuth.execute({ profile: profileName, baseUrl })).token;
 
-  // Wire up Playwright renderer when browser auth is configured — enables JS-rendered page scraping
-  const pageRenderer = profile.auth.browser
-    ? new PlaywrightPageRenderer(createPlaywrightLoader(), getToken, baseUrl)
-    : undefined;
+  // Wire up Playwright renderer when browser auth is configured — enables
+  // JS-rendered page scraping. The renderer keeps a reusable browser singleton
+  // so consecutive renders skip the Chromium launch cost.
+  let pageRenderer: PlaywrightPageRenderer | undefined;
+  if (profile.auth.browser) {
+    const r = new PlaywrightPageRenderer(playwrightLoader, getToken, baseUrl);
+    pageRenderer = r;
+    disposables.add(() => r.dispose());
+  }
 
+  const userAgent = `brightspace-mcp/${readPackageVersion()} (+https://github.com/JhostinAleck/brightspace-mcp)`;
   const apiClient = new D2lApiClient({
     baseUrl,
     getToken,
+    userAgent,
+    metrics,
     retry: { maxAttempts: 3, initialMs: 250, maxMs: 5_000 },
     circuit: { failureThreshold: 5, resetTimeoutMs: 30_000 },
     coalescer: new RequestCoalescer(),
@@ -323,9 +401,6 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     ...(input.transportPolicy ? { transportPolicy: input.transportPolicy } : {}),
     ...(pageRenderer ? { pageRenderer } : {}),
   });
-
-  const versions = await discoverVersions(baseUrl);
-  logger.info('Discovered D2L API versions', { lp: versions.lp, le: versions.le });
 
   const rawCourseRepo = new D2lCourseRepository(apiClient, { le: versions.le, lp: versions.lp });
   const courseRepo = new CachedCourseRepository(rawCourseRepo, domainCacheBacking, {
@@ -366,14 +441,13 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     configDryRun: config.writes?.dry_run ?? false,
   });
 
-  const idempotencyStore = config.redis
-    ? new CachedIdempotencyStore(new RedisCache({
-        loader: buildRedisLoader(config.redis),
-        keyPrefix: `${config.redis.key_prefix}idm:`,
-      }))
-    : new CachedIdempotencyStore(
-        new FileCache({ path: join(homedir(), '.brightspace-mcp', 'idempotency.json') }),
-      );
+  const idempotencyBacking = redisLoader
+    ? new RedisCache({
+        loader: redisLoader,
+        keyPrefix: `${config.redis!.key_prefix}idm:`,
+      })
+    : new FileCache({ path: Paths.idempotencyJson() });
+  const idempotencyStore = new CachedIdempotencyStore(idempotencyBacking);
   const auditLogger = new AuditLogger({ logger });
 
   return {
@@ -387,11 +461,19 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     communicationsRepo,
     calendarRepo,
     httpCache,
-    domainCaches: { courses: domainCacheBacking },
+    domainCaches: {
+      courses: domainCacheBacking,
+      grades: domainCacheBacking,
+      assignments: domainCacheBacking,
+      content: domainCacheBacking,
+      communications: domainCacheBacking,
+      calendar: domainCacheBacking,
+    },
     metrics,
     staticInfo: { profile: profileName, baseUrl, versions: { lp: versions.lp, le: versions.le } },
     writesGate,
     idempotencyStore,
     auditLogger,
+    disposables,
   };
 }

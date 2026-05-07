@@ -9,11 +9,11 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
 import { Feedback } from '@/contexts/assignments/domain/Feedback.js';
-import { inflateRawSync } from 'node:zlib';
 import type { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { D2lApiError } from '@/contexts/http-api/errors.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
+import { extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
 
 interface SubmissionDto {
   Submitter?: { Identifier?: string | null } | null;
@@ -47,52 +47,6 @@ export interface D2lAssignmentRepositoryOptions {
   le: string;
 }
 
-async function extractDocxText(buf: Buffer): Promise<string> {
-  try {
-    const xml = extractZipEntry(buf, 'word/document.xml');
-    if (!xml) return '[DOCX: could not read content]';
-    // Strip XML tags, decode common entities
-    return xml
-      .replace(/<w:br[^>]*/g, '\n')
-      .replace(/<w:p[ >][^>]*>/g, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .replace(/&apos;/g, "'").replace(/&quot;/g, '"').replace(/&#xA;/g, '\n')
-      .replace(/\n{3,}/g, '\n\n').trim();
-  } catch {
-    return '[DOCX: extraction failed]';
-  }
-}
-
-function extractZipEntry(buf: Buffer, target: string): string | null {
-  // Parse ZIP local file headers (PK\x03\x04) to find and decompress entries
-  let offset = 0;
-  while (offset < buf.length - 30) {
-    if (buf[offset] !== 0x50 || buf[offset+1] !== 0x4B || buf[offset+2] !== 0x03 || buf[offset+3] !== 0x04) {
-      offset++;
-      continue;
-    }
-    const compression = buf.readUInt16LE(offset + 8);
-    const compressedSize = buf.readUInt32LE(offset + 18);
-    const filenameLen = buf.readUInt16LE(offset + 26);
-    const extraLen = buf.readUInt16LE(offset + 28);
-    const dataStart = offset + 30 + filenameLen + extraLen;
-    if (dataStart > buf.length) { offset++; continue; }
-    const filename = buf.slice(offset + 30, offset + 30 + filenameLen).toString('utf8');
-    if (filename === target) {
-      if (dataStart + compressedSize > buf.length) return null;
-      const compressedData = buf.slice(dataStart, dataStart + compressedSize);
-      if (compression === 0) return compressedData.toString('utf8');
-      if (compression === 8) {
-        return inflateRawSync(compressedData).toString('utf8');
-      }
-      return null;
-    }
-    offset = dataStart + compressedSize;
-  }
-  return null;
-}
-
 export class D2lAssignmentRepository implements AssignmentRepository {
   constructor(
     private readonly client: D2lApiClient,
@@ -108,7 +62,7 @@ export class D2lAssignmentRepository implements AssignmentRepository {
   }
 
   async submit(input: SubmitInput): Promise<SubmitResult> {
-    const orgUnit = String(input.courseId);
+    const orgUnit = OrgUnitId.toNumber(input.courseId);
     const path = `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${input.folderId}/submissions/mysubmissions/`;
 
     const formData = new FormData();
@@ -211,7 +165,7 @@ export class D2lAssignmentRepository implements AssignmentRepository {
         const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
         const buf = await this.client.getRaw(file.url);
         if (ext === 'docx' || ext === 'doc') {
-          fileContents[file.name] = await extractDocxText(buf);
+          fileContents[file.name] = extractDocxText(buf);
         } else if (ext === 'pdf') {
           fileContents[file.name] = `[PDF — ${buf.length} bytes]`;
         } else if (ext === 'xlsx' || ext === 'xls') {

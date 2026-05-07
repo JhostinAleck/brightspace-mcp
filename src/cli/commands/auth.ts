@@ -1,9 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 
 import { loadConfig } from '@/shared-kernel/config/loader.js';
 import type { Config } from '@/shared-kernel/config/schema.js';
+import { Paths } from '@/shared-kernel/config/paths.js';
 import { buildDependencies } from '@/composition-root.js';
 import { TransportPolicy } from '@/contexts/http-api/transport/TransportPolicy.js';
 
@@ -12,12 +11,8 @@ export interface AuthOptions {
   config?: string;
 }
 
-function defaultConfigPath(): string {
-  return join(homedir(), '.brightspace-mcp', 'config.yaml');
-}
-
 export async function runAuth(opts: AuthOptions): Promise<void> {
-  const path = opts.config ?? defaultConfigPath();
+  const path = opts.config ?? Paths.configYaml();
   const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
 
   const cliOverrides: Record<string, unknown> = {};
@@ -40,12 +35,19 @@ export async function runAuth(opts: AuthOptions): Promise<void> {
   const profileName = config.default_profile;
   process.stdout.write(`Authenticating profile "${profileName}"...\n`);
 
-  const session = await deps.ensureAuth.execute({
-    profile: profileName,
-    baseUrl: deps.baseUrl,
-  });
-
-  process.stdout.write(
-    `Success. Token from strategy "${session.source}" expires at ${session.expiresAt.toISOString()}\n`,
-  );
+  try {
+    const session = await deps.ensureAuth.execute({
+      profile: profileName,
+      baseUrl: deps.baseUrl,
+    });
+    process.stdout.write(
+      `Success. Token from strategy "${session.source}" expires at ${session.expiresAt.toISOString()}\n`,
+    );
+  } finally {
+    // Release Redis / Playwright resources promptly so the CLI exits cleanly.
+    await deps.disposables.disposeAll((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`Shutdown warning: ${msg}\n`);
+    });
+  }
 }

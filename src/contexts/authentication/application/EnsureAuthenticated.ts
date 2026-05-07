@@ -4,6 +4,36 @@ import type { Session } from '@/contexts/authentication/domain/Session.js';
 import type { ConfigBackedStrategyResolver } from './ConfigBackedStrategyResolver.js';
 import { FallbackChainExhaustedError } from '@/contexts/authentication/domain/errors.js';
 
+interface StrategyFailure {
+  strategy: string;
+  error: Error;
+}
+
+/**
+ * AggregateAuthError carries every failure in the fallback chain so callers
+ * can render a complete diagnosis ("api_token failed because X, oauth failed
+ * because Y, browser failed because Z"). The `cause` chain points at the
+ * first failure to preserve root-cause semantics for stderr-only consumers
+ * that follow only `error.cause`.
+ */
+class AggregateAuthError extends Error {
+  override readonly cause?: Error;
+  readonly failures: ReadonlyArray<StrategyFailure>;
+
+  constructor(failures: ReadonlyArray<StrategyFailure>) {
+    super(
+      failures.length === 0
+        ? 'No authentication strategies were attempted.'
+        : `All authentication strategies failed:\n${failures
+            .map((f) => `  - ${f.strategy}: ${f.error.message}`)
+            .join('\n')}`,
+    );
+    this.name = 'AggregateAuthError';
+    this.failures = failures;
+    if (failures.length > 0) this.cause = failures[0]!.error;
+  }
+}
+
 export class EnsureAuthenticated {
   constructor(
     private readonly cache: SessionCache,
@@ -15,20 +45,22 @@ export class EnsureAuthenticated {
     if (cached) return cached;
 
     const chain = this.buildChain();
-    const failures: Error[] = [];
+    const failures: StrategyFailure[] = [];
     for (const strategy of chain) {
       try {
         const fresh = await strategy.authenticate(ctx);
         await this.cache.save(ctx.profile, fresh);
         return fresh;
       } catch (err) {
-        failures.push(err instanceof Error ? err : new Error(String(err)));
+        failures.push({
+          strategy: strategy.kind,
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
       }
     }
-    const cause = failures[failures.length - 1];
     throw new FallbackChainExhaustedError(
-      `All authentication strategies failed: ${failures.map((e) => e.message).join(' | ')}`,
-      cause,
+      new AggregateAuthError(failures).message,
+      new AggregateAuthError(failures),
     );
   }
 

@@ -1,7 +1,7 @@
-import type { CourseRepository } from '@/contexts/courses/CourseRepository.js';
-import { Course } from '@/contexts/courses/Course.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
-import { Classmate } from '@/contexts/courses/Classmate.js';
+import type { CourseRepository } from '@/contexts/courses/domain/CourseRepository.js';
+import { Course } from '@/contexts/courses/domain/Course.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
+import { Classmate } from '@/contexts/courses/domain/Classmate.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
 import type { Cache } from '@/shared-kernel/cache/Cache.js';
 
@@ -52,6 +52,8 @@ function fromPlain(plain: CoursePlain): Course {
   return new Course(props);
 }
 
+type CachedCourse = { kind: 'value'; value: CoursePlain } | { kind: 'none' };
+
 interface ClassmatePlain {
   userIdNumber: number;
   displayName: string;
@@ -99,10 +101,11 @@ export class CachedCourseRepository implements CourseRepository {
 
   async findById(id: CourseId): Promise<Course | null> {
     const key = `${PREFIX}byId:${CourseId.toNumber(id)}`;
-    const cached = await this.cache.get<CoursePlain | null>(key);
-    if (cached !== undefined && cached !== null) return fromPlain(cached);
+    const cached = await this.cache.get<CachedCourse>(key);
+    if (cached) return cached.kind === 'value' ? fromPlain(cached.value) : null;
     const fresh = await this.inner.findById(id);
-    await this.cache.set(key, fresh ? toPlain(fresh) : null, this.ttls.byIdTtlMs);
+    const toStore: CachedCourse = fresh ? { kind: 'value', value: toPlain(fresh) } : { kind: 'none' };
+    await this.cache.set(key, toStore, this.ttls.byIdTtlMs);
     return fresh;
   }
 

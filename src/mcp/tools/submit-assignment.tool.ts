@@ -6,11 +6,17 @@ import type { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import { submitAssignment } from '@/contexts/assignments/application/submitAssignment.js';
 import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
 
+// 50 MB binary cap → ceil(50_000_000 / 3) * 4 ≈ 66_666_668 base64 chars.
+// Hard-cap ASCII length so a malicious caller cannot OOM the process before
+// we even decode the payload.
+export const SUBMIT_MAX_BYTES = 50 * 1024 * 1024;
+const MAX_BASE64_LEN = Math.ceil(SUBMIT_MAX_BYTES / 3) * 4 + 4;
+
 export const submitAssignmentSchema = z.object({
   course_id: z.string().min(1),
   folder_id: z.string().min(1),
   filename: z.string().min(1).max(255),
-  content_base64: z.string().min(1),
+  content_base64: z.string().min(1).max(MAX_BASE64_LEN),
   mime_type: z.string().optional(),
   idempotency_key: z.string().min(8).max(128),
 });
@@ -30,18 +36,8 @@ export async function handleSubmitAssignment(
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   const correlationId = `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  deps.auditLogger.recordWriteAttempt({
-    correlationId,
-    tool: 'submit_assignment',
-    args: {
-      course_id: params.course_id,
-      folder_id: params.folder_id,
-      filename: params.filename,
-      bytes: Buffer.from(params.content_base64, 'base64').byteLength,
-      idempotency_key: params.idempotency_key,
-    },
-  });
-
+  // Idempotency check FIRST so replays don't inflate audit logs nor decode the
+  // payload twice.
   const cacheKey = `submit_assignment:${params.idempotency_key}`;
   const cached = await deps.idempotencyStore.get<{ submissionId: string; submittedAt: string }>(cacheKey);
   if (cached) {
@@ -52,6 +48,30 @@ export async function handleSubmitAssignment(
       }],
     };
   }
+
+  // Single decode + size enforcement. Re-using the buffer downstream avoids
+  // doubling memory pressure on large attachments.
+  const content = Buffer.from(params.content_base64, 'base64');
+  if (content.byteLength === 0) {
+    throw new Error('content is empty');
+  }
+  if (content.byteLength > SUBMIT_MAX_BYTES) {
+    throw new Error(
+      `content exceeds maximum allowed size (${content.byteLength} > ${SUBMIT_MAX_BYTES} bytes)`,
+    );
+  }
+
+  deps.auditLogger.recordWriteAttempt({
+    correlationId,
+    tool: 'submit_assignment',
+    args: {
+      course_id: params.course_id,
+      folder_id: params.folder_id,
+      filename: params.filename,
+      bytes: content.byteLength,
+      idempotency_key: params.idempotency_key,
+    },
+  });
 
   if (deps.writesGate.isDryRun) {
     return {
@@ -67,7 +87,7 @@ export async function handleSubmitAssignment(
     courseId: params.course_id,
     folderId: params.folder_id,
     filename: params.filename,
-    contentBase64: params.content_base64,
+    content,
     ...(params.mime_type !== undefined ? { mimeType: params.mime_type } : {}),
   });
 

@@ -1,8 +1,8 @@
-import type { CourseRepository } from '@/contexts/courses/CourseRepository.js';
-import { getRoster } from '@/contexts/courses/getRoster.js';
+import type { CourseRepository } from '@/contexts/courses/domain/CourseRepository.js';
+import { getRoster } from '@/contexts/courses/application/getRoster.js';
 import { getRosterSchema } from '@/mcp/schemas.js';
 import { rosterToText } from '@/mcp/tool-helpers.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 
 export interface GetRosterDeps { courseRepo: CourseRepository; }
 

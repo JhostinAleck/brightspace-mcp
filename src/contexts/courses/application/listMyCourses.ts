@@ -1,5 +1,5 @@
-import type { CourseRepository } from './CourseRepository.js';
-import type { Course } from './Course.js';
+import type { CourseRepository } from '../domain/CourseRepository.js';
+import type { Course } from '../domain/Course.js';
 
 export interface ListMyCoursesInput {
   repo: CourseRepository;

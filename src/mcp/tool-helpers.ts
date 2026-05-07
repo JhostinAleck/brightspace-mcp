@@ -1,11 +1,11 @@
-import type { Course } from '@/contexts/courses/Course.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
+import type { Course } from '@/contexts/courses/domain/Course.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import type { Grade } from '@/contexts/grades/domain/Grade.js';
 import { LetterGrade } from '@/contexts/grades/domain/LetterGrade.js';
 import type { Feedback } from '@/contexts/assignments/domain/Feedback.js';
 import type { Assignment } from '@/contexts/assignments/domain/Assignment.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
-import type { Classmate } from '@/contexts/courses/Classmate.js';
+import type { Classmate } from '@/contexts/courses/domain/Classmate.js';
 import type { Syllabus } from '@/contexts/content/domain/Syllabus.js';
 import type { Module } from '@/contexts/content/domain/Module.js';
 import type { Announcement } from '@/contexts/communications/domain/Announcement.js';

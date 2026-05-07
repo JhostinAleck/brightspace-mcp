@@ -3,8 +3,8 @@ import type { Cache } from './Cache.js';
 export interface RedisLikeClient {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, mode: 'PX', ttlMs: number): Promise<string>;
-  del(key: string): Promise<number>;
-  keys(pattern: string): Promise<string[]>;
+  del(...keys: string[]): Promise<number>;
+  scan(cursor: string, ...args: string[]): Promise<[string, string[]]>;
   quit(): Promise<void>;
 }
 
@@ -56,10 +56,21 @@ export class RedisCache implements Cache {
     await client.del(this.fullKey(key));
   }
 
+  /**
+   * Clear keys by prefix. Uses non-blocking SCAN with a bounded COUNT and
+   * variadic DEL to avoid the production hazards of `KEYS *`.
+   */
   async clear(prefix?: string): Promise<void> {
     const client = await this.client();
     const pattern = `${this.opts.keyPrefix}${prefix ?? ''}*`;
-    const keys = await client.keys(pattern);
-    await Promise.all(keys.map((k) => client.del(k)));
+    let cursor = '0';
+    do {
+      const [next, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', '500');
+      cursor = next;
+      if (keys.length > 0) {
+        // Variadic DEL — single round-trip per batch.
+        await client.del(...keys);
+      }
+    } while (cursor !== '0');
   }
 }

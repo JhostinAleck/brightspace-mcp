@@ -16,10 +16,21 @@ function makeFakeRedis(): { client: RedisLikeClient; store: Map<string, { v: str
       store.set(key, { v: value, expiresAt: now() + ttlMs });
       return 'OK';
     },
-    async del(key) { return store.delete(key) ? 1 : 0; },
-    async keys(pattern) {
+    async del(...keys) {
+      let n = 0;
+      for (const k of keys) if (store.delete(k)) n++;
+      return n;
+    },
+    // Minimal SCAN: returns all matching keys in one shot with cursor='0'.
+    // Real ioredis would paginate via cursor, but our `clear` consumer handles
+    // both forms identically.
+    async scan(_cursor, ...args) {
+      // args layout: ['MATCH', pattern, 'COUNT', count]
+      const matchIdx = args.indexOf('MATCH');
+      const pattern = matchIdx >= 0 ? args[matchIdx + 1] ?? '*' : '*';
       const re = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-      return [...store.keys()].filter((k) => re.test(k));
+      const keys = [...store.keys()].filter((k) => re.test(k));
+      return ['0', keys];
     },
     async quit() {},
   };
@@ -41,7 +52,7 @@ describe('RedisCache', () => {
     expect([...store.keys()][0]).toBe('app:k');
   });
 
-  it('clear(prefix) deletes matching keys', async () => {
+  it('clear(prefix) deletes matching keys via SCAN', async () => {
     const { client } = makeFakeRedis();
     const cache = new RedisCache({ loader: async () => client, keyPrefix: 'p:' });
     await cache.set('a:1', 1, 10_000);

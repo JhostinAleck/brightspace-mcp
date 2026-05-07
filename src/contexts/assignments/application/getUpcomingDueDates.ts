@@ -13,10 +13,12 @@ export async function getUpcomingDueDates(
   input: GetUpcomingDueDatesInput,
 ): Promise<Assignment[]> {
   if (input.courseIds.length === 0) return [];
-  const perCourse: Assignment[][] = [];
-  for (const id of input.courseIds) {
-    perCourse.push(await input.repo.findByCourse(id));
-  }
+  // Parallel fan-out — each course's assignments are independent. The HTTP
+  // client's bulkhead caps backend pressure so this is safe even for users
+  // enrolled in many courses.
+  const perCourse = await Promise.all(
+    input.courseIds.map((id) => input.repo.findByCourse(id)),
+  );
   const flat = perCourse.flat();
   const inWindow = flat.filter((a) => a.dueDate.isWithin(input.from, input.to));
   return inWindow.sort((x, y) => {

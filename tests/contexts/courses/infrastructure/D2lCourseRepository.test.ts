@@ -5,7 +5,7 @@ import nock from 'nock';
 import { D2lCourseRepository } from '@/contexts/courses/infrastructure/D2lCourseRepository.js';
 import { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { AccessToken } from '@/contexts/authentication/domain/AccessToken.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 
 const BASE = 'https://x.com';
 const fixturePath = resolve(__dirname, '../../../fixtures/enrollments/happy-path.json');

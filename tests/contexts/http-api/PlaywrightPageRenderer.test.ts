@@ -4,6 +4,15 @@ import { AccessToken } from '@/contexts/authentication/domain/AccessToken';
 
 const neverLoader = async () => { throw new Error('should not be called'); };
 
+function makeFakePage(content: string) {
+  return {
+    goto: async (_url: string) => {},
+    waitForTimeout: async () => {},
+    content: async () => content,
+    close: async () => {},
+  };
+}
+
 describe('PlaywrightPageRenderer', () => {
   it('returns empty string when token is bearer (not cookie)', async () => {
     const renderer = new PlaywrightPageRenderer(
@@ -31,14 +40,17 @@ describe('PlaywrightPageRenderer', () => {
       goto: async (url: string) => { pages.push(url); },
       waitForTimeout: async () => {},
       content: async () => '<html><body>Hello World</body></html>',
+      close: async () => {},
     };
     const fakeCtx = {
       addCookies: async () => {},
       newPage: async () => fakePage,
+      close: async () => {},
     };
     const fakeBrowser = {
       newContext: async () => fakeCtx,
       close: async () => {},
+      isConnected: () => true,
     };
     const fakeModule = { chromium: { launch: async () => fakeBrowser } };
     const loader = async () => fakeModule;
@@ -55,13 +67,9 @@ describe('PlaywrightPageRenderer', () => {
   });
 
   it('getRenderedText strips HTML tags and scripts', async () => {
-    const fakePage = {
-      goto: async () => {},
-      waitForTimeout: async () => {},
-      content: async () => '<html><head><script>alert(1)</script><style>body{}</style></head><body><h1>Title</h1><p>Content here</p></body></html>',
-    };
-    const fakeCtx = { addCookies: async () => {}, newPage: async () => fakePage };
-    const fakeBrowser = { newContext: async () => fakeCtx, close: async () => {} };
+    const fakePage = makeFakePage('<html><head><script>alert(1)</script><style>body{}</style></head><body><h1>Title</h1><p>Content here</p></body></html>');
+    const fakeCtx = { addCookies: async () => {}, newPage: async () => fakePage, close: async () => {} };
+    const fakeBrowser = { newContext: async () => fakeCtx, close: async () => {}, isConnected: () => true };
     const loader = async () => ({ chromium: { launch: async () => fakeBrowser } });
 
     const renderer = new PlaywrightPageRenderer(
@@ -78,14 +86,21 @@ describe('PlaywrightPageRenderer', () => {
     expect(text).not.toContain('<h1>');
   });
 
-  it('closes browser even when page.goto throws', async () => {
-    let closed = false;
+  it('closes the per-call context even when page.goto throws', async () => {
+    let ctxClosed = false;
     const fakeBrowser = {
       newContext: async () => ({
         addCookies: async () => {},
-        newPage: async () => ({ goto: async () => { throw new Error('nav failed'); }, waitForTimeout: async () => {}, content: async () => '' }),
+        newPage: async () => ({
+          goto: async () => { throw new Error('nav failed'); },
+          waitForTimeout: async () => {},
+          content: async () => '',
+          close: async () => {},
+        }),
+        close: async () => { ctxClosed = true; },
       }),
-      close: async () => { closed = true; },
+      close: async () => {},
+      isConnected: () => true,
     };
     const loader = async () => ({ chromium: { launch: async () => fakeBrowser } });
 
@@ -96,6 +111,36 @@ describe('PlaywrightPageRenderer', () => {
     );
 
     await expect(renderer.getRenderedHtml('/fail')).rejects.toThrow('nav failed');
-    expect(closed).toBe(true);
+    expect(ctxClosed).toBe(true);
+  });
+
+  it('reuses the browser instance across calls and disposes on shutdown', async () => {
+    let launches = 0;
+    let browserClosed = false;
+    const fakeBrowser = {
+      newContext: async () => ({
+        addCookies: async () => {},
+        newPage: async () => makeFakePage('<html></html>'),
+        close: async () => {},
+      }),
+      close: async () => { browserClosed = true; },
+      isConnected: () => true,
+    };
+    const loader = async () => {
+      launches++;
+      return { chromium: { launch: async () => fakeBrowser } };
+    };
+
+    const renderer = new PlaywrightPageRenderer(
+      loader as never,
+      async () => AccessToken.cookie('session=abc'),
+      'https://example.com/',
+    );
+
+    await renderer.getRenderedHtml('/a');
+    await renderer.getRenderedHtml('/b');
+    expect(launches).toBe(1);
+    await renderer.dispose();
+    expect(browserClosed).toBe(true);
   });
 });

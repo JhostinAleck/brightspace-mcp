@@ -113,28 +113,46 @@ export class FileSessionCache implements SessionCache {
     }
   }
 
+  /**
+   * Lazy expiration: returns null for expired sessions without rewriting the
+   * file. Garbage entries are reclaimed on the next `save` / `invalidate`.
+   * Avoids turning every read into a locked write.
+   */
   async get(profile: string): Promise<Session | null> {
-    return this.withLock(async () => {
-      const file = await this.loadFile();
-      const entry = file.entries[profile];
-      if (!entry) return null;
-      const expiresAt = new Date(entry.expiresAtIso);
-      if (expiresAt.getTime() <= Date.now()) {
-        delete file.entries[profile];
-        if (Object.keys(file.entries).length === 0) {
-          if (existsSync(this.opts.path)) await unlink(this.opts.path);
-        } else {
-          await this.saveFile(file);
-        }
-        return null;
-      }
-      return this.fromStored(entry);
-    });
+    if (!existsSync(this.opts.path)) return null;
+    let text: string;
+    try {
+      text = await readFile(this.opts.path, 'utf8');
+    } catch {
+      return null;
+    }
+    let parsed: SessionFile;
+    try {
+      parsed = JSON.parse(text) as SessionFile;
+    } catch {
+      return null;
+    }
+    if (parsed.version !== 1) return null;
+    const entry = parsed.entries[profile];
+    if (!entry) return null;
+    const expiresAt = new Date(entry.expiresAtIso);
+    if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) {
+      return null;
+    }
+    return this.fromStored(entry);
   }
 
   async save(profile: string, session: Session): Promise<void> {
     return this.withLock(async () => {
       const file = await this.loadFile();
+      // Opportunistic GC of expired siblings while we own the lock.
+      const now = Date.now();
+      for (const k of Object.keys(file.entries)) {
+        const e = file.entries[k];
+        if (!e) continue;
+        const t = Date.parse(e.expiresAtIso);
+        if (Number.isFinite(t) && t <= now) delete file.entries[k];
+      }
       file.entries[profile] = this.toStored(session);
       await this.saveFile(file);
     });
@@ -147,7 +165,9 @@ export class FileSessionCache implements SessionCache {
       if (!(profile in file.entries)) return;
       delete file.entries[profile];
       if (Object.keys(file.entries).length === 0) {
-        await unlink(this.opts.path);
+        // Truncate to empty container — we hold the inode lock so we cannot
+        // unlink without breaking the lock semantics.
+        await this.saveFile({ version: 1, entries: {} });
         return;
       }
       await this.saveFile(file);

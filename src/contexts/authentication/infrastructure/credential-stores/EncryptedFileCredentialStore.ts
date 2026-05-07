@@ -1,7 +1,8 @@
 import { readFile, writeFile, chmod, rename, mkdir, unlink } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { randomBytes, scryptSync, createCipheriv, createDecipheriv } from 'node:crypto';
 import { dirname } from 'node:path';
+import lockfile from 'proper-lockfile';
 import type {
   CredentialStore,
   CredentialKey,
@@ -29,12 +30,9 @@ const SCRYPT_PARAMS = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 } as co
 /**
  * AES-256-GCM encrypted on-disk credential store.
  *
- * Concurrency: this store is safe for a single writer. Two MCP server
- * processes writing to the same file concurrently will race — one will
- * silently lose data. The plan trades this off because credential writes
- * are rare (setup wizard, occasional rotation). If you need multi-writer
- * safety, wrap the store with `proper-lockfile` or use the OS keychain
- * (KeychainCredentialStore) instead.
+ * Concurrency: file-locked via proper-lockfile. Read/write/delete operations
+ * acquire an exclusive lock so concurrent MCP processes (setup wizard +
+ * running server, OAuth refresh contention, etc.) cannot corrupt the file.
  *
  * Security: AES-256-GCM (authenticated), per-entry random 12-byte IV,
  * scrypt KDF with pinned OWASP 2024 interactive params, per-file 16-byte
@@ -53,6 +51,31 @@ export class EncryptedFileCredentialStore implements CredentialStore {
 
   private deriveKey(salt: Buffer): Buffer {
     return scryptSync(this.opts.passphrase.reveal(), salt, 32, SCRYPT_PARAMS);
+  }
+
+  private async withLock<T>(op: () => Promise<T>): Promise<T> {
+    await mkdir(dirname(this.opts.path), { recursive: true });
+    // proper-lockfile needs an existing file to lock. Initialise with an
+    // empty container so concurrent first-time writers all see the same
+    // lockable target.
+    if (!existsSync(this.opts.path)) {
+      const empty: EncryptedFile = {
+        version: 1,
+        salt: randomBytes(16).toString('hex'),
+        entries: {},
+      };
+      writeFileSync(this.opts.path, JSON.stringify(empty), 'utf8');
+      if (process.platform !== 'win32') await chmod(this.opts.path, 0o600);
+    }
+    const release = await lockfile.lock(this.opts.path, {
+      realpath: false,
+      retries: { retries: 10, factor: 1.2, minTimeout: 20, maxTimeout: 200 },
+    });
+    try {
+      return await op();
+    } finally {
+      await release();
+    }
   }
 
   private async loadFile(): Promise<EncryptedFile> {
@@ -102,59 +125,68 @@ export class EncryptedFileCredentialStore implements CredentialStore {
 
   async get(key: CredentialKey): Promise<SecretValue | null> {
     const logical = this.stripPrefix(key);
-    const file = await this.loadFile();
-    const entry = file.entries[logical];
-    if (!entry) return null;
-    const salt = Buffer.from(file.salt, 'hex');
-    const aesKey = this.deriveKey(salt);
-    const iv = Buffer.from(entry.iv, 'hex');
-    const decipher = createDecipheriv('aes-256-gcm', aesKey, iv);
-    decipher.setAuthTag(Buffer.from(entry.authTag, 'hex'));
-    let plaintext: Buffer;
-    try {
-      plaintext = Buffer.concat([
-        decipher.update(Buffer.from(entry.ciphertext, 'hex')),
-        decipher.final(),
-      ]);
-    } catch (err) {
-      throw new Error(
-        `Failed to decrypt credential "${logical}" — wrong passphrase or corrupted file`,
-        { cause: err },
-      );
-    }
-    return new SecretValue(plaintext.toString('utf8'));
+    return this.withLock(async () => {
+      const file = await this.loadFile();
+      const entry = file.entries[logical];
+      if (!entry) return null;
+      const salt = Buffer.from(file.salt, 'hex');
+      const aesKey = this.deriveKey(salt);
+      const iv = Buffer.from(entry.iv, 'hex');
+      const decipher = createDecipheriv('aes-256-gcm', aesKey, iv);
+      decipher.setAuthTag(Buffer.from(entry.authTag, 'hex'));
+      let plaintext: Buffer;
+      try {
+        plaintext = Buffer.concat([
+          decipher.update(Buffer.from(entry.ciphertext, 'hex')),
+          decipher.final(),
+        ]);
+      } catch (err) {
+        throw new Error(
+          `Failed to decrypt credential "${logical}" — wrong passphrase or corrupted file`,
+          { cause: err },
+        );
+      }
+      return new SecretValue(plaintext.toString('utf8'));
+    });
   }
 
   async set(key: CredentialKey, value: SecretValue): Promise<void> {
     const logical = this.stripPrefix(key);
-    const file = await this.loadFile();
-    const salt = Buffer.from(file.salt, 'hex');
-    const aesKey = this.deriveKey(salt);
-    const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', aesKey, iv);
-    const ciphertext = Buffer.concat([
-      cipher.update(Buffer.from(value.reveal(), 'utf8')),
-      cipher.final(),
-    ]);
-    const authTag = cipher.getAuthTag();
-    file.entries[logical] = {
-      iv: iv.toString('hex'),
-      authTag: authTag.toString('hex'),
-      ciphertext: ciphertext.toString('hex'),
-    };
-    await this.saveFile(file);
+    return this.withLock(async () => {
+      const file = await this.loadFile();
+      const salt = Buffer.from(file.salt, 'hex');
+      const aesKey = this.deriveKey(salt);
+      const iv = randomBytes(12);
+      const cipher = createCipheriv('aes-256-gcm', aesKey, iv);
+      const ciphertext = Buffer.concat([
+        cipher.update(Buffer.from(value.reveal(), 'utf8')),
+        cipher.final(),
+      ]);
+      const authTag = cipher.getAuthTag();
+      file.entries[logical] = {
+        iv: iv.toString('hex'),
+        authTag: authTag.toString('hex'),
+        ciphertext: ciphertext.toString('hex'),
+      };
+      await this.saveFile(file);
+    });
   }
 
   async delete(key: CredentialKey): Promise<void> {
     const logical = this.stripPrefix(key);
     if (!existsSync(this.opts.path)) return;
-    const file = await this.loadFile();
-    if (!(logical in file.entries)) return;
-    delete file.entries[logical];
-    if (Object.keys(file.entries).length === 0) {
-      await unlink(this.opts.path);
-      return;
-    }
-    await this.saveFile(file);
+    return this.withLock(async () => {
+      const file = await this.loadFile();
+      if (!(logical in file.entries)) return;
+      delete file.entries[logical];
+      if (Object.keys(file.entries).length === 0) {
+        // Cannot unlink while we hold the lock on the same file — proper-lockfile
+        // tracks the inode. Truncate to an empty container instead so the next
+        // get() returns nothing and we keep the lock release semantics intact.
+        await this.saveFile({ version: 1, salt: file.salt, entries: {} });
+        return;
+      }
+      await this.saveFile(file);
+    });
   }
 }

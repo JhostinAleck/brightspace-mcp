@@ -13,7 +13,18 @@ export const listMyCoursesSchema = z
 export type ListMyCoursesInput = z.infer<typeof listMyCoursesSchema>;
 
 export const clearCacheSchema = z.object({
-  scope: z.enum(['all', 'http', 'courses']).default('all'),
+  scope: z
+    .enum([
+      'all',
+      'http',
+      'courses',
+      'grades',
+      'assignments',
+      'content',
+      'communications',
+      'calendar',
+    ])
+    .default('all'),
 }).strict();
 
 export type ClearCacheInput = z.infer<typeof clearCacheSchema>;

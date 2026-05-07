@@ -1,9 +1,9 @@
-import type { CourseRepository } from '@/contexts/courses/CourseRepository.js';
+import type { CourseRepository } from '@/contexts/courses/domain/CourseRepository.js';
 import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
 import { getUpcomingDueDates } from '@/contexts/assignments/application/getUpcomingDueDates.js';
 import { getUpcomingDueDatesSchema } from '@/mcp/schemas.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 
 export interface GetUpcomingDueDatesDeps {
