@@ -53,6 +53,7 @@ import { RequestCoalescer } from '@/contexts/http-api/resilience/RequestCoalesce
 import { Bulkhead } from '@/contexts/http-api/resilience/Bulkhead.js';
 import { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import { InMemoryIdempotencyStore } from '@/shared-kernel/idempotency/IdempotencyStore.js';
+import { CachedIdempotencyStore } from '@/shared-kernel/idempotency/CachedIdempotencyStore.js';
 import { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
 import type { ToolDeps } from '@/mcp/registry.js';
 import type { AuthStrategyKind } from '@/contexts/authentication/domain/Session.js';
@@ -365,7 +366,14 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     configDryRun: config.writes?.dry_run ?? false,
   });
 
-  const idempotencyStore = new InMemoryIdempotencyStore();
+  const idempotencyStore = config.redis
+    ? new CachedIdempotencyStore(new RedisCache({
+        loader: buildRedisLoader(config.redis),
+        keyPrefix: `${config.redis.key_prefix}idm:`,
+      }))
+    : new CachedIdempotencyStore(
+        new FileCache({ path: join(homedir(), '.brightspace-mcp', 'idempotency.json') }),
+      );
   const auditLogger = new AuditLogger({ logger });
 
   return {
