@@ -1,4 +1,4 @@
-import { authenticator } from 'otplib';
+import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
 import type {
   MfaStrategy,
   MfaChallenge,
@@ -14,16 +14,6 @@ export interface TotpMfaStrategyOptions {
 }
 
 const ALLOWED_ALGORITHMS = ['SHA1', 'SHA256', 'SHA512'] as const;
-
-// otplib's AuthenticatorOptions.algorithm is typed as the HashAlgorithms enum,
-// whose string values are the lowercase algorithm names. Since otplib v12 does
-// not declare `otplib/core` as a TS-visible subpath export, we mirror the
-// enum shape locally and cast through it.
-type OtpAlgorithm = Parameters<typeof authenticator.clone>[0] extends {
-  algorithm?: infer A;
-}
-  ? A
-  : never;
 
 export class TotpMfaStrategy implements MfaStrategy {
   readonly kind = 'totp' as const;
@@ -42,13 +32,15 @@ export class TotpMfaStrategy implements MfaStrategy {
         `TotpMfaStrategy only handles totp_code challenges, got "${challenge.kind}"`,
       );
     }
-    const code = authenticator
-      .clone({
-        digits: this.opts.digits,
-        step: this.opts.period,
-        algorithm: this.opts.algorithm.toLowerCase() as unknown as OtpAlgorithm,
-      })
-      .generate(this.opts.secret.reveal());
+    const totp = new TOTP({
+      digits: this.opts.digits,
+      period: this.opts.period,
+      algorithm: this.opts.algorithm.toLowerCase() as Lowercase<typeof this.opts.algorithm>,
+      secret: this.opts.secret.reveal(),
+      crypto: new NobleCryptoPlugin(),
+      base32: new ScureBase32Plugin(),
+    });
+    const code = await totp.generate();
     return { code };
   }
 }

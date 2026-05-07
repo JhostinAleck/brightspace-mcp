@@ -4,6 +4,20 @@ import {
   InMemoryIdempotencyStore,
   type IdempotencyStore,
 } from '@/shared-kernel/idempotency/IdempotencyStore.js';
+import { createIdempotencyKey } from '@/shared-kernel/idempotency/IdempotencyKey.js';
+
+describe('createIdempotencyKey', () => {
+  it('accepts a valid key', () => {
+    const key = createIdempotencyKey('valid-key-1234');
+    expect(key).toBe('valid-key-1234');
+  });
+  it('throws when key is too short', () => {
+    expect(() => createIdempotencyKey('short')).toThrow(/8/);
+  });
+  it('throws when key is too long', () => {
+    expect(() => createIdempotencyKey('x'.repeat(129))).toThrow(/128/);
+  });
+});
 
 describe('InMemoryIdempotencyStore', () => {
   it('returns null when key not seen before', async () => {

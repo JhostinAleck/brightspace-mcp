@@ -129,11 +129,17 @@ const WritesConfigSchema = z
   })
   .default({ enabled: false, dry_run: false });
 
+const RedisCacheConfigSchema = z.object({
+  url: z.string().default('redis://localhost:6379'),
+  key_prefix: z.string().default('brightspace:'),
+});
+
 export const ConfigSchema = z.object({
   default_profile: z.string(),
   profiles: z.record(z.string(), ProfileSchema),
   logging: LoggingSchema.default({ level: 'info' }),
   writes: WritesConfigSchema,
+  redis: RedisCacheConfigSchema.optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
