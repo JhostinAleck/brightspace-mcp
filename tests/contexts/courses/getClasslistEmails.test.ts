@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { getClasslistEmails } from '@/contexts/courses/getClasslistEmails';
-import { Classmate } from '@/contexts/courses/Classmate';
+import { getClasslistEmails } from '@/contexts/courses/application/getClasslistEmails';
+import { Classmate } from '@/contexts/courses/domain/Classmate';
 import { UserId } from '@/shared-kernel/types/UserId';
-import { CourseId } from '@/contexts/courses/CourseId';
+import { CourseId } from '@/contexts/courses/domain/CourseId';
 import { FakeCourseRepository } from '@tests/helpers/fakes/FakeCourseRepository';
 
 describe('getClasslistEmails', () => {

@@ -1,7 +1,7 @@
-import type { CourseRepository } from '@/contexts/courses/CourseRepository.js';
-import type { Course } from '@/contexts/courses/Course.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
-import type { Classmate } from '@/contexts/courses/Classmate.js';
+import type { CourseRepository } from '@/contexts/courses/domain/CourseRepository.js';
+import type { Course } from '@/contexts/courses/domain/Course.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
+import type { Classmate } from '@/contexts/courses/domain/Classmate.js';
 
 export class FakeCourseRepository implements CourseRepository {
   constructor(

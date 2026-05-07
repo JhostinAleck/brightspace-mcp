@@ -1,6 +1,6 @@
-import type { CourseRepository } from './CourseRepository.js';
-import type { Classmate } from './Classmate.js';
-import type { CourseId } from './CourseId.js';
+import type { CourseRepository } from '../domain/CourseRepository.js';
+import type { Classmate } from '../domain/Classmate.js';
+import type { CourseId } from '../domain/CourseId.js';
 
 export interface GetRosterInput {
   repo: CourseRepository;

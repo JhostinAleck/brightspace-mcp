@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Course } from '@/contexts/courses/Course.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
+import { Course } from '@/contexts/courses/domain/Course.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 
 describe('Course', () => {
   it('builds with required fields', () => {

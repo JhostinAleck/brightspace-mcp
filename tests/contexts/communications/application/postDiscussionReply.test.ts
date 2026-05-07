@@ -21,7 +21,7 @@ describe('postDiscussionReply', () => {
     const repo = makeRepo(captured);
     const result = await postDiscussionReply({
       repo,
-      courseId: 'c1',
+      courseId: '101',
       forumId: 'forum-1',
       topicId: 'topic-1',
       body: '  hello  ',
@@ -35,7 +35,7 @@ describe('postDiscussionReply', () => {
     const captured = { replies: [] as unknown[] };
     const repo = makeRepo(captured);
     await expect(
-      postDiscussionReply({ repo, courseId: 'c1', forumId: 'f', topicId: 't', body: '   ' }),
+      postDiscussionReply({ repo, courseId: '101', forumId: 'f', topicId: 't', body: '   ' }),
     ).rejects.toThrow(/body/i);
   });
 
@@ -44,7 +44,15 @@ describe('postDiscussionReply', () => {
     const repo = makeRepo(captured);
     const tooLong = 'a'.repeat(10_001);
     await expect(
-      postDiscussionReply({ repo, courseId: 'c1', forumId: 'f', topicId: 't', body: tooLong }),
+      postDiscussionReply({ repo, courseId: '101', forumId: 'f', topicId: 't', body: tooLong }),
     ).rejects.toThrow(/too long/i);
+  });
+
+  it('rejects non-numeric courseId', async () => {
+    const captured = { replies: [] as unknown[] };
+    const repo = makeRepo(captured);
+    await expect(
+      postDiscussionReply({ repo, courseId: 'c1', forumId: 'f', topicId: 't', body: 'hi' }),
+    ).rejects.toThrow(/Invalid OrgUnitId/);
   });
 });

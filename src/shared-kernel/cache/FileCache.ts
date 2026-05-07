@@ -57,24 +57,43 @@ export class FileCache implements Cache {
     try { return await op(); } finally { await release(); }
   }
 
+  /**
+   * Lazy expiration: a `get` on an expired entry returns null without
+   * rewriting the file. Garbage entries are reclaimed on the next `set` or
+   * `clear`. This avoids turning every read into a write and keeps reads
+   * lock-free except for the file open/parse cost.
+   */
   async get<T>(key: string): Promise<T | null> {
-    return this.withLock(async () => {
-      const file = await this.load();
-      const entry = file.entries[key];
-      if (!entry) return null;
-      if (Date.now() >= entry.expiresAt) {
-        delete file.entries[key];
-        await this.save(file);
-        return null;
-      }
-      return entry.value as T;
-    });
+    if (!existsSync(this.opts.path)) return null;
+    let text: string;
+    try {
+      text = await readFile(this.opts.path, 'utf8');
+    } catch {
+      return null;
+    }
+    let parsed: CacheFile;
+    try {
+      parsed = JSON.parse(text) as CacheFile;
+    } catch {
+      return null;
+    }
+    if (parsed.version !== 1) return null;
+    const entry = parsed.entries[key];
+    if (!entry) return null;
+    if (Date.now() >= entry.expiresAt) return null;
+    return entry.value as T;
   }
 
   async set<T>(key: string, value: T, ttlMs: number): Promise<void> {
     return this.withLock(async () => {
       const file = await this.load();
-      file.entries[key] = { value, expiresAt: Date.now() + ttlMs };
+      // Opportunistic GC: drop expired siblings while we hold the write lock.
+      const now = Date.now();
+      for (const k of Object.keys(file.entries)) {
+        const e = file.entries[k];
+        if (e && e.expiresAt <= now) delete file.entries[k];
+      }
+      file.entries[key] = { value, expiresAt: now + ttlMs };
       await this.save(file);
     });
   }

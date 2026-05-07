@@ -9,6 +9,11 @@ interface WhoAmIResponse {
   UniqueName: string;
 }
 
+/**
+ * Fetch the current user identity. `lpVersion` should be the LP version
+ * discovered at startup via `discoverVersions` — passing a stale default
+ * eventually breaks when D2L deprecates older LP versions.
+ */
 export async function callWhoAmI(
   token: AccessToken,
   baseUrl: string,
@@ -24,8 +29,12 @@ export async function callWhoAmI(
   );
   if (!resp.ok) throw new Error(`whoami failed: ${resp.status}`);
   const body = (await resp.json()) as WhoAmIResponse;
+  const userId = Number.parseInt(body.Identifier, 10);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new Error(`whoami returned invalid Identifier: ${String(body.Identifier)}`);
+  }
   return {
-    userId: UserId.of(parseInt(body.Identifier, 10)),
+    userId: UserId.of(userId),
     displayName: `${body.FirstName} ${body.LastName}`.trim(),
     uniqueName: body.UniqueName,
   };

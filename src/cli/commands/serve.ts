@@ -1,8 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { loadConfig } from '@/shared-kernel/config/loader.js';
 import type { Config } from '@/shared-kernel/config/schema.js';
+import { Paths } from '@/shared-kernel/config/paths.js';
 import { buildDependencies } from '@/composition-root.js';
 import { startServer } from '@/mcp/server.js';
 import { TransportPolicy } from '@/contexts/http-api/transport/TransportPolicy.js';
@@ -14,12 +13,8 @@ export interface ServeOptions {
   enableWrites?: boolean;
 }
 
-function defaultConfigPath(): string {
-  return join(homedir(), '.brightspace-mcp', 'config.yaml');
-}
-
 export async function runServe(opts: ServeOptions): Promise<void> {
-  const path = opts.config ?? defaultConfigPath();
+  const path = opts.config ?? Paths.configYaml();
   const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
 
   const cliOverrides: Record<string, unknown> = {};
@@ -38,5 +33,23 @@ export async function runServe(opts: ServeOptions): Promise<void> {
     transportPolicy: allowLocalHttp ? TransportPolicy.allowHttpForLocalhost() : TransportPolicy.strict(),
     enableWrites: opts.enableWrites ?? false,
   });
+
+  // Graceful shutdown: release Redis connection, close Playwright browser,
+  // flush file locks. Without this the process lingers on SIGTERM until the
+  // OS kills it (ioredis + Playwright keep timers alive).
+  let shuttingDown = false;
+  const shutdown = async (signal: string): Promise<void> => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    process.stderr.write(`Received ${signal}, shutting down...\n`);
+    await deps.disposables.disposeAll((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`Shutdown error: ${msg}\n`);
+    });
+    process.exit(0);
+  };
+  process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
+  process.on('SIGINT', () => { void shutdown('SIGINT'); });
+
   await startServer(deps);
 }

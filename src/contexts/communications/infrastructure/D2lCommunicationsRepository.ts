@@ -88,7 +88,7 @@ export class D2lCommunicationsRepository implements CommunicationsRepository {
   }
 
   async postReply(input: PostReplyInput): Promise<PostReplyResult> {
-    const orgUnit = String(input.courseId);
+    const orgUnit = OrgUnitId.toNumber(input.courseId);
     const path = `/d2l/api/le/${this.versions.le}/${orgUnit}/discussions/forums/${input.forumId}/topics/${input.topicId}/posts/`;
     const response = await this.client.postJson<{ Id: number; DatePosted: string }>(path, {
       ParentPostId: null,
@@ -102,7 +102,7 @@ export class D2lCommunicationsRepository implements CommunicationsRepository {
   }
 
   async markAnnouncementRead(input: MarkAnnouncementReadInput): Promise<void> {
-    const orgUnit = String(input.courseId);
+    const orgUnit = OrgUnitId.toNumber(input.courseId);
     const path = `/d2l/api/le/${this.versions.le}/${orgUnit}/news/${input.announcementId}/mark-read`;
     await this.client.postJson(path, {});
   }

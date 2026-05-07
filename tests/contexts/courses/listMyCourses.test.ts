@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { listMyCourses } from '@/contexts/courses/listMyCourses.js';
+import { listMyCourses } from '@/contexts/courses/application/listMyCourses.js';
 import { FakeCourseRepository } from '@tests/helpers/fakes/FakeCourseRepository.js';
-import { Course } from '@/contexts/courses/Course.js';
-import { CourseId } from '@/contexts/courses/CourseId.js';
+import { Course } from '@/contexts/courses/domain/Course.js';
+import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 
 const c = (id: number, name: string, active = true) =>
   new Course({ id: CourseId.of(id), name, code: `C${id}`, active });

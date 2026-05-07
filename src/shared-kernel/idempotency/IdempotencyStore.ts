@@ -13,6 +13,12 @@ export interface InMemoryIdempotencyStoreOptions {
   defaultTtlMs?: number;
 }
 
+/**
+ * In-memory idempotency store. Production wiring uses
+ * `CachedIdempotencyStore` over a persistent backing cache (Redis or file)
+ * so replays survive process restarts. This implementation is kept as a
+ * lightweight test seam.
+ */
 export class InMemoryIdempotencyStore implements IdempotencyStore {
   private readonly clock: () => number;
   private readonly entries = new Map<string, Entry>();

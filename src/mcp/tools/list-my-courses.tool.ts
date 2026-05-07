@@ -1,5 +1,5 @@
-import type { CourseRepository } from '@/contexts/courses/CourseRepository.js';
-import { listMyCourses } from '@/contexts/courses/listMyCourses.js';
+import type { CourseRepository } from '@/contexts/courses/domain/CourseRepository.js';
+import { listMyCourses } from '@/contexts/courses/application/listMyCourses.js';
 import { listMyCoursesSchema } from '@/mcp/schemas.js';
 import { coursesToCompact, coursesToDetailed } from '@/mcp/tool-helpers.js';
 

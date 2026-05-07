@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { handleGetClasslistEmails } from '@/mcp/tools/get-classlist-emails.tool';
 import { FakeCourseRepository } from '@tests/helpers/fakes/FakeCourseRepository';
-import { Classmate } from '@/contexts/courses/Classmate';
+import { Classmate } from '@/contexts/courses/domain/Classmate';
 import { UserId } from '@/shared-kernel/types/UserId';
 
 describe('get_classlist_emails tool', () => {

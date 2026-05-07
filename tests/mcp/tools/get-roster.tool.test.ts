@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { handleGetRoster } from '@/mcp/tools/get-roster.tool';
 import { FakeCourseRepository } from '@tests/helpers/fakes/FakeCourseRepository';
-import { Classmate } from '@/contexts/courses/Classmate';
+import { Classmate } from '@/contexts/courses/domain/Classmate';
 import { UserId } from '@/shared-kernel/types/UserId';
 
 const mate = (id: number, name: string, role: Classmate['role']) =>

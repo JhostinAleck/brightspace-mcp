@@ -27,16 +27,7 @@ export async function handleMarkAnnouncementRead(
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   const correlationId = `ack-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  deps.auditLogger.recordWriteAttempt({
-    correlationId,
-    tool: 'mark_announcement_read',
-    args: {
-      course_id: params.course_id,
-      announcement_id: params.announcement_id,
-      idempotency_key: params.idempotency_key,
-    },
-  });
-
+  // Idempotency check FIRST so replays don't inflate audit logs.
   const cacheKey = `mark_announcement_read:${params.idempotency_key}`;
   const cached = await deps.idempotencyStore.get<{ markedAt: string }>(cacheKey);
   if (cached) {
@@ -47,6 +38,16 @@ export async function handleMarkAnnouncementRead(
       }],
     };
   }
+
+  deps.auditLogger.recordWriteAttempt({
+    correlationId,
+    tool: 'mark_announcement_read',
+    args: {
+      course_id: params.course_id,
+      announcement_id: params.announcement_id,
+      idempotency_key: params.idempotency_key,
+    },
+  });
 
   if (deps.writesGate.isDryRun) {
     return {

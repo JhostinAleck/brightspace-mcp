@@ -29,6 +29,18 @@ export async function handlePostDiscussionReply(
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   const correlationId = `reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+  // Idempotency check FIRST so replays don't inflate audit logs.
+  const cacheKey = `post_discussion_reply:${params.idempotency_key}`;
+  const cached = await deps.idempotencyStore.get<{ postId: string; postedAt: string }>(cacheKey);
+  if (cached) {
+    return {
+      content: [{
+        type: 'text',
+        text: `Reply ${cached.postId} (replay, idempotent) at ${cached.postedAt}`,
+      }],
+    };
+  }
+
   deps.auditLogger.recordWriteAttempt({
     correlationId,
     tool: 'post_discussion_reply',
@@ -40,17 +52,6 @@ export async function handlePostDiscussionReply(
       idempotency_key: params.idempotency_key,
     },
   });
-
-  const cacheKey = `post_discussion_reply:${params.idempotency_key}`;
-  const cached = await deps.idempotencyStore.get<{ postId: string; postedAt: string }>(cacheKey);
-  if (cached) {
-    return {
-      content: [{
-        type: 'text',
-        text: `Reply ${cached.postId} (replay, idempotent) at ${cached.postedAt}`,
-      }],
-    };
-  }
 
   if (deps.writesGate.isDryRun) {
     return {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { getRoster } from '@/contexts/courses/getRoster';
-import { Classmate } from '@/contexts/courses/Classmate';
+import { getRoster } from '@/contexts/courses/application/getRoster';
+import { Classmate } from '@/contexts/courses/domain/Classmate';
 import { UserId } from '@/shared-kernel/types/UserId';
-import { CourseId } from '@/contexts/courses/CourseId';
+import { CourseId } from '@/contexts/courses/domain/CourseId';
 import { FakeCourseRepository } from '@tests/helpers/fakes/FakeCourseRepository';
 
 const mate = (userIdNum: number, name: string, role: Classmate['role']) =>

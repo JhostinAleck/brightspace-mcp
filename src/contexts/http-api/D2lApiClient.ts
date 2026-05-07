@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { AccessToken } from '@/contexts/authentication/domain/AccessToken.js';
 import { InMemoryCache } from '@/shared-kernel/cache/InMemoryCache.js';
+import type { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
 import { HttpResponseCache } from './cache/HttpResponseCache.js';
 import { D2lApiError, NetworkError, RateLimitedError } from './errors.js';
 import type { Bulkhead } from './resilience/Bulkhead.js';
@@ -34,18 +35,32 @@ export interface D2lApiClientOptions {
   cache?: HttpResponseCache;
   cacheTtlMs?: number;
   pageRenderer?: PlaywrightPageRenderer;
+  metrics?: MetricsRegistry;
 }
 
-const DEFAULT_UA =
-  'brightspace-mcp/0.2.0 (+https://github.com/JhostinAleck/brightspace-mcp)';
+const DEFAULT_UA = 'brightspace-mcp/dev (+https://github.com/JhostinAleck/brightspace-mcp)';
 
 function parseRetryAfterMs(header: string | null): number | null {
   if (!header) return null;
-  const asInt = Number.parseInt(header, 10);
-  if (!Number.isNaN(asInt)) return asInt * 1000;
-  const asDate = Date.parse(header);
+  const trimmed = header.trim();
+  if (trimmed.length === 0) return null;
+  const asInt = Number.parseInt(trimmed, 10);
+  if (!Number.isNaN(asInt)) {
+    if (asInt < 0) return null;
+    return asInt * 1000;
+  }
+  const asDate = Date.parse(trimmed);
   if (!Number.isNaN(asDate)) return Math.max(0, asDate - Date.now());
   return null;
+}
+
+function authFingerprintHash(token: AccessToken): string {
+  // SHA-256 first 16 hex chars: 64-bit truncation. Birthday collision risk
+  // negligible for any realistic cache size (<10K entries).
+  // Crucially: hashing happens at the boundary so the raw secret never lives
+  // inside the cacheKey object — the only consumer that needs the secret is
+  // the actual fetch call, which receives the token directly.
+  return createHash('sha256').update(token.reveal()).digest('hex').slice(0, 16);
 }
 
 export class D2lApiClient {
@@ -59,6 +74,7 @@ export class D2lApiClient {
   private readonly bulkhead?: Bulkhead;
   private readonly cache?: HttpResponseCache;
   private readonly cacheTtlMs: number;
+  private readonly metrics?: MetricsRegistry;
 
   constructor(private readonly opts: D2lApiClientOptions) {
     this.transport = opts.transportPolicy ?? TransportPolicy.strict();
@@ -75,7 +91,10 @@ export class D2lApiClient {
       });
     }
     if (opts.circuit) {
-      this.breaker = new CircuitBreaker(opts.circuit);
+      this.breaker = new CircuitBreaker({
+        ...opts.circuit,
+        ...(opts.metrics ? { onStateChange: (s) => opts.metrics!.inc(`circuit.${s}`) } : {}),
+      });
     }
     if (opts.coalescer) this.coalescer = opts.coalescer;
     if (opts.bulkhead) this.bulkhead = opts.bulkhead;
@@ -85,28 +104,35 @@ export class D2lApiClient {
     } else if (this.cacheTtlMs > 0) {
       this.cache = new HttpResponseCache(new InMemoryCache());
     }
+    if (opts.metrics) this.metrics = opts.metrics;
   }
 
   async get<T>(path: string): Promise<T> {
     const token = await this.opts.getToken();
-    const authFingerprint = token.reveal();
-    const cacheKey = { method: 'GET', path, authFingerprint };
+    const fingerprint = authFingerprintHash(token);
+    const cacheKey = { method: 'GET', path, authFingerprint: fingerprint };
 
     if (this.cache && this.cacheTtlMs > 0) {
       const cached = await this.cache.get<T>(cacheKey);
-      if (cached !== null) return cached;
+      if (cached !== null) {
+        this.metrics?.inc('http.cache.hit');
+        return cached;
+      }
+      this.metrics?.inc('http.cache.miss');
     }
 
-    const key = `GET ${path} ${createHash('sha256').update(authFingerprint).digest('hex').slice(0, 16)}`;
-    const doFetch = (): Promise<T> =>
-      this.withMiddlewares(() => this.fetchOnce<T>(path, token));
-    const coalesced = this.coalescer ? this.coalescer.run(key, doFetch) : doFetch();
-    const result = await coalesced;
-
-    if (this.cache && this.cacheTtlMs > 0) {
-      await this.cache.set(cacheKey, result, this.cacheTtlMs);
-    }
-    return result;
+    const key = `GET ${path} ${fingerprint}`;
+    // The cache write lives inside the coalesced fn so it runs ONCE per
+    // upstream fetch — concurrent callers will all await the same promise
+    // and only the originator pays the cache.set cost.
+    const doFetch = async (): Promise<T> => {
+      const result = await this.withMiddlewares(() => this.fetchOnce<T>(path, token));
+      if (this.cache && this.cacheTtlMs > 0) {
+        await this.cache.set(cacheKey, result, this.cacheTtlMs);
+      }
+      return result;
+    };
+    return this.coalescer ? this.coalescer.run(key, doFetch) : doFetch();
   }
 
   async getHtml(path: string): Promise<string> {
@@ -130,11 +156,16 @@ export class D2lApiClient {
     return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
   }
 
+  private observeStatus(status: number): void {
+    this.metrics?.inc(`http.status.${status}`);
+  }
+
   private async fetchText(path: string, token: AccessToken): Promise<string> {
     const url = `${this.baseUrl}${path}`;
     this.transport.validate(url);
     const { name, value } = token.toAuthHeader();
     let response: Response;
+    const start = this.metrics ? performance.now() : 0;
     try {
       response = await fetch(url, {
         method: 'GET',
@@ -142,8 +173,12 @@ export class D2lApiClient {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (err) {
+      this.metrics?.inc('http.network_error');
       throw new NetworkError(`GET ${path} failed`, err instanceof Error ? err : undefined);
+    } finally {
+      if (this.metrics) this.metrics.observe('http.duration_ms', performance.now() - start);
     }
+    this.observeStatus(response.status);
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new D2lApiError(response.status, path, body);
@@ -156,6 +191,7 @@ export class D2lApiClient {
     this.transport.validate(url);
     const { name, value } = token.toAuthHeader();
     let response: Response;
+    const start = this.metrics ? performance.now() : 0;
     try {
       response = await fetch(url, {
         method: 'GET',
@@ -163,8 +199,12 @@ export class D2lApiClient {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (err) {
+      this.metrics?.inc('http.network_error');
       throw new NetworkError(`GET ${path} failed`, err instanceof Error ? err : undefined);
+    } finally {
+      if (this.metrics) this.metrics.observe('http.duration_ms', performance.now() - start);
     }
+    this.observeStatus(response.status);
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new D2lApiError(response.status, path, body);
@@ -187,6 +227,7 @@ export class D2lApiClient {
     const { name, value } = token.toAuthHeader();
 
     let response: Response;
+    const start = this.metrics ? performance.now() : 0;
     try {
       response = await fetch(url, {
         method: 'POST',
@@ -195,9 +236,12 @@ export class D2lApiClient {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (err) {
+      this.metrics?.inc('http.network_error');
       throw new NetworkError(`POST ${path} failed`, err instanceof Error ? err : undefined);
+    } finally {
+      if (this.metrics) this.metrics.observe('http.duration_ms', performance.now() - start);
     }
-
+    this.observeStatus(response.status);
     if (response.status === 429) {
       const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
       throw new RateLimitedError(path, retryAfterMs);
@@ -220,6 +264,7 @@ export class D2lApiClient {
     const { name, value } = token.toAuthHeader();
 
     let response: Response;
+    const start = this.metrics ? performance.now() : 0;
     try {
       response = await fetch(url, {
         method: 'POST',
@@ -232,9 +277,12 @@ export class D2lApiClient {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (err) {
+      this.metrics?.inc('http.network_error');
       throw new NetworkError(`POST ${path} failed`, err instanceof Error ? err : undefined);
+    } finally {
+      if (this.metrics) this.metrics.observe('http.duration_ms', performance.now() - start);
     }
-
+    this.observeStatus(response.status);
     if (response.status === 429) {
       const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
       throw new RateLimitedError(path, retryAfterMs);
@@ -265,6 +313,7 @@ export class D2lApiClient {
     const { name, value } = token.toAuthHeader();
 
     let response: Response;
+    const start = this.metrics ? performance.now() : 0;
     try {
       response = await fetch(url, {
         method: 'GET',
@@ -272,9 +321,13 @@ export class D2lApiClient {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (err) {
+      this.metrics?.inc('http.network_error');
       throw new NetworkError(`GET ${path} failed`, err instanceof Error ? err : undefined);
+    } finally {
+      if (this.metrics) this.metrics.observe('http.duration_ms', performance.now() - start);
     }
 
+    this.observeStatus(response.status);
     if (response.status === 429) {
       const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
       throw new RateLimitedError(path, retryAfterMs);

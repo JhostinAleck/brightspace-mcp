@@ -76,15 +76,20 @@ export class D2lContentRepository implements ContentRepository {
     return Promise.all(roots.map((r) => this.buildModule(orgUnit, r)));
   }
 
-  private async buildModule(orgUnit: number, dto: ModuleDto): Promise<Module> {
+  private async buildModule(orgUnit: number, dto: ModuleDto, depth = 0): Promise<Module> {
+    if (depth > 12) {
+      // Pathological tree guard — D2L module trees are typically <5 deep.
+      // Stop recursing rather than blowing the stack.
+      return new Module({ id: dto.Id, title: dto.Title, topics: [], submodules: [] });
+    }
     const children = await this.client.get<TopicOrModuleDto[]>(
       `/d2l/api/le/${this.versions.le}/${orgUnit}/content/modules/${dto.Id}/structure/`,
     );
     const topics: Topic[] = [];
-    const submodules: Module[] = [];
+    const submoduleDtos: Array<{ Id: number; Title: string }> = [];
     for (const c of children) {
       if (c.Type === 0) {
-        submodules.push(await this.buildModule(orgUnit, { Id: c.Id, Title: c.Title }));
+        submoduleDtos.push({ Id: c.Id, Title: c.Title });
       } else {
         topics.push(
           new Topic({
@@ -97,6 +102,10 @@ export class D2lContentRepository implements ContentRepository {
         );
       }
     }
+    // Parallel descent — bulkhead caps backend pressure.
+    const submodules = await Promise.all(
+      submoduleDtos.map((m) => this.buildModule(orgUnit, m, depth + 1)),
+    );
     return new Module({ id: dto.Id, title: dto.Title, topics, submodules });
   }
 

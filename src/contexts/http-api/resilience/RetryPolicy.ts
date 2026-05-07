@@ -36,7 +36,12 @@ export class RetryPolicy {
         const decision = this.opts.classifier(err, attempt);
         if (!decision.retry || attempt === this.opts.maxAttempts) break;
         const base = Math.min(this.opts.initialMs * 2 ** (attempt - 1), this.opts.maxMs);
-        const wait = decision.retryAfterMs ?? Math.min(this.jitter(base), this.opts.maxMs);
+        // When the server provides Retry-After we honour it verbatim — even if
+        // it exceeds maxMs. The server's instruction wins because rate-limit
+        // windows are usually longer than our exponential backoff cap.
+        const wait = decision.retryAfterMs !== undefined
+          ? Math.max(0, decision.retryAfterMs)
+          : Math.min(this.jitter(base), this.opts.maxMs);
         await this.sleep(wait);
       }
     }
