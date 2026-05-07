@@ -34,6 +34,7 @@ export async function runConfigValidate(opts: ConfigValidateOptions): Promise<vo
   } catch (err) {
     throw new Error(
       `yaml parse error in ${path}: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
     );
   }
 

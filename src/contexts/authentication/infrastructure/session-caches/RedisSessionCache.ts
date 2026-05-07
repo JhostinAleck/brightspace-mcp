@@ -36,6 +36,7 @@ export class RedisSessionCache implements SessionCache {
           const message = err instanceof Error ? err.message : String(err);
           throw new Error(
             `ioredis is not available (${message}). Install the optional "ioredis" dependency or switch to memory/file cache backend.`,
+            { cause: err },
           );
         }
       })();

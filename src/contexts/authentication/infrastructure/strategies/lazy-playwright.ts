@@ -52,6 +52,7 @@ export function createPlaywrightLoader(
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(
         `Playwright is not available (${message}). Install with "npm install playwright" and run "npx playwright install chromium", or use another auth strategy.`,
+        { cause: err },
       );
     }
   };

@@ -45,6 +45,7 @@ export class KeychainCredentialStore implements CredentialStore {
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(
         `keytar is not available (${message}). Install the optional "keytar" dependency or switch to encrypted_file credential store.`,
+        { cause: err },
       );
     }
   }
