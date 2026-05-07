@@ -1,0 +1,13 @@
+# Socket Security configuration.
+# Docs: https://docs.socket.dev/docs/socket-yml
+
+version: 2
+
+# Issue overrides — only use after reading the package source. Each entry must
+# explain the rationale so future maintainers can re-evaluate the call.
+issueRules:
+  # ioredis ships TypeScript-compiled, minified JavaScript. Socket's
+  # "obfuscated code" detector treats minification as obfuscation. ioredis is
+  # a mature, MIT-licensed Redis client (>1.4M weekly downloads, official
+  # Redis Labs support). The minified bundle is auditable on GitHub.
+  obfuscatedFile: false
