@@ -63,13 +63,13 @@ export class EncryptedFileCredentialStore implements CredentialStore {
     try {
       text = await readFile(this.opts.path, 'utf8');
     } catch (err) {
-      throw new Error(`Failed to read credential file "${this.opts.path}": ${err instanceof Error ? err.message : String(err)}`);
+      throw new Error(`Failed to read credential file "${this.opts.path}": ${err instanceof Error ? err.message : String(err)}`, { cause: err });
     }
     let parsed: unknown;
     try {
       parsed = JSON.parse(text);
     } catch (err) {
-      throw new Error(`Credential file at "${this.opts.path}" is corrupted (not valid JSON): ${err instanceof Error ? err.message : String(err)}`);
+      throw new Error(`Credential file at "${this.opts.path}" is corrupted (not valid JSON): ${err instanceof Error ? err.message : String(err)}`, { cause: err });
     }
     if (
       typeof parsed !== 'object' || parsed === null ||
@@ -119,7 +119,7 @@ export class EncryptedFileCredentialStore implements CredentialStore {
     } catch (err) {
       throw new Error(
         `Failed to decrypt credential "${logical}" — wrong passphrase or corrupted file`,
-        { cause: err instanceof Error ? err : undefined },
+        { cause: err },
       );
     }
     return new SecretValue(plaintext.toString('utf8'));
