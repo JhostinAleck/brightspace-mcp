@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-05-07
+
+### Fixed (comprehensive audit — 51 issues across all severity levels)
+
+#### Critical
+- `OrgUnitId` / `UserId` / `CourseId` / `AssignmentId`: `createOrgUnitId` now parses string→number with a positive-integer regex; `toNumber` validates the runtime invariant so future regressions fail loudly instead of silently propagating string-shaped IDs.
+- `brightspace-mcp cache clear` CLI: now wipes the real on-disk paths (`domain-cache.json`, `idempotency.json`, `sessions.json`) and Redis via `SCAN`. Previously a silent no-op pointing at a non-existent file.
+- `MetricsRegistry`: instrumented in `D2lApiClient` (durations, status codes, network errors, cache hit/miss) and `CircuitBreaker` (state transitions). `get_diagnostics` now reports real data instead of empty maps.
+- `AuditLogger`: emits a single flat JSON line via `logger.warn(msg, ctx)` instead of double-stringifying the audit payload.
+- `EncryptedFileCredentialStore`: read/write/delete now run under `proper-lockfile` so concurrent processes cannot corrupt credentials.
+- `CachedCourseRepository.findById`: discriminated union for negative caching (was conflating cached-null with cache-miss).
+- `submit_assignment`: 50 MB hard cap, single decode of the base64 payload.
+
+#### High
+- Audit logging happens AFTER the idempotency check in all 3 write tools so replays no longer inflate the audit log.
+- Cache write now lives inside the coalesced fn (one `cache.set` per upstream fetch instead of N).
+- `FileCache` / `FileSessionCache.get` use lazy expiration (no write on read); opportunistic GC happens on the next `set()`.
+- `RedisCache.clear` uses `SCAN` + variadic `DEL` instead of the production-hazardous `KEYS *`.
+- `Disposables` registry plus `SIGTERM`/`SIGINT` handlers in serve/auth so Redis `quit()` and Playwright `close()` actually run on shutdown.
+- `findMyCourses` guarded by `MAX_PAGES` + cyclic-bookmark detection.
+- `AggregateAuthError` preserves every strategy failure with its kind so all chain failures are visible.
+- `D2lContentRepository.buildModule` fans out submodules via `Promise.all` with a depth cap.
+- `getUpcomingDueDates` uses `Promise.all` for per-course fetches.
+- Single ZIP extractor in `shared-kernel/zip` parses the central directory (the old byte-scan parser misread payloads containing `PK` signatures).
+- `whoami` receives the discovered LP version instead of a frozen default.
+- `User-Agent` now reads the version from `package.json` at startup.
+- `PlaywrightPageRenderer` reuses one browser singleton with per-call contexts; `dispose` closes it on shutdown.
+- DOCX paragraph regex switched to lazy match — the greedy form swallowed entire paragraphs for shapes without nested `w:r`/`w:t` children.
+
+#### Medium / Low
+- `redactor.ts`: TOTP regex bounded to [16-128] chars; JWT pattern added.
+- `AuditLogger` `SECRET_KEYS` expanded to 12 entries (case-insensitive lookup).
+- `AccessToken` rejects CRLF/NUL injection at construction time.
+- `D2lApiClient` hashes the auth fingerprint before building the cache key (raw secret no longer travels with the cache key object).
+- `findById` takes the O(1) `/orgstructure/` path with enrollment fallback for tenants that 403/404 student tokens against orgstructure.
+- `clear_cache` MCP tool exposes all 6 domain contexts (was `courses` only).
+- `CachedIdempotencyStore` no longer doubles the `idm:` prefix.
+- `RetryPolicy` honours server-supplied `Retry-After` even when it exceeds `maxMs` (with documented rationale).
+- `parseRetryAfterMs` validates negative values.
+
+### Changed
+
+- **Replaced unmaintained dependencies**:
+  - `keytar@7.9.0` (no releases since 2022, deprecated `prebuild-install` chain) → `@napi-rs/keyring@1.x` (modern napi-rs binding, no deprecated transitives). `KeychainCredentialStore` is now backend-agnostic and accepts a loader returning either a flat keytar-style module or an `AsyncEntry`-style napi-rs module. The legacy `keytarLoader` option name is honoured for backward compatibility.
+  - `npm-run-all@4.1.5` (mysticatea, no releases since 2018) → `npm-run-all2@8.0.4` (active fork).
+- **`contexts/courses/` restructured** to match the rest of the bounded contexts: `domain/` for entities and repositories, `application/` for use cases.
+- **`Paths` namespace** consolidates `~/.brightspace-mcp/*` paths so CLI and runtime stay in lock-step.
+- `DEFAULT_CONFIG.base_url` is now `https://placeholder.invalid` so misconfigurations fail at DNS time rather than silently pointing at `example.brightspace.com`.
+
+### Removed
+
+- `keytar` optional dependency (replaced — see above).
+- `InMemoryIdempotencyStore` from production wiring (kept only as a test seam).
+
+### Security
+
+- Defence-in-depth in token validation, secret redaction, file-lock-protected credential store, and CRLF-injection guards in HTTP headers.
+- `socket.yml` configuration silences the false-positive "obfuscated code" alert on `ioredis` (which ships minified — not obfuscated — bundles).
+
+### Verification
+
+443/443 tests, lint clean, typecheck clean,
+`dependency-cruiser` 0 violations (177 modules, 531 deps), build clean,
+coverage 85.42% statements / 71.42% branches. Net: -139 transitive
+packages installed after replacing `keytar` and `npm-run-all`.
+
 ## [0.12.2] - 2026-05-04
 
 ### Added
