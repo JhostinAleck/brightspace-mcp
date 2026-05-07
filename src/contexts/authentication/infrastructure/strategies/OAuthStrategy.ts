@@ -34,6 +34,7 @@ export interface OAuthStrategyOptions {
   makeState?: () => string;
   makeVerifier?: () => string;
   whoami: WhoAmI;
+  tokenTimeoutMs?: number;
 }
 
 interface TokenResponse {
@@ -68,6 +69,7 @@ export class OAuthStrategy implements AuthStrategy {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
+      signal: AbortSignal.timeout(this.opts.tokenTimeoutMs ?? 15_000),
     });
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');

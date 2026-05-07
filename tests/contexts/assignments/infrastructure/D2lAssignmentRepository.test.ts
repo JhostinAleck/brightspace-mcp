@@ -118,4 +118,64 @@ describe('D2lAssignmentRepository', () => {
     expect(result.files.length).toBeGreaterThanOrEqual(0); // scraping may or may not match
     expect(result.assignmentName).toBe('Essay 1');
   });
+
+  it('findFiles propagates non-404 errors from attachments endpoint instead of silently swallowing them', async () => {
+    // list endpoint — no embedded attachments so strategy B is triggered
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/')
+      .reply(200, [{ Id: 5001, Name: 'Essay 1', Attachments: [] }]);
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/5001/attachments/')
+      .reply(500, 'internal server error');
+
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lAssignmentRepository(client, { le: '1.91' });
+
+    // A 500 should NOT be silently swallowed — it should propagate
+    await expect(repo.findFiles(OrgUnitId.of(101), AssignmentId.of(5001))).rejects.toThrow();
+  });
+
+  it('findFiles falls back gracefully when attachments endpoint returns 404', async () => {
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/')
+      .reply(200, [{ Id: 5001, Name: 'Essay 1', Attachments: [] }]);
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/5001/attachments/')
+      .reply(404, 'not found');
+    nock(BASE)
+      .get(/folder_submit_files/)
+      .reply(200, '<html></html>');
+
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lAssignmentRepository(client, { le: '1.91' });
+
+    // 404 should fall through to HTML scraping, not throw
+    const result = await repo.findFiles(OrgUnitId.of(101), AssignmentId.of(5001));
+    expect(result.assignmentName).toBe('Essay 1');
+  });
+
+  it('extractZipEntry returns null for truncated ZIP instead of throwing from zlib', async () => {
+    // Build a malformed DOCX (ZIP) where compressedSize points past buffer end
+    const buf = Buffer.alloc(50);
+    buf.write('PK\x03\x04', 0, 'binary');
+    buf.writeUInt16LE(8, 8);              // compression = deflate
+    buf.writeUInt32LE(9999, 18);          // compressedSize way past buffer
+    buf.writeUInt16LE(4, 26);             // filenameLen = 4
+    buf.writeUInt16LE(0, 28);             // extraLen = 0
+    buf.write('test', 30, 'ascii');       // filename = "test"
+
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/')
+      .reply(200, [{ Id: 5001, Name: 'Essay 1', Attachments: [{ FileId: 'f1', FileName: 'hw.docx' }] }]);
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/5001/attachments/f1')
+      .reply(200, buf, { 'content-type': 'application/octet-stream' });
+
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lAssignmentRepository(client, { le: '1.91' });
+
+    // Should not throw — corrupted ZIP/DOCX should return graceful fallback
+    const result = await repo.findFiles(OrgUnitId.of(101), AssignmentId.of(5001));
+    expect(result.fileContents['hw.docx']).toMatch(/failed|DOCX/i);
+  });
 });

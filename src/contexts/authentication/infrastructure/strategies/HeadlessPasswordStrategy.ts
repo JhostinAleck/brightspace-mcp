@@ -20,6 +20,7 @@ export interface HeadlessPasswordStrategyOptions {
   mfaUrl?: string;
   whoami: WhoAmI;
   sessionTtlMs: number;
+  loginTimeoutMs?: number;
 }
 
 interface LoginResponseBody {
@@ -28,8 +29,11 @@ interface LoginResponseBody {
 }
 
 function extractSetCookies(response: Response): string {
-  const raw = response.headers.get('set-cookie');
-  return raw ?? '';
+  const headers = response.headers as unknown as Record<string, unknown>;
+  if (typeof headers['getSetCookie'] === 'function') {
+    return (headers['getSetCookie']() as string[]).join('; ');
+  }
+  return response.headers.get('set-cookie') ?? '';
 }
 
 export class HeadlessPasswordStrategy implements AuthStrategy {
@@ -51,6 +55,7 @@ export class HeadlessPasswordStrategy implements AuthStrategy {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ username, password }),
+      signal: AbortSignal.timeout(this.opts.loginTimeoutMs ?? 15_000),
     });
     if (!loginResp.ok) throw new Error(`Login failed: HTTP ${loginResp.status}`);
     const loginBody = (await loginResp.json()) as LoginResponseBody;

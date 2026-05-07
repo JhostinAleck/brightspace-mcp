@@ -48,4 +48,14 @@ describe('redactSecrets', () => {
     expect(out).toContain('Cookie: [REDACTED]');
     expect(out).toContain('Bearer [REDACTED]');
   });
+
+  it('redacts JWTs (eyJ... format)', () => {
+    const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+    expect(redactSecrets(`Authorization: Bearer ${jwt}`)).toContain('Bearer [REDACTED]');
+  });
+
+  it('redacts secrets embedded in URLs', () => {
+    const out = redactSecrets('https://user:s3cr3t_pass@school.brightspace.com/api');
+    expect(out).not.toContain('s3cr3t_pass');
+  });
 });

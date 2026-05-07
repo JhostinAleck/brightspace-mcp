@@ -84,4 +84,46 @@ describe('HeadlessPasswordStrategy', () => {
     });
     await expect(strat.authenticate({ profile: 'p', baseUrl: 'https://x.com' })).rejects.toThrow(/cookie|session/i);
   });
+
+  it('captures all cookies when server sends multiple Set-Cookie headers', async () => {
+    nock('https://x.com')
+      .post('/login')
+      .reply(200, { status: 'ok' }, {
+        'set-cookie': [
+          'd2lSessionVal=abc123; Path=/; HttpOnly',
+          'd2lSecureSessionVal=xyz789; Path=/; Secure; HttpOnly',
+        ],
+      });
+
+    const strat = new HeadlessPasswordStrategy({
+      loginUrl: 'https://x.com/login',
+      usernameRef: 'env:U',
+      passwordRef: 'env:P',
+      credentialStore: new FakeCredentialStore({ 'env:U': 'a', 'env:P': 'p' }),
+      mfa: new NoMfaStrategy(),
+      whoami,
+      sessionTtlMs: 60_000,
+    });
+    const sess = await strat.authenticate({ profile: 'p', baseUrl: 'https://x.com' });
+    expect(sess.token.reveal()).toContain('d2lSessionVal=abc123');
+    expect(sess.token.reveal()).toContain('d2lSecureSessionVal=xyz789');
+  });
+
+  it('aborts login fetch if server exceeds loginTimeoutMs', async () => {
+    nock('https://x.com').post('/login').delay(500).reply(200, { status: 'ok' });
+
+    const strat = new HeadlessPasswordStrategy({
+      loginUrl: 'https://x.com/login',
+      usernameRef: 'env:U',
+      passwordRef: 'env:P',
+      credentialStore: new FakeCredentialStore({ 'env:U': 'a', 'env:P': 'p' }),
+      mfa: new NoMfaStrategy(),
+      whoami,
+      sessionTtlMs: 60_000,
+      loginTimeoutMs: 50,
+    });
+    await expect(
+      strat.authenticate({ profile: 'p', baseUrl: 'https://x.com' }),
+    ).rejects.toThrow();
+  });
 });

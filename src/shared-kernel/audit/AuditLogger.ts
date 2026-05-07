@@ -13,16 +13,16 @@ export interface WriteAttempt {
 
 const SECRET_KEYS = new Set(['api_token', 'token', 'password', 'secret', 'token_ref']);
 
+function redactValue(v: unknown): unknown {
+  if (v === null || typeof v !== 'object') return v;
+  if (Array.isArray(v)) return v.map(redactValue);
+  return redactArgs(v as Record<string, unknown>);
+}
+
 function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args)) {
-    if (SECRET_KEYS.has(k)) {
-      out[k] = '[redacted]';
-    } else if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
-      out[k] = redactArgs(v as Record<string, unknown>);
-    } else {
-      out[k] = v;
-    }
+    out[k] = SECRET_KEYS.has(k) ? '[redacted]' : redactValue(v);
   }
   return out;
 }

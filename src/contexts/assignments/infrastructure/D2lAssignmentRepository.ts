@@ -76,9 +76,11 @@ function extractZipEntry(buf: Buffer, target: string): string | null {
     const compressedSize = buf.readUInt32LE(offset + 18);
     const filenameLen = buf.readUInt16LE(offset + 26);
     const extraLen = buf.readUInt16LE(offset + 28);
-    const filename = buf.slice(offset + 30, offset + 30 + filenameLen).toString('utf8');
     const dataStart = offset + 30 + filenameLen + extraLen;
+    if (dataStart > buf.length) { offset++; continue; }
+    const filename = buf.slice(offset + 30, offset + 30 + filenameLen).toString('utf8');
     if (filename === target) {
+      if (dataStart + compressedSize > buf.length) return null;
       const compressedData = buf.slice(dataStart, dataStart + compressedSize);
       if (compression === 0) return compressedData.toString('utf8');
       if (compression === 8) {
@@ -165,7 +167,9 @@ export class D2lAssignmentRepository implements AssignmentRepository {
             url: `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/attachments/${a.FileId}`,
           }));
         }
-      } catch { /* endpoint may not exist — continue to HTML scrape */ }
+      } catch (err) {
+        if (!(err instanceof D2lApiError && err.status === 404)) throw err;
+      }
     }
 
     // Strategy C: scrape the submit page — uses Playwright renderer if available (handles JS components)

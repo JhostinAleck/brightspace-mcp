@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { AccessToken } from '@/contexts/authentication/domain/AccessToken.js';
 import { InMemoryCache } from '@/shared-kernel/cache/InMemoryCache.js';
 import { HttpResponseCache } from './cache/HttpResponseCache.js';
@@ -96,7 +97,7 @@ export class D2lApiClient {
       if (cached !== null) return cached;
     }
 
-    const key = `GET ${path} ${authFingerprint}`;
+    const key = `GET ${path} ${createHash('sha256').update(authFingerprint).digest('hex').slice(0, 16)}`;
     const doFetch = (): Promise<T> =>
       this.withMiddlewares(() => this.fetchOnce<T>(path, token));
     const coalesced = this.coalescer ? this.coalescer.run(key, doFetch) : doFetch();

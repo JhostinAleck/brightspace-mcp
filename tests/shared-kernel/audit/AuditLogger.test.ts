@@ -52,4 +52,19 @@ describe('AuditLogger', () => {
     expect(entry.args.api_token).toBe('[redacted]');
     expect(entry.args.password).toBe('[redacted]');
   });
+
+  it('redacts secret-like fields inside arrays in args', () => {
+    const lines: string[] = [];
+    const logger = new AuditLogger({ logger: stubLogger(lines) });
+
+    logger.recordWriteAttempt({
+      correlationId: 'cid-1',
+      tool: 'submit_assignment',
+      args: { tokens: [{ api_token: 'supersecret', name: 'alice' }] },
+    });
+
+    const entry = JSON.parse(lines[0]!) as { args: { tokens: Array<Record<string, string>> } };
+    expect(entry.args.tokens[0]!.api_token).toBe('[redacted]');
+    expect(entry.args.tokens[0]!.name).toBe('alice');
+  });
 });
