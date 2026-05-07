@@ -271,7 +271,9 @@ async function buildStrategies(
         process.stderr.write(`Open this URL in your browser to authorize: ${url}\n`);
       },
       awaitCallback: async () => {
-        throw new Error('OAuth interactive callback listener is not implemented in Plan 2. Run the oauth callback helper separately.');
+        throw new Error(
+          'OAuth interactive callback listener is not bundled with the server. Run the dedicated oauth callback helper out-of-band.',
+        );
       },
       whoami,
     });

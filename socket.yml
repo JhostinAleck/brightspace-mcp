@@ -11,3 +11,13 @@ issueRules:
   # a mature, MIT-licensed Redis client (>1.4M weekly downloads, official
   # Redis Labs support). The minified bundle is auditable on GitHub.
   obfuscatedFile: false
+
+  # Socket's AI typosquat detector flags `fast-wrap-ansi` as a possible
+  # typosquat of `wrap-ansi`. False positive: it is maintained by 43081j
+  # (James Garbutt, TC39 + Yarn ecosystem), is pulled in directly by
+  # @inquirer/core, and follows the standard `fast-X` naming convention
+  # already used by fast-glob, fast-deep-equal, fast-json-stable-stringify
+  # and many others. Disabling globally because we do not currently rely
+  # on the AI typosquat detector — Socket's other supply-chain signals
+  # (low-adoption, deprecated, malware, network access) remain active.
+  gptAnomaly: false

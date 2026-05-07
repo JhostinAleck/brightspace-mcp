@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-05-07
+
+### Added
+
+- **Error-path test coverage** for the infrastructure layer:
+  - `D2lApiClient` metrics observation: cache hit/miss counters, status-code counters, network-error counter, circuit-open counter wired through the breaker's `onStateChange` hook.
+  - `CircuitBreaker.onStateChange` event emission: fires once per real transition, never on the implicit boot state.
+  - `HeadlessPasswordStrategy` error paths: missing `mfaUrl`, unknown server status, MFA submission failure, login HTTP failure, single-header set-cookie fallback.
+  - `D2lCourseRepository.findById` direct `/orgstructure/` lookup, course-shape filtering, 403/404 fallback to enrollments scan, error propagation for non-403/404 failures.
+  - `D2lContentRepository.findModules` depth-cap guard: pathological self-referential trees stop descending instead of blowing the stack.
+
+### Changed
+
+- `socket.yml` now silences Socket's `gptAnomaly` (AI typosquat detector) so the false positive on `fast-wrap-ansi` no longer drags the dependency score. Other Socket signals (low-adoption, deprecated, malware, network access, eval, shell access) remain active. Rationale documented inline in the file.
+- Removed the `Plan 2` reference from the OAuth-callback error message in `composition-root.ts` — replaced with a clearer description of the out-of-band callback helper requirement.
+
+### Verification
+
+462/462 tests pass, lint clean, typecheck clean, depcruise 0 violations
+(177 modules, 531 deps), coverage 86.88% statements / 74.24% branches.
+
 ## [0.13.0] - 2026-05-07
 
 ### Fixed (comprehensive audit — 51 issues across all severity levels)
