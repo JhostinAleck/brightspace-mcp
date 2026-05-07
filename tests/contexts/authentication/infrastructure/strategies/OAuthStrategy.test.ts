@@ -64,6 +64,28 @@ describe('OAuthStrategy', () => {
     await expect(strat.authenticate({ profile: 'p', baseUrl: 'https://x.com' })).rejects.toThrow(/state/i);
   });
 
+  it('aborts token endpoint fetch if server exceeds tokenTimeoutMs', async () => {
+    nock('https://x.com').post('/oauth/token').delay(500).reply(200, { access_token: 'a', expires_in: 600 });
+
+    const strat = new OAuthStrategy({
+      authorizeUrl: 'https://x.com/oauth/authorize',
+      tokenUrl: 'https://x.com/oauth/token',
+      clientId: 'client-1',
+      clientSecretRef: null,
+      redirectUri: 'http://localhost:6789/callback',
+      scopes: ['core:*:*'],
+      credentialStore: new FakeCredentialStore({}),
+      refreshTokenRef: 'file:creds/refresh-p',
+      browserLauncher: async () => {},
+      awaitCallback: async () => ({ code: 'c', state: 's' }),
+      makeState: () => 's',
+      makeVerifier: () => 'v'.repeat(64),
+      whoami,
+      tokenTimeoutMs: 50,
+    });
+    await expect(strat.authenticate({ profile: 'p', baseUrl: 'https://x.com' })).rejects.toThrow();
+  });
+
   it('refresh() exchanges the stored refresh token for a new access token', async () => {
     nock('https://x.com')
       .post('/oauth/token', (body) =>

@@ -23,6 +23,9 @@ const PATTERNS: Array<[RegExp, string]> = [
   // Catches the common shape {"Cookie":"sessionid=abc"} that the header-line
   // pattern above misses because the colon-quote separator is non-standard.
   [/"(?:Cookie|Set-Cookie|Authorization)"\s*:\s*"[^"]*"/gi, '"Cookie":"[REDACTED]"'],
+
+  // Credentials embedded in URLs: https://user:password@host
+  [/([a-z][a-z0-9+\-.]*:\/\/[^:/?#\s]+):[^@/?#\s]+@/gi, '$1:[REDACTED]@'],
 ];
 
 export function redactSecrets(input: string): string {

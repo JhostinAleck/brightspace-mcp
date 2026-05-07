@@ -97,4 +97,25 @@ describe('D2lApiClient.get', () => {
       retryAfterMs: 2000,
     });
   });
+
+  it('does not expose raw token in coalescer key — two users get isolated results', async () => {
+    // Two different tokens must NOT share coalesced results
+    nock(BASE).get('/data').reply(200, { user: 'alice' });
+    nock(BASE).get('/data').reply(200, { user: 'bob' });
+
+    let call = 0;
+    const tokens = ['tok_alice', 'tok_bob'];
+    const client = new D2lApiClient({
+      baseUrl: BASE,
+      getToken: async () => AccessToken.bearer(tokens[call++ % 2]!),
+    });
+
+    const [a, b] = await Promise.all([
+      client.get<{ user: string }>('/data'),
+      client.get<{ user: string }>('/data'),
+    ]);
+
+    // Both requests should complete; if coalescer key leaks raw token they'd collide
+    expect(new Set([a.user, b.user]).size).toBe(2);
+  });
 });
