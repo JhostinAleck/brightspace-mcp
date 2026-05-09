@@ -135,7 +135,7 @@ function xlsxParseSheet(xml: string, shared: string[]): string[][] {
       const cellType = tMatch ? tMatch[1] : 'n';
       const vMatch = /<v>([^<]*)<\/v>/.exec(body);
       const rawVal = vMatch ? vMatch[1] : '';
-      let value = '';
+      let value: string;
       if (cellType === 's') {
         value = shared[parseInt(rawVal ?? '0', 10)] ?? '';
       } else if (cellType === 'inlineStr') {
