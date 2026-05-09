@@ -77,6 +77,18 @@ describe('TotpMfaStrategy', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
+  it('generates code for 80-bit (16 char base32) secrets used by many services', async () => {
+    vi.setSystemTime(new Date(59_000));
+    const strategy = new TotpMfaStrategy({
+      secret: new SecretValue('JBSWY3DPEHPK3PXP'),
+      digits: 6,
+      period: 30,
+      algorithm: 'SHA1',
+    });
+    const resp = await strategy.solve({ kind: 'totp_code' });
+    expect(resp.code).toMatch(/^\d{6}$/);
+  });
+
   it('rejects unsupported algorithm at construction (defence-in-depth)', () => {
     expect(() => new TotpMfaStrategy({
       secret: new SecretValue(RFC_BASE32),
