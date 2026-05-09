@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-05-09
+
+### Added
+
+- **`get_topic_file` — xlsx content extraction**: `.xlsx` files now return their cell data as tab-separated rows per sheet (e.g. `=== Sheet1 ===\nNombre\tNota\nAna\t95.5`) instead of `[Excel — N bytes]`. Implemented natively via the existing ZIP parser — no new dependencies.
+- **`get_topic_file` — `save_to` parameter**: optional path (`~/...`, `%USERPROFILE%\...`, or absolute) to save the raw file binary to disk. The extracted text is still returned alongside a `[Saved to: /abs/path]` confirmation. Works on macOS, Linux, and Windows.
+
+### Fixed
+
+- **TOTP with 80-bit secrets**: replaced `otplib` class-based TOTP with a native `node:createHmac` implementation (RFC 6238/4226). `otplib` v13 enforces a 128-bit minimum that rejects real-world 16-char base32 secrets issued by many services. The native implementation has no length restriction and passes all RFC Appendix B test vectors.
+- **`fast-uri` CVEs**: updated transitive dependency to patch `GHSA-q3j6-qgpj-74h6` (path traversal) and `GHSA-v39h-62p7-jpjc` (host confusion). `npm audit` reports 0 vulnerabilities.
+
+### Removed
+
+- **`otplib`** from `optionalDependencies` — replaced by the native TOTP implementation above.
+
+### Verification
+
+471/471 tests pass, lint clean, typecheck clean, depcruise 0 violations, coverage 87.29% statements / 74.02% branches, `npm audit` 0 vulnerabilities.
+
 ## [0.14.0] - 2026-05-07
 
 ### Added
