@@ -110,5 +110,9 @@ export type GetAssignmentFilesInputSchema = z.infer<typeof getAssignmentFilesSch
 export const getTopicFileSchema = z.object({
   course_id: z.number().int().positive(),
   topic_id: z.number().int().positive(),
+  save_to: z.string().optional().describe(
+    'Optional absolute or ~/... path where the raw file will be saved on disk (e.g. ~/Downloads/file.xlsx). ' +
+    'When provided the binary is written to that path and the extracted text is still returned.',
+  ),
 }).strict();
 export type GetTopicFileInputSchema = z.infer<typeof getTopicFileSchema>;

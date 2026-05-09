@@ -1,3 +1,6 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, resolve } from 'node:path';
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
 import { getTopicFileSchema } from '@/mcp/schemas.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
@@ -40,10 +43,24 @@ function detectContentType(buf: Buffer): string {
   return 'application/octet-stream';
 }
 
+function saveToDisk(buf: Buffer, rawPath: string): string {
+  const expanded = rawPath.startsWith('~')
+    ? rawPath.replace(/^~/, homedir())
+    : rawPath;
+  const abs = resolve(expanded);
+  mkdirSync(dirname(abs), { recursive: true });
+  writeFileSync(abs, buf);
+  return abs;
+}
+
 export async function handleGetTopicFile(deps: GetTopicFileDeps, rawInput: unknown) {
   const input = getTopicFileSchema.parse(rawInput);
   const courseId = OrgUnitId.of(input.course_id);
   const buf = await deps.contentRepo.findTopicFile(courseId, input.topic_id);
+
+  const savedNote = input.save_to
+    ? `\n\n[Saved to: ${saveToDisk(buf, input.save_to)}]`
+    : '';
 
   const contentType = detectContentType(buf);
 
@@ -54,17 +71,17 @@ export async function handleGetTopicFile(deps: GetTopicFileDeps, rawInput: unkno
       const result = await parser.getText();
       await parser.destroy();
       const text = result.text.replace(/\s+/g, ' ').trim().slice(0, 12000);
-      if (text) return { content: [{ type: 'text' as const, text }] };
+      if (text) return { content: [{ type: 'text' as const, text: text + savedNote }] };
     } catch { /* fall through to size report */ }
-    return { content: [{ type: 'text' as const, text: `[PDF — ${buf.length} bytes, text extraction failed]` }] };
+    return { content: [{ type: 'text' as const, text: `[PDF — ${buf.length} bytes, text extraction failed]${savedNote}` }] };
   }
 
   // For unrecognized binary (D2L internal format), fall back to Playwright-rendered view URL
   if (contentType === 'application/octet-stream') {
     const rendered = await deps.contentRepo.findTopicRenderedText(courseId, input.topic_id);
-    if (rendered) return { content: [{ type: 'text' as const, text: rendered }] };
+    if (rendered) return { content: [{ type: 'text' as const, text: rendered + savedNote }] };
   }
 
   const text = bufToText(buf, contentType);
-  return { content: [{ type: 'text' as const, text }] };
+  return { content: [{ type: 'text' as const, text: text + savedNote }] };
 }

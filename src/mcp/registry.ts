@@ -282,7 +282,8 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       description:
         'Download and read a content topic file from a Brightspace course.\n' +
         'Use get_course_content first to find the topic id (shown as id=XXXX next to each topic).\n' +
-        'Use when the user wants to read a specific file posted in the course content (PDFs, DOCX, etc.).',
+        'Use when the user wants to read a specific file posted in the course content (PDFs, DOCX, XLSX, etc.).\n' +
+        'Pass save_to with an absolute or ~/... path to also save the raw file to disk (e.g. ~/Downloads/file.xlsx).',
       inputSchema: getTopicFileSchema.shape,
     },
     async (input: unknown) => handleGetTopicFile(deps, input),
