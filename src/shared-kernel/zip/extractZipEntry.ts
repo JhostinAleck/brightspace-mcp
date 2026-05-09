@@ -79,6 +79,117 @@ export function extractZipEntry(buf: Buffer, target: string): string | null {
   return null;
 }
 
+// ── XLSX extraction ─────────────────────────────────────────────────────────
+
+function xlsxDecodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+}
+
+function xlsxParseSharedStrings(xml: string): string[] {
+  const strings: string[] = [];
+  // Each <si> element is one shared string (may contain <t> or <r><t>)
+  const siRe = /<si[^>]*>([\s\S]*?)<\/si>/g;
+  const tRe = /<t[^>]*>([^<]*)<\/t>/g;
+  let si: RegExpExecArray | null;
+  while ((si = siRe.exec(xml)) !== null) {
+    const body = si[1] ?? '';
+    let text = '';
+    let t: RegExpExecArray | null;
+    tRe.lastIndex = 0;
+    while ((t = tRe.exec(body)) !== null) text += t[1] ?? '';
+    strings.push(xlsxDecodeEntities(text));
+  }
+  return strings;
+}
+
+function xlsxColToIndex(col: string): number {
+  let n = 0;
+  for (const ch of col.toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n - 1;
+}
+
+function xlsxParseSheet(xml: string, shared: string[]): string[][] {
+  const rows: string[][] = [];
+  const rowRe = /<row[^>]*>([\s\S]*?)<\/row>/g;
+  const cellRe = /<c r="([A-Z]+)(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
+  let row: RegExpExecArray | null;
+  while ((row = rowRe.exec(xml)) !== null) {
+    const rowIdx = parseInt((/<row[^>]*r="(\d+)"/.exec(`<row ${row[0]}`) ?? ['', '0'])[1], 10) - 1;
+    if (rowIdx < 0) continue;
+    while (rows.length <= rowIdx) rows.push([]);
+    const rowData = rows[rowIdx]!;
+    let cell: RegExpExecArray | null;
+    cellRe.lastIndex = 0;
+    while ((cell = cellRe.exec(row[1] ?? '')) !== null) {
+      const colIdx = xlsxColToIndex(cell[1] ?? '');
+      const attrs = cell[3] ?? '';
+      const body = cell[4] ?? '';
+      const tMatch = /t="([^"]+)"/.exec(attrs);
+      const cellType = tMatch ? tMatch[1] : 'n';
+      const vMatch = /<v>([^<]*)<\/v>/.exec(body);
+      const rawVal = vMatch ? vMatch[1] : '';
+      let value = '';
+      if (cellType === 's') {
+        value = shared[parseInt(rawVal ?? '0', 10)] ?? '';
+      } else if (cellType === 'inlineStr') {
+        const tInline = /<t[^>]*>([^<]*)<\/t>/.exec(body);
+        value = xlsxDecodeEntities(tInline ? (tInline[1] ?? '') : '');
+      } else if (cellType === 'b') {
+        value = rawVal === '1' ? 'TRUE' : 'FALSE';
+      } else {
+        value = xlsxDecodeEntities(rawVal ?? '');
+      }
+      while (rowData.length <= colIdx) rowData.push('');
+      rowData[colIdx] = value;
+    }
+  }
+  return rows;
+}
+
+function xlsxSheetNames(workbookXml: string): string[] {
+  const names: string[] = [];
+  const re = /<sheet[^>]+name="([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(workbookXml)) !== null) names.push(m[1] ?? '');
+  return names;
+}
+
+export function extractXlsxText(buf: Buffer): string {
+  const sharedXml = extractZipEntry(buf, 'xl/sharedStrings.xml');
+  const shared = sharedXml ? xlsxParseSharedStrings(sharedXml) : [];
+
+  const workbookXml = extractZipEntry(buf, 'xl/workbook.xml');
+  const sheetNames = workbookXml ? xlsxSheetNames(workbookXml) : [];
+
+  const parts: string[] = [];
+  let sheetIndex = 1;
+  while (true) {
+    const sheetXml = extractZipEntry(buf, `xl/worksheets/sheet${sheetIndex}.xml`);
+    if (!sheetXml) break;
+    const name = sheetNames[sheetIndex - 1] ?? `Sheet${sheetIndex}`;
+    const grid = xlsxParseSheet(sheetXml, shared);
+    const text = grid
+      .filter((r) => r.some((c) => c !== ''))
+      .map((r) => r.join('\t'))
+      .join('\n');
+    if (text) parts.push(`=== ${name} ===\n${text}`);
+    sheetIndex++;
+    if (sheetIndex > 20) break; // safety cap
+  }
+
+  if (parts.length === 0) return '[Excel: no readable content found]';
+  return parts.join('\n\n').slice(0, 12_000);
+}
+
+// ── DOCX extraction ──────────────────────────────────────────────────────────
+
 // Note: paragraph regex uses lazy `*?` because real DOCX paragraphs may or
 // may not have nested children. A greedy match would swallow the entire
 // paragraph (including its text) on shapes like `<w:p>plain</w:p>`.

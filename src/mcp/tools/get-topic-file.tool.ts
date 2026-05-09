@@ -1,7 +1,7 @@
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
 import { getTopicFileSchema } from '@/mcp/schemas.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
-import { extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
+import { extractDocxText, extractXlsxText } from '@/shared-kernel/zip/extractZipEntry.js';
 import { PDFParse } from 'pdf-parse';
 
 export interface GetTopicFileDeps { contentRepo: ContentRepository; }
@@ -11,7 +11,7 @@ function bufToText(buf: Buffer, contentType: string): string {
   if (contentType.includes('wordprocessingml') || contentType.includes('docx')) {
     return extractDocxText(buf);
   }
-  if (contentType.includes('spreadsheetml')) return `[Excel — ${buf.length} bytes]`;
+  if (contentType.includes('spreadsheetml')) return extractXlsxText(buf);
   if (contentType.includes('presentationml')) return `[PowerPoint — ${buf.length} bytes]`;
   if (contentType.includes('zip')) return `[ZIP — ${buf.length} bytes]`;
   if (contentType.includes('text') || contentType.includes('html')) return buf.toString('utf8').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 5000);
