@@ -43,11 +43,16 @@ function detectContentType(buf: Buffer): string {
   return 'application/octet-stream';
 }
 
+function expandPath(rawPath: string): string {
+  // Unix: ~/... → /home/user/...
+  let p = rawPath.startsWith('~') ? rawPath.replace(/^~/, homedir()) : rawPath;
+  // Windows: %USERPROFILE%\... or any %VAR% token
+  p = p.replace(/%([^%]+)%/g, (_, name: string) => process.env[name] ?? `%${name}%`);
+  return p;
+}
+
 function saveToDisk(buf: Buffer, rawPath: string): string {
-  const expanded = rawPath.startsWith('~')
-    ? rawPath.replace(/^~/, homedir())
-    : rawPath;
-  const abs = resolve(expanded);
+  const abs = resolve(expandPath(rawPath));
   mkdirSync(dirname(abs), { recursive: true });
   writeFileSync(abs, buf);
   return abs;
