@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deflateRawSync, gzipSync } from 'node:zlib';
 
-import { extractZipEntry, extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
+import { extractZipEntry, extractDocxText, extractXlsxText } from '@/shared-kernel/zip/extractZipEntry.js';
 
 const SIG_LFH = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 const SIG_CDH = Buffer.from([0x50, 0x4b, 0x01, 0x02]);
@@ -175,6 +175,16 @@ describe('extractDocxText', () => {
     expect(out).toContain('C<D');
   });
 
+  it('handles w:br line breaks and collapses excessive blank lines', () => {
+    const xml = '<w:p><w:r><w:t>A</w:t></w:r></w:p><w:p/><w:p/><w:p><w:r><w:t>B</w:t></w:r></w:p>';
+    const buf = buildZip([
+      { filename: 'word/document.xml', data: Buffer.from(xml), compression: 8 },
+    ]);
+    const out = extractDocxText(buf);
+    expect(out).toContain('A');
+    expect(out).toContain('B');
+  });
+
   it('returns null for compression=8 entries with corrupt deflate payload', () => {
     // Stored uncorrupt + manual deflate body that is not valid raw deflate.
     const fakeDeflateBuf = buildZip([
@@ -197,5 +207,141 @@ describe('extractDocxText', () => {
     const cdOffset = buf.readUInt32LE(buf.length - 22 + 16);
     buf.writeUInt16LE(8, cdOffset + 10);
     expect(extractDocxText(buf)).toBe('[DOCX: could not read content]');
+  });
+});
+
+// ── helpers for xlsx tests ────────────────────────────────────────────────────
+
+function buildXlsx(opts: {
+  sharedStrings?: string;
+  workbook?: string;
+  sheets?: Record<string, string>; // e.g. { 'xl/worksheets/sheet1.xml': '...' }
+}): Buffer {
+  const entries: Entry[] = [];
+  if (opts.sharedStrings !== undefined) {
+    entries.push({ filename: 'xl/sharedStrings.xml', data: Buffer.from(opts.sharedStrings), compression: 8 });
+  }
+  if (opts.workbook !== undefined) {
+    entries.push({ filename: 'xl/workbook.xml', data: Buffer.from(opts.workbook), compression: 8 });
+  }
+  for (const [name, xml] of Object.entries(opts.sheets ?? {})) {
+    entries.push({ filename: name, data: Buffer.from(xml), compression: 8 });
+  }
+  return buildZip(entries);
+}
+
+const WORKBOOK_1 = `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheets><sheet name="Datos" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`;
+
+const SHARED = `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si><t>Nombre</t></si>
+  <si><t>Nota</t></si>
+  <si><t>Ana &amp; Carlos</t></si>
+</sst>`;
+
+const SHEET1 = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c r="A1" t="s"><v>0</v></c>
+      <c r="B1" t="s"><v>1</v></c>
+    </row>
+    <row r="2">
+      <c r="A2" t="s"><v>2</v></c>
+      <c r="B2"><v>95.5</v></c>
+    </row>
+  </sheetData>
+</worksheet>`;
+
+describe('extractXlsxText', () => {
+  it('extracts shared-string and numeric cells as tab-separated rows', () => {
+    const buf = buildXlsx({
+      sharedStrings: SHARED,
+      workbook: WORKBOOK_1,
+      sheets: { 'xl/worksheets/sheet1.xml': SHEET1 },
+    });
+    const out = extractXlsxText(buf);
+    expect(out).toContain('Nombre\tNota');
+    expect(out).toContain('95.5');
+    expect(out).toContain('=== Datos ===');
+  });
+
+  it('decodes XML entities in shared strings', () => {
+    const buf = buildXlsx({
+      sharedStrings: SHARED,
+      workbook: WORKBOOK_1,
+      sheets: { 'xl/worksheets/sheet1.xml': SHEET1 },
+    });
+    expect(extractXlsxText(buf)).toContain('Ana & Carlos');
+  });
+
+  it('handles boolean cells (TRUE / FALSE)', () => {
+    const sheet = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheetData>
+        <row r="1">
+          <c r="A1" t="b"><v>1</v></c>
+          <c r="B1" t="b"><v>0</v></c>
+        </row>
+      </sheetData>
+    </worksheet>`;
+    const buf = buildXlsx({ sheets: { 'xl/worksheets/sheet1.xml': sheet } });
+    const out = extractXlsxText(buf);
+    expect(out).toContain('TRUE');
+    expect(out).toContain('FALSE');
+  });
+
+  it('handles inlineStr cells', () => {
+    const sheet = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheetData>
+        <row r="1">
+          <c r="A1" t="inlineStr"><is><t>Hello inline</t></is></c>
+        </row>
+      </sheetData>
+    </worksheet>`;
+    const buf = buildXlsx({ sheets: { 'xl/worksheets/sheet1.xml': sheet } });
+    expect(extractXlsxText(buf)).toContain('Hello inline');
+  });
+
+  it('reads multiple sheets and labels each with its name', () => {
+    const workbook = `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheets>
+        <sheet name="Hoja1" sheetId="1" r:id="rId1"/>
+        <sheet name="Hoja2" sheetId="2" r:id="rId2"/>
+      </sheets>
+    </workbook>`;
+    const sheet2 = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheetData>
+        <row r="1"><c r="A1"><v>42</v></c></row>
+      </sheetData>
+    </worksheet>`;
+    const buf = buildXlsx({
+      workbook,
+      sheets: {
+        'xl/worksheets/sheet1.xml': SHEET1,
+        'xl/worksheets/sheet2.xml': sheet2,
+      },
+    });
+    const out = extractXlsxText(buf);
+    expect(out).toContain('=== Hoja1 ===');
+    expect(out).toContain('=== Hoja2 ===');
+    expect(out).toContain('42');
+  });
+
+  it('returns placeholder when no sheets exist', () => {
+    const buf = buildXlsx({});
+    expect(extractXlsxText(buf)).toBe('[Excel: no readable content found]');
+  });
+
+  it('skips empty rows and does not include them in output', () => {
+    const sheet = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheetData>
+        <row r="1"><c r="A1"><v>X</v></c></row>
+        <row r="2"></row>
+        <row r="3"><c r="A3"><v>Y</v></c></row>
+      </sheetData>
+    </worksheet>`;
+    const buf = buildXlsx({ sheets: { 'xl/worksheets/sheet1.xml': sheet } });
+    const lines = extractXlsxText(buf).split('\n').filter((l) => l.trim() && !l.startsWith('==='));
+    expect(lines).toHaveLength(2);
   });
 });
