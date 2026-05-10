@@ -4,7 +4,16 @@ import type {
   SubmitInput,
   SubmitResult,
 } from '@/contexts/assignments/domain/AssignmentRepository.js';
-import { Assignment } from '@/contexts/assignments/domain/Assignment.js';
+import { Assignment, type SubmissionMode } from '@/contexts/assignments/domain/Assignment.js';
+
+function mapSubmissionType(id: number | undefined): SubmissionMode {
+  // D2L Valence enum: see https://docs.valence.desire2learn.com/res/dropbox.html#term-SUBMISSION_T
+  if (id === 0) return 'replace_previous';
+  if (id === 1) return 'append';
+  if (id === 2) return 'only_one';
+  return 'unknown';
+}
+
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
@@ -50,6 +59,14 @@ interface FolderDto {
   DueDate?: string | null;
   Submissions?: SubmissionDto[] | null;
   Attachments?: AttachmentDto[] | null;
+  /**
+   * D2L SubmissionType enum:
+   *   0 OnFileSubmissionPerUser  → only one submission, new replaces old
+   *   1 AllSubmissionsKept       → each submission appended to history
+   *   2 OnlyOneSubmissionAllowed → cannot resubmit at all
+   *   3 ObservedInPerson, 4 TextSubmission (not file-based)
+   */
+  SubmissionType?: { Id?: number } | null;
 }
 
 interface FeedbackDto {
@@ -295,6 +312,7 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       instructions: folder.CustomInstructions?.Html ?? null,
       dueDate: due,
       submissions,
+      submissionMode: mapSubmissionType(folder.SubmissionType?.Id),
     });
   }
 

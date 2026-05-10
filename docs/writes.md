@@ -133,6 +133,8 @@ sequenceDiagram
 
 **Size limit.** `submit_assignment` caps file uploads at 50 MB. Larger files are rejected before encoding.
 
+**Resubmit guard.** `submit_assignment` looks up the assignment's `SubmissionType` before submitting. If the assignment is set to *replace previous* (D2L type 0) or *only one allowed* (type 2) AND a submission already exists, the tool refuses with a clear error including the existing submission timestamp. Pass `replace: true` to confirm and proceed. Append-mode assignments (type 1) submit without checks.
+
 ## `submit_assignment` example
 
 You can pass the file two ways. **`file_path` is preferred** for anything >1 MB — the server reads from disk locally, avoiding the ~33% token cost of base64-encoding through the LLM.

@@ -131,6 +131,126 @@ describe('submitAssignmentSchema — file_path', () => {
   });
 });
 
+describe('handleSubmitAssignment — resubmit guard', () => {
+  it('refuses second submission when mode=replace_previous and submission exists', async () => {
+    const { Assignment } = await import('@/contexts/assignments/domain/Assignment.js');
+    const { AssignmentId } = await import('@/contexts/assignments/domain/AssignmentId.js');
+    const { DueDate } = await import('@/contexts/assignments/domain/DueDate.js');
+    const { Submission } = await import('@/contexts/assignments/domain/Submission.js');
+    const { UserId } = await import('@/shared-kernel/types/UserId.js');
+    const repo: AssignmentRepository = {
+      findByCourse: async () => [
+        new Assignment({
+          id: AssignmentId.of(42),
+          courseOrgUnitId: 100,
+          name: 'Lab 1',
+          instructions: null,
+          dueDate: DueDate.unspecified(),
+          submissions: [new Submission({
+            submittedAt: new Date('2026-04-23T08:00:00Z'),
+            submittedBy: UserId.of(1),
+            comments: null,
+          })],
+          submissionMode: 'replace_previous',
+        }),
+      ],
+      findFeedback: async () => null,
+      findFiles: async () => { throw new Error('not used'); },
+      findFileBinary: async () => Buffer.from(''),
+      submit: async () => ({ submissionId: 's', submittedAt: new Date() }),
+    };
+    const deps = {
+      assignmentRepo: repo,
+      idempotencyStore: new InMemoryIdempotencyStore(),
+      auditLogger: new AuditLogger({ logger: { warn: () => undefined, error: () => undefined } as never }),
+      writesGate: new WritesGate({ configEnabled: true, cliFlag: true }),
+    };
+    await expect(
+      handleSubmitAssignment({
+        course_id: '100', folder_id: '42',
+        filename: 'new.zip',
+        content_base64: Buffer.from('x').toString('base64'),
+        idempotency_key: 'guard-test-12345',
+      } as SubmitAssignmentParams, deps),
+    ).rejects.toThrow(/already has 1 submission/);
+  });
+
+  it('allows second submission when mode=append (history kept)', async () => {
+    const { Assignment } = await import('@/contexts/assignments/domain/Assignment.js');
+    const { AssignmentId } = await import('@/contexts/assignments/domain/AssignmentId.js');
+    const { DueDate } = await import('@/contexts/assignments/domain/DueDate.js');
+    const { Submission } = await import('@/contexts/assignments/domain/Submission.js');
+    const { UserId } = await import('@/shared-kernel/types/UserId.js');
+    const repo: AssignmentRepository = {
+      findByCourse: async () => [
+        new Assignment({
+          id: AssignmentId.of(42), courseOrgUnitId: 100, name: 'Lab',
+          instructions: null, dueDate: DueDate.unspecified(),
+          submissions: [new Submission({
+            submittedAt: new Date(), submittedBy: UserId.of(1), comments: null,
+          })],
+          submissionMode: 'append',
+        }),
+      ],
+      findFeedback: async () => null,
+      findFiles: async () => { throw new Error('not used'); },
+      findFileBinary: async () => Buffer.from(''),
+      submit: async () => ({ submissionId: 'sub-ok', submittedAt: new Date() }),
+    };
+    const deps = {
+      assignmentRepo: repo,
+      idempotencyStore: new InMemoryIdempotencyStore(),
+      auditLogger: new AuditLogger({ logger: { warn: () => undefined, error: () => undefined } as never }),
+      writesGate: new WritesGate({ configEnabled: true, cliFlag: true }),
+    };
+    const result = await handleSubmitAssignment({
+      course_id: '100', folder_id: '42',
+      filename: 'x.zip',
+      content_base64: Buffer.from('x').toString('base64'),
+      idempotency_key: 'append-mode-12345',
+    } as SubmitAssignmentParams, deps);
+    expect(result.content[0]?.text).toContain('sub-ok');
+  });
+
+  it('replace=true bypasses the guard even when mode=replace_previous', async () => {
+    const { Assignment } = await import('@/contexts/assignments/domain/Assignment.js');
+    const { AssignmentId } = await import('@/contexts/assignments/domain/AssignmentId.js');
+    const { DueDate } = await import('@/contexts/assignments/domain/DueDate.js');
+    const { Submission } = await import('@/contexts/assignments/domain/Submission.js');
+    const { UserId } = await import('@/shared-kernel/types/UserId.js');
+    const repo: AssignmentRepository = {
+      findByCourse: async () => [
+        new Assignment({
+          id: AssignmentId.of(42), courseOrgUnitId: 100, name: 'Lab',
+          instructions: null, dueDate: DueDate.unspecified(),
+          submissions: [new Submission({
+            submittedAt: new Date(), submittedBy: UserId.of(1), comments: null,
+          })],
+          submissionMode: 'replace_previous',
+        }),
+      ],
+      findFeedback: async () => null,
+      findFiles: async () => { throw new Error('not used'); },
+      findFileBinary: async () => Buffer.from(''),
+      submit: async () => ({ submissionId: 'forced', submittedAt: new Date() }),
+    };
+    const deps = {
+      assignmentRepo: repo,
+      idempotencyStore: new InMemoryIdempotencyStore(),
+      auditLogger: new AuditLogger({ logger: { warn: () => undefined, error: () => undefined } as never }),
+      writesGate: new WritesGate({ configEnabled: true, cliFlag: true }),
+    };
+    const result = await handleSubmitAssignment({
+      course_id: '100', folder_id: '42',
+      filename: 'x.zip',
+      content_base64: Buffer.from('x').toString('base64'),
+      idempotency_key: 'force-replace-12345',
+      replace: true,
+    } as SubmitAssignmentParams, deps);
+    expect(result.content[0]?.text).toContain('forced');
+  });
+});
+
 describe('handleSubmitAssignment — file_path branch', () => {
   let tmpDir: string;
 

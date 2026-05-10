@@ -8,7 +8,9 @@ import type { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
 import type { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import { submitAssignment } from '@/contexts/assignments/application/submitAssignment.js';
 import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
+import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { expandPath } from '@/shared-kernel/path/expandPath.js';
+import { createOrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 
 // 50 MB binary cap → ceil(50_000_000 / 3) * 4 ≈ 66_666_668 base64 chars.
 // Hard-cap ASCII length so a malicious caller cannot OOM the process before
@@ -35,6 +37,12 @@ export const submitAssignmentSchema = z
     file_path: z.string().min(1).optional(),
     mime_type: z.string().optional(),
     idempotency_key: z.string().min(8).max(128),
+    /**
+     * Allow the submission even when the assignment has an existing
+     * submission and would replace or reject. Defaults to false (we error
+     * with a clear message so the caller can confirm before overwriting).
+     */
+    replace: z.boolean().default(false),
   })
   .superRefine((data, ctx) => {
     const hasB64 = data.content_base64 !== undefined;
@@ -125,6 +133,33 @@ export async function handleSubmitAssignment(
       idempotency_key: params.idempotency_key,
     },
   });
+
+  // Pre-submit safety check: if the assignment is "only_one" or
+  // "replace_previous" AND there's already a submission, refuse unless
+  // the caller explicitly opted in via `replace: true`. This avoids
+  // accidental overwrites of group work.
+  if (!params.replace) {
+    try {
+      const courseId = createOrgUnitId(params.course_id);
+      const folderId = Number(params.folder_id);
+      const assignments = await deps.assignmentRepo.findByCourse(courseId);
+      const target = assignments.find((a) => AssignmentId.toNumber(a.id) === folderId);
+      if (target && target.hasSubmission && target.submissionMode !== 'append') {
+        const lastAt = target.submissions[target.submissions.length - 1]!.submittedAt.toISOString();
+        const verb = target.submissionMode === 'only_one' ? 'rejected by Brightspace' : 'replaced';
+        throw new Error(
+          `"${target.name}" already has ${target.submissions.length} submission(s) ` +
+          `(latest at ${lastAt}). With submissionMode=${target.submissionMode}, this ` +
+          `submission would be ${verb}. Pass \`replace: true\` to confirm.`,
+        );
+      }
+    } catch (err) {
+      // Re-throw the explicit guard error; swallow lookup failures (a
+      // network blip shouldn't block the submission — D2L itself will
+      // enforce its policy).
+      if (err instanceof Error && err.message.startsWith('"')) throw err;
+    }
+  }
 
   if (deps.writesGate.isDryRun) {
     return {
