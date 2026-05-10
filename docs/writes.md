@@ -146,7 +146,7 @@ You can pass the file two ways. **`file_path` is preferred** for anything >1 MB 
   "folder_id": "405350",
   "file_path": "~/Downloads/Lab4-final.zip",   // ~/, %VAR%, or absolute
   "mime_type": "application/zip",
-  "idempotency_key": "lab4-grp9-2026-05-09-attempt-1"
+  "idempotency_key": "idem-2026-05-09-attempt-1"
 }
 ```
 
@@ -158,7 +158,7 @@ You can pass the file two ways. **`file_path` is preferred** for anything >1 MB 
   "filename": "Lab4-final.zip",
   "content_base64": "UEsDBBQA...",
   "mime_type": "application/zip",
-  "idempotency_key": "lab4-grp9-2026-05-09-attempt-1"
+  "idempotency_key": "idem-2026-05-09-attempt-1"
 }
 ```
 
@@ -180,7 +180,7 @@ Replays of the same `idempotency_key` return the cached `submissionId` without r
   "topic_id": "112233",
   "parent_post_id": "445566",        // null for a top-level reply
   "html": "<p>Great point — see RFC 4271 §6.</p>",
-  "idempotency_key": "lab4-discussion-2026-05-09"
+  "idempotency_key": "idem-discussion-2026-05-09"
 }
 ```
 
