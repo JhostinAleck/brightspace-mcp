@@ -43,6 +43,7 @@ import { handleListQuizzes, type ListQuizzesDeps } from './tools/list-quizzes.to
 import { handleGetQuizAttempts, type GetQuizAttemptsDeps } from './tools/get-quiz-attempts.tool.js';
 import { handleGetMyGroups, getMyGroupsSchema, type GetMyGroupsDeps } from './tools/get-my-groups.tool.js';
 import { handleSearchCourse, searchCourseSchema, type SearchCourseDeps } from './tools/search-course.tool.js';
+import { handleListNotifications, listNotificationsSchema, type ListNotificationsDeps } from './tools/list-notifications.tool.js';
 import {
   handleSubmitAssignment,
   submitAssignmentSchema,
@@ -84,7 +85,8 @@ export interface ToolDeps
     ListQuizzesDeps,
     GetQuizAttemptsDeps,
     GetMyGroupsDeps,
-    SearchCourseDeps {
+    SearchCourseDeps,
+    ListNotificationsDeps {
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
@@ -326,6 +328,18 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getQuizAttemptsSchema.shape,
     },
     async (input: unknown) => handleGetQuizAttempts(deps, input),
+  );
+
+  server.registerTool(
+    'list_notifications',
+    {
+      title: 'List Notifications',
+      description:
+        'Show your Brightspace activity feed (announcements, due-date reminders, grade releases, etc.).\n' +
+        'Pass unread_only=true to filter. Defaults to last 25 notifications.',
+      inputSchema: listNotificationsSchema.shape,
+    },
+    async (input: unknown) => handleListNotifications(deps, input),
   );
 
   server.registerTool(

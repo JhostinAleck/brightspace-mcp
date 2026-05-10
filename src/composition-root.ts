@@ -47,6 +47,7 @@ import { D2lAssignmentRepository } from '@/contexts/assignments/infrastructure/D
 import { D2lUiSubmitter } from '@/contexts/assignments/infrastructure/D2lUiSubmitter.js';
 import { D2lQuizRepository } from '@/contexts/quizzes/infrastructure/D2lQuizRepository.js';
 import { D2lGroupRepository } from '@/contexts/groups/infrastructure/D2lGroupRepository.js';
+import { D2lNotificationRepository } from '@/contexts/notifications/infrastructure/D2lNotificationRepository.js';
 import { CachedAssignmentRepository } from '@/contexts/assignments/infrastructure/CachedAssignmentRepository.js';
 import { D2lContentRepository } from '@/contexts/content/infrastructure/D2lContentRepository.js';
 import { CachedContentRepository } from '@/contexts/content/infrastructure/CachedContentRepository.js';
@@ -477,6 +478,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
 
   const quizRepo = new D2lQuizRepository(apiClient, { le: versions.le });
   const groupRepo = new D2lGroupRepository(apiClient, { lp: versions.lp });
+  const notificationRepo = new D2lNotificationRepository(apiClient, { lp: versions.lp });
 
   // Writes gate: requires BOTH the config switch AND the --enable-writes CLI flag to open.
   const writesGate = new WritesGate({
@@ -509,6 +511,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     calendarRepo,
     quizRepo,
     groupRepo,
+    notificationRepo,
     httpCache,
     domainCaches: {
       courses: domainCacheBacking,
