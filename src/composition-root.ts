@@ -484,7 +484,10 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
       })
     : new FileCache({ path: Paths.idempotencyJson() });
   const idempotencyStore = new CachedIdempotencyStore(idempotencyBacking);
-  const auditLogger = new AuditLogger({ logger });
+  // Persist audit log to disk so the get_audit_log tool can surface history.
+  // Path lives next to the rest of the app's state (~/.brightspace-mcp/).
+  const auditLogPath = `${Paths.rootDir()}/audit.log`;
+  const auditLogger = new AuditLogger({ logger, filePath: auditLogPath });
 
   return {
     ensureAuth,
@@ -510,6 +513,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     writesGate,
     idempotencyStore,
     auditLogger,
+    auditLogPath,
     disposables,
   };
 }

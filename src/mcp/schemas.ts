@@ -101,6 +101,13 @@ export const getCalendarEventsSchema = z.object({
 }).strict();
 export type GetCalendarEventsInputSchema = z.infer<typeof getCalendarEventsSchema>;
 
+export const getAuditLogSchema = z.object({
+  tool: z.string().optional().describe('Filter by tool name (e.g. "submit_assignment").'),
+  since: z.string().optional().describe('ISO-8601 timestamp; only entries after this are returned.'),
+  limit: z.number().int().positive().max(500).default(100),
+}).strict();
+export type GetAuditLogInputSchema = z.infer<typeof getAuditLogSchema>;
+
 export const getAssignmentFilesSchema = z.object({
   course_id: z.number().int().positive(),
   assignment_id: z.number().int().positive(),

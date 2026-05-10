@@ -95,6 +95,18 @@ Drop cached responses to force re-fetch.
 
 **Args:** `scope` *(`all|http|courses|grades|assignments|content|communications|calendar`, default `all`)*.
 
+### `get_audit_log`
+Local NDJSON audit history of write attempts (`submit_assignment`, `post_discussion_reply`, `mark_announcement_read`). Read-only — no writes-gate required.
+
+**Args:**
+- `tool` *(string, optional)* — filter by tool name
+- `since` *(ISO timestamp, optional)*
+- `limit` *(integer 1–500, default 100)*
+
+**Returns:** newest-first list of attempts with timestamp, correlation ID, redacted args.
+
+The log lives at `~/.brightspace-mcp/audit.log` (mode 0600). Secret-shaped fields are pre-redacted before being written.
+
 ### `get_diagnostics`
 JSON report on server state — profile, base URL, discovered API versions, cache hit/miss counters, HTTP timings.
 

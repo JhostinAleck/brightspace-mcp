@@ -1,8 +1,18 @@
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+
 import type { Logger } from '@/shared-kernel/logging/Logger.js';
 
 export interface AuditLoggerOptions {
   logger: Logger;
   clock?: () => number;
+  /**
+   * Optional NDJSON file path where each audit entry is appended (one JSON
+   * object per line) on top of the standard stderr log emission. Used by the
+   * `get_audit_log` MCP tool to surface write history. Parent directory is
+   * created lazily on first write.
+   */
+  filePath?: string;
 }
 
 export interface WriteAttempt {
@@ -62,19 +72,42 @@ function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
 export class AuditLogger {
   private readonly logger: Logger;
   private readonly clock: () => number;
+  private readonly filePath: string | undefined;
+  private fileDirEnsured = false;
 
   constructor(opts: AuditLoggerOptions) {
     this.logger = opts.logger;
     this.clock = opts.clock ?? ((): number => Date.now());
+    this.filePath = opts.filePath;
   }
 
   recordWriteAttempt(attempt: WriteAttempt): void {
-    this.logger.warn('audit.write_attempt', {
+    const entry = {
       audit_ts: new Date(this.clock()).toISOString(),
       event: 'write_attempt',
       cid: attempt.correlationId,
       tool: attempt.tool,
       args: redactArgs(attempt.args),
-    });
+    };
+    this.logger.warn('audit.write_attempt', entry);
+    if (this.filePath !== undefined) this.appendNdjson(entry);
+  }
+
+  private appendNdjson(entry: Record<string, unknown>): void {
+    if (!this.filePath) return;
+    try {
+      if (!this.fileDirEnsured) {
+        mkdirSync(dirname(this.filePath), { recursive: true });
+        this.fileDirEnsured = true;
+      }
+      appendFileSync(this.filePath, `${JSON.stringify(entry)}\n`, { encoding: 'utf8', mode: 0o600 });
+    } catch (err) {
+      // Audit must never crash the app. Log the failure once to stderr but
+      // continue — losing one audit line is preferable to losing the request.
+      this.logger.error('audit.file_write_failed', {
+        path: this.filePath,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 }

@@ -17,6 +17,7 @@ import {
   getCalendarEventsSchema,
   getAssignmentFilesSchema,
   getTopicFileSchema,
+  getAuditLogSchema,
 } from './schemas.js';
 import { handleCheckAuth, type CheckAuthDeps } from './tools/check-auth.tool.js';
 import { handleListMyCourses, type ListMyCoursesDeps } from './tools/list-my-courses.tool.js';
@@ -35,6 +36,7 @@ import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discu
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
 import { handleGetAssignmentFiles, type GetAssignmentFilesDeps } from './tools/get-assignment-files.tool.js';
 import { handleGetTopicFile, type GetTopicFileDeps } from './tools/get-topic-file.tool.js';
+import { handleGetAuditLog, type GetAuditLogDeps } from './tools/get-audit-log.tool.js';
 import {
   handleSubmitAssignment,
   submitAssignmentSchema,
@@ -71,7 +73,8 @@ export interface ToolDeps
     GetDiscussionsDeps,
     GetCalendarEventsDeps,
     GetAssignmentFilesDeps,
-    GetTopicFileDeps {
+    GetTopicFileDeps,
+    GetAuditLogDeps {
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
@@ -288,6 +291,19 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getTopicFileSchema.shape,
     },
     async (input: unknown) => handleGetTopicFile(deps, input),
+  );
+
+  server.registerTool(
+    'get_audit_log',
+    {
+      title: 'Get Audit Log',
+      description:
+        'Return the local audit history of write attempts (submit_assignment, post_discussion_reply, mark_announcement_read).\n' +
+        'Read-only — no writes-gate required. Optionally filter by tool name and/or `since` ISO timestamp.\n' +
+        'Use when the user asks "what did I submit today" or for compliance review.',
+      inputSchema: getAuditLogSchema.shape,
+    },
+    async (input: unknown) => handleGetAuditLog(deps, input),
   );
 
   if (deps.writesGate.allowsWrites) {

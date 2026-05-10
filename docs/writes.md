@@ -125,7 +125,7 @@ sequenceDiagram
 
 ## Safety features
 
-**Audit log.** Every write attempt is recorded to `~/.brightspace-mcp/audit.log` (NDJSON) before the call is sent. Includes correlation ID, tool name, args (with content elided), timestamp.
+**Audit log.** Every write attempt is recorded to `~/.brightspace-mcp/audit.log` (NDJSON, mode 0600) before the call is sent. Includes correlation ID, tool name, args (with secrets redacted), timestamp. Query it via the `get_audit_log` MCP tool — read-only, no writes-gate required.
 
 **Idempotency cache.** Writes accepting an `idempotency_key` are deduplicated. A replay returns the cached response without re-sending. Cached entries persist in `~/.brightspace-mcp/idempotency.json`.
 
