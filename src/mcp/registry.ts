@@ -41,6 +41,7 @@ import { handleGetTopicFile, type GetTopicFileDeps } from './tools/get-topic-fil
 import { handleGetAuditLog, type GetAuditLogDeps } from './tools/get-audit-log.tool.js';
 import { handleListQuizzes, type ListQuizzesDeps } from './tools/list-quizzes.tool.js';
 import { handleGetQuizAttempts, type GetQuizAttemptsDeps } from './tools/get-quiz-attempts.tool.js';
+import { handleGetMyGroups, getMyGroupsSchema, type GetMyGroupsDeps } from './tools/get-my-groups.tool.js';
 import {
   handleSubmitAssignment,
   submitAssignmentSchema,
@@ -80,7 +81,8 @@ export interface ToolDeps
     GetTopicFileDeps,
     GetAuditLogDeps,
     ListQuizzesDeps,
-    GetQuizAttemptsDeps {
+    GetQuizAttemptsDeps,
+    GetMyGroupsDeps {
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
@@ -322,6 +324,18 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getQuizAttemptsSchema.shape,
     },
     async (input: unknown) => handleGetQuizAttempts(deps, input),
+  );
+
+  server.registerTool(
+    'get_my_groups',
+    {
+      title: 'Get My Groups',
+      description:
+        'List the groups you are enrolled in for a course (with member names).\n' +
+        'Useful for group projects: "who\'s in my group?" or finding the right grpid for a submission.',
+      inputSchema: getMyGroupsSchema.shape,
+    },
+    async (input: unknown) => handleGetMyGroups(deps, input),
   );
 
   server.registerTool(

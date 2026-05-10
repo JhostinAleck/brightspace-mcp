@@ -90,6 +90,14 @@ Download a single content topic file. Returns extracted text and optionally save
 
 If `save_to` is provided, the raw file binary is also written to disk and the response includes `[Saved to: /abs/path]`.
 
+### `get_my_groups`
+List the groups you're enrolled in for a course, with member names.
+
+**Args:** `course_id`.
+**Returns:** per-category, the group name + member display names + usernames where available.
+
+Useful for "who's in my group?" or finding the right `grpid` for a manual UI URL.
+
 ### `list_quizzes`
 List quizzes for a course with attempt counts, time limits, close dates.
 
