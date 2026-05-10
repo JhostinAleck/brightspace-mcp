@@ -3,7 +3,7 @@ import type { AccessToken } from '@/contexts/authentication/domain/AccessToken.j
 import { InMemoryCache } from '@/shared-kernel/cache/InMemoryCache.js';
 import type { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
 import { HttpResponseCache } from './cache/HttpResponseCache.js';
-import { D2lApiError, NetworkError, RateLimitedError } from './errors.js';
+import { D2lApiError, NetworkError, RateLimitedError, classifyD2lError } from './errors.js';
 import type { Bulkhead } from './resilience/Bulkhead.js';
 import { CircuitBreaker, CircuitOpenError } from './resilience/CircuitBreaker.js';
 import type { RequestCoalescer } from './resilience/RequestCoalescer.js';
@@ -186,7 +186,7 @@ export class D2lApiClient {
     this.observeStatus(response.status);
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new D2lApiError(response.status, path, body);
+      throw classifyD2lError(new D2lApiError(response.status, path, body));
     }
     return response.text();
   }
@@ -212,7 +212,7 @@ export class D2lApiClient {
     this.observeStatus(response.status);
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new D2lApiError(response.status, path, body);
+      throw classifyD2lError(new D2lApiError(response.status, path, body));
     }
     return Buffer.from(await response.arrayBuffer());
   }
@@ -274,7 +274,7 @@ export class D2lApiClient {
     if (response.status === 403 && xsrf) this.resetXsrfToken();
     if (!response.ok) {
       const responseBody = await response.text().catch(() => '');
-      throw new D2lApiError(response.status, path, responseBody);
+      throw classifyD2lError(new D2lApiError(response.status, path, responseBody));
     }
     const text = await response.text();
     if (text.length === 0) return {} as T;
@@ -350,7 +350,7 @@ export class D2lApiClient {
     if (response.status === 403 && xsrf) this.resetXsrfToken();
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new D2lApiError(response.status, path, body);
+      throw classifyD2lError(new D2lApiError(response.status, path, body));
     }
     return (await response.json()) as T;
   }
@@ -395,7 +395,7 @@ export class D2lApiClient {
     if (response.status === 403 && xsrf) this.resetXsrfToken();
     if (!response.ok) {
       const responseBody = await response.text().catch(() => '');
-      throw new D2lApiError(response.status, path, responseBody);
+      throw classifyD2lError(new D2lApiError(response.status, path, responseBody));
     }
 
     const text = await response.text();
@@ -440,7 +440,7 @@ export class D2lApiClient {
     }
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new D2lApiError(response.status, path, body);
+      throw classifyD2lError(new D2lApiError(response.status, path, body));
     }
     return (await response.json()) as T;
   }
