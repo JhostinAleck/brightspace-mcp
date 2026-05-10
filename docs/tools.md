@@ -90,6 +90,20 @@ Download a single content topic file. Returns extracted text and optionally save
 
 If `save_to` is provided, the raw file binary is also written to disk and the response includes `[Saved to: /abs/path]`.
 
+### `list_quizzes`
+List quizzes for a course with attempt counts, time limits, close dates.
+
+**Args:** `course_id`, `format` *(`compact|detailed`)*.
+**Returns:** newest-first list with attempts taken, attempts remaining, due date.
+
+⚠️ Read-only by design — quiz questions and answer keys are NOT exposed even if the API permits it. Quiz integrity matters.
+
+### `get_quiz_attempts`
+Your attempts on a single quiz with scores and submission status.
+
+**Args:** `course_id`, `quiz_id`.
+**Returns:** per-attempt score, percent, submission status, start/complete timestamps.
+
 ### `clear_cache`
 Drop cached responses to force re-fetch.
 

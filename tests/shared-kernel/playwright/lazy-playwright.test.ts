@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createPlaywrightLoader } from '@/contexts/authentication/infrastructure/strategies/lazy-playwright';
+import { createPlaywrightLoader } from '@/shared-kernel/playwright/lazy-playwright';
 
 describe('createPlaywrightLoader', () => {
   it('resolves the fake module when provided via injection', async () => {

@@ -1,5 +1,5 @@
 import type { AccessToken } from '@/contexts/authentication/domain/AccessToken.js';
-import type { PlaywrightLoader } from '@/contexts/authentication/infrastructure/strategies/lazy-playwright.js';
+import type { PlaywrightLoader } from '@/shared-kernel/playwright/lazy-playwright.js';
 import type { SubmitInput, SubmitResult } from '@/contexts/assignments/domain/AssignmentRepository.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 

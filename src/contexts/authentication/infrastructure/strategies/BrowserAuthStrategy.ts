@@ -8,7 +8,7 @@ import type { CredentialStore } from '@/contexts/authentication/domain/Credentia
 import type { MfaStrategy } from '@/contexts/authentication/domain/MfaStrategy.js';
 import { AccessToken } from '@/contexts/authentication/domain/AccessToken.js';
 import { AuthConfigError } from '@/contexts/authentication/domain/errors.js';
-import type { PlaywrightLoader } from './lazy-playwright.js';
+import type { PlaywrightLoader } from '@/shared-kernel/playwright/lazy-playwright.js';
 
 export type WhoAmI = (token: AccessToken, baseUrl: string) => Promise<UserIdentity>;
 

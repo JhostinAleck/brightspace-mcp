@@ -25,7 +25,7 @@ import { SessionCookieStrategy } from '@/contexts/authentication/infrastructure/
 import { HeadlessPasswordStrategy } from '@/contexts/authentication/infrastructure/strategies/HeadlessPasswordStrategy.js';
 import { OAuthStrategy } from '@/contexts/authentication/infrastructure/strategies/OAuthStrategy.js';
 import { BrowserAuthStrategy } from '@/contexts/authentication/infrastructure/strategies/BrowserAuthStrategy.js';
-import { createPlaywrightLoader } from '@/contexts/authentication/infrastructure/strategies/lazy-playwright.js';
+import { createPlaywrightLoader } from '@/shared-kernel/playwright/lazy-playwright.js';
 import type { SecretValue } from '@/contexts/authentication/domain/SecretValue.js';
 import { EnsureAuthenticated } from '@/contexts/authentication/application/EnsureAuthenticated.js';
 import { ConfigBackedStrategyResolver } from '@/contexts/authentication/application/ConfigBackedStrategyResolver.js';
@@ -45,6 +45,7 @@ import { D2lGradeRepository } from '@/contexts/grades/infrastructure/D2lGradeRep
 import { CachedGradeRepository } from '@/contexts/grades/infrastructure/CachedGradeRepository.js';
 import { D2lAssignmentRepository } from '@/contexts/assignments/infrastructure/D2lAssignmentRepository.js';
 import { D2lUiSubmitter } from '@/contexts/assignments/infrastructure/D2lUiSubmitter.js';
+import { D2lQuizRepository } from '@/contexts/quizzes/infrastructure/D2lQuizRepository.js';
 import { CachedAssignmentRepository } from '@/contexts/assignments/infrastructure/CachedAssignmentRepository.js';
 import { D2lContentRepository } from '@/contexts/content/infrastructure/D2lContentRepository.js';
 import { CachedContentRepository } from '@/contexts/content/infrastructure/CachedContentRepository.js';
@@ -473,6 +474,8 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     ttlMs: 5 * 60 * 1000,
   });
 
+  const quizRepo = new D2lQuizRepository(apiClient, { le: versions.le });
+
   // Writes gate: requires BOTH the config switch AND the --enable-writes CLI flag to open.
   const writesGate = new WritesGate({
     configEnabled: config.writes?.enabled ?? false,
@@ -502,6 +505,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     contentRepo,
     communicationsRepo,
     calendarRepo,
+    quizRepo,
     httpCache,
     domainCaches: {
       courses: domainCacheBacking,

@@ -19,7 +19,7 @@ import { homedir } from 'node:os';
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
-import { createPlaywrightLoader } from '@/contexts/authentication/infrastructure/strategies/lazy-playwright.js';
+import { createPlaywrightLoader } from '@/shared-kernel/playwright/lazy-playwright.js';
 import { Paths } from '@/shared-kernel/config/paths.js';
 
 export interface RecordAuthOptions {

@@ -7,7 +7,7 @@ import { FakeMfaStrategy } from '@tests/helpers/fakes/FakeMfaStrategy';
 import type {
   PlaywrightModule,
   PlaywrightPage,
-} from '@/contexts/authentication/infrastructure/strategies/lazy-playwright';
+} from '@/shared-kernel/playwright/lazy-playwright';
 
 const whoami = async () => ({
   userId: UserId.of(5),

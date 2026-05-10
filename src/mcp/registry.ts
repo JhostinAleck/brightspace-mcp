@@ -18,6 +18,8 @@ import {
   getAssignmentFilesSchema,
   getTopicFileSchema,
   getAuditLogSchema,
+  listQuizzesSchema,
+  getQuizAttemptsSchema,
 } from './schemas.js';
 import { handleCheckAuth, type CheckAuthDeps } from './tools/check-auth.tool.js';
 import { handleListMyCourses, type ListMyCoursesDeps } from './tools/list-my-courses.tool.js';
@@ -37,6 +39,8 @@ import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get
 import { handleGetAssignmentFiles, type GetAssignmentFilesDeps } from './tools/get-assignment-files.tool.js';
 import { handleGetTopicFile, type GetTopicFileDeps } from './tools/get-topic-file.tool.js';
 import { handleGetAuditLog, type GetAuditLogDeps } from './tools/get-audit-log.tool.js';
+import { handleListQuizzes, type ListQuizzesDeps } from './tools/list-quizzes.tool.js';
+import { handleGetQuizAttempts, type GetQuizAttemptsDeps } from './tools/get-quiz-attempts.tool.js';
 import {
   handleSubmitAssignment,
   submitAssignmentSchema,
@@ -74,7 +78,9 @@ export interface ToolDeps
     GetCalendarEventsDeps,
     GetAssignmentFilesDeps,
     GetTopicFileDeps,
-    GetAuditLogDeps {
+    GetAuditLogDeps,
+    ListQuizzesDeps,
+    GetQuizAttemptsDeps {
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
@@ -291,6 +297,31 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getTopicFileSchema.shape,
     },
     async (input: unknown) => handleGetTopicFile(deps, input),
+  );
+
+  server.registerTool(
+    'list_quizzes',
+    {
+      title: 'List Quizzes',
+      description:
+        'List quizzes for a course with attempt counts, time limits, and close dates.\n' +
+        'Read-only — no quiz answers or questions are exposed (intentionally).\n' +
+        'Use when the user asks "what quizzes do I have", "what\'s due in X class", or about attempt history.',
+      inputSchema: listQuizzesSchema.shape,
+    },
+    async (input: unknown) => handleListQuizzes(deps, input),
+  );
+
+  server.registerTool(
+    'get_quiz_attempts',
+    {
+      title: 'Get Quiz Attempts',
+      description:
+        'List your attempts on a single quiz with scores and submission status.\n' +
+        'Use when the user asks "what did I get on the X quiz" or "have I started Y yet".',
+      inputSchema: getQuizAttemptsSchema.shape,
+    },
+    async (input: unknown) => handleGetQuizAttempts(deps, input),
   );
 
   server.registerTool(

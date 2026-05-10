@@ -101,6 +101,18 @@ export const getCalendarEventsSchema = z.object({
 }).strict();
 export type GetCalendarEventsInputSchema = z.infer<typeof getCalendarEventsSchema>;
 
+export const listQuizzesSchema = z.object({
+  course_id: z.number().int().positive(),
+  format: z.enum(['compact', 'detailed']).default('compact'),
+}).strict();
+export type ListQuizzesInputSchema = z.infer<typeof listQuizzesSchema>;
+
+export const getQuizAttemptsSchema = z.object({
+  course_id: z.number().int().positive(),
+  quiz_id: z.number().int().positive(),
+}).strict();
+export type GetQuizAttemptsInputSchema = z.infer<typeof getQuizAttemptsSchema>;
+
 export const getAuditLogSchema = z.object({
   tool: z.string().optional().describe('Filter by tool name (e.g. "submit_assignment").'),
   since: z.string().optional().describe('ISO-8601 timestamp; only entries after this are returned.'),
