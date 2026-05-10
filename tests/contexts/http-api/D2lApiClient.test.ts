@@ -119,3 +119,71 @@ describe('D2lApiClient.get', () => {
     expect(new Set([a.user, b.user]).size).toBe(2);
   });
 });
+
+describe('D2lApiClient.auto-refresh on AuthExpiredError', () => {
+  beforeEach(() => nock.disableNetConnect());
+  afterEach(() => {
+    nock.cleanAll();
+    nock.enableNetConnect();
+  });
+
+  it('retries the request once with a fresh token after 401', async () => {
+    // First call: 401. Second call (after refresh): 200.
+    nock(BASE).get('/data').reply(401, 'Unauthorized');
+    nock(BASE).get('/data').reply(200, { ok: true });
+
+    let tokenSerial = 0;
+    let refreshCalls = 0;
+    const client = new D2lApiClient({
+      baseUrl: BASE,
+      getToken: async () => AccessToken.bearer(`tok_${tokenSerial}`),
+      onAuthFailure: async () => {
+        refreshCalls++;
+        tokenSerial++;
+        return AccessToken.bearer(`tok_${tokenSerial}`);
+      },
+    });
+
+    const result = await client.get<{ ok: boolean }>('/data');
+    expect(result.ok).toBe(true);
+    expect(refreshCalls).toBe(1);
+  });
+
+  it('debounces concurrent 401s to a single refresh call', async () => {
+    nock(BASE).get('/a').reply(401, '');
+    nock(BASE).get('/b').reply(401, '');
+    nock(BASE).get('/a').reply(200, { name: 'a' });
+    nock(BASE).get('/b').reply(200, { name: 'b' });
+
+    let refreshCalls = 0;
+    let tokenSerial = 0;
+    const client = new D2lApiClient({
+      baseUrl: BASE,
+      getToken: async () => AccessToken.bearer(`t${tokenSerial}`),
+      onAuthFailure: async () => {
+        refreshCalls++;
+        // Slow refresh so the second concurrent caller has to wait for it.
+        await new Promise((r) => setTimeout(r, 30));
+        tokenSerial++;
+        return AccessToken.bearer(`t${tokenSerial}`);
+      },
+    });
+
+    const [a, b] = await Promise.all([
+      client.get<{ name: string }>('/a'),
+      client.get<{ name: string }>('/b'),
+    ]);
+    expect(a.name).toBe('a');
+    expect(b.name).toBe('b');
+    expect(refreshCalls).toBe(1); // not 2
+  });
+
+  it('lets AuthExpiredError bubble when no onAuthFailure is configured', async () => {
+    nock(BASE).get('/x').reply(401, 'expired');
+    const client = new D2lApiClient({
+      baseUrl: BASE,
+      getToken: async () => AccessToken.bearer('t'),
+    });
+    await expect(client.get('/x')).rejects.toMatchObject({ code: 'AUTH_EXPIRED' });
+  });
+});

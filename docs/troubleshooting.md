@@ -129,7 +129,9 @@ If your tenant *does* allow API submissions, you'll see something like `Submitte
 
 ## My session cookie expired (401 on every read tool)
 
-Cookies captured via `record-auth` typically last ~1 hour. When they expire:
+For credential-based strategies (`browser`, `headless`, `oauth`, `api_token`) the MCP server **auto-refreshes** when it sees a 401: the failing request is retried once after `EnsureAuthenticated.reauthenticate()` runs. You won't normally see expiration errors.
+
+For `session_cookie` (cookies captured via `record-auth`), there is no automated re-auth — Playwright cannot pop a browser without user interaction. When the cookie expires (~1 hour) re-run:
 
 ```bash
 brightspace-mcp record-auth --save-to keychain --profile my_school

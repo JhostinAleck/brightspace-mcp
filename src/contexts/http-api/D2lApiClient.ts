@@ -3,7 +3,7 @@ import type { AccessToken } from '@/contexts/authentication/domain/AccessToken.j
 import { InMemoryCache } from '@/shared-kernel/cache/InMemoryCache.js';
 import type { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
 import { HttpResponseCache } from './cache/HttpResponseCache.js';
-import { D2lApiError, NetworkError, RateLimitedError, classifyD2lError } from './errors.js';
+import { AuthExpiredError, D2lApiError, NetworkError, RateLimitedError, classifyD2lError } from './errors.js';
 import type { Bulkhead } from './resilience/Bulkhead.js';
 import { CircuitBreaker, CircuitOpenError } from './resilience/CircuitBreaker.js';
 import type { RequestCoalescer } from './resilience/RequestCoalescer.js';
@@ -25,6 +25,17 @@ export interface CircuitConfig {
 export interface D2lApiClientOptions {
   baseUrl: string;
   getToken: () => Promise<AccessToken>;
+  /**
+   * Optional callback invoked when a request returns an `AuthExpiredError`
+   * (HTTP 401 or 403 with xsrf body). Implementations should force the auth
+   * strategy to re-authenticate and return a fresh token. The client retries
+   * the failed request exactly once with the new token. If `onAuthFailure`
+   * is unset, the original error bubbles unchanged.
+   *
+   * Concurrent failures are debounced — only the first caller actually
+   * triggers re-auth; the rest await the same promise.
+   */
+  onAuthFailure?: () => Promise<AccessToken>;
   timeoutMs?: number;
   userAgent?: string;
   transportPolicy?: TransportPolicy;
@@ -80,6 +91,10 @@ export class D2lApiClient {
   // lifetime of the client (the token is tied to the session). Invalidated by
   // resetXsrfToken() if a write fails with a token-related 403.
   private xsrfToken: string | null = null;
+  // Debouncer for concurrent re-auth attempts. The first caller to hit an
+  // AuthExpiredError populates this; all concurrent failures await the same
+  // promise and retry with the same fresh token. Cleared once resolved.
+  private authRefreshInFlight: Promise<AccessToken> | null = null;
 
   constructor(private readonly opts: D2lApiClientOptions) {
     this.transport = opts.transportPolicy ?? TransportPolicy.strict();
@@ -113,6 +128,10 @@ export class D2lApiClient {
   }
 
   async get<T>(path: string): Promise<T> {
+    return this.withAuthRefresh(() => this.getOnceCached<T>(path));
+  }
+
+  private async getOnceCached<T>(path: string): Promise<T> {
     const token = await this.opts.getToken();
     const fingerprint = authFingerprintHash(token);
     const cacheKey = { method: 'GET', path, authFingerprint: fingerprint };
@@ -218,8 +237,10 @@ export class D2lApiClient {
   }
 
   async postMultipart<T>(path: string, formData: FormData): Promise<T> {
-    const token = await this.opts.getToken();
-    return this.withMiddlewares(() => this.postMultipartOnce<T>(path, formData, token));
+    return this.withAuthRefresh(async () => {
+      const token = await this.opts.getToken();
+      return this.withMiddlewares(() => this.postMultipartOnce<T>(path, formData, token));
+    });
   }
 
   /**
@@ -229,8 +250,10 @@ export class D2lApiClient {
    * `/dropbox/folders/{id}/submissions/mysubmissions/`.
    */
   async postRawMultipart<T>(path: string, body: Buffer, contentType: string): Promise<T> {
-    const token = await this.opts.getToken();
-    return this.withMiddlewares(() => this.postRawMultipartOnce<T>(path, body, contentType, token));
+    return this.withAuthRefresh(async () => {
+      const token = await this.opts.getToken();
+      return this.withMiddlewares(() => this.postRawMultipartOnce<T>(path, body, contentType, token));
+    });
   }
 
   private async postRawMultipartOnce<T>(
@@ -314,6 +337,38 @@ export class D2lApiClient {
     this.xsrfToken = null;
   }
 
+  /**
+   * Wraps an HTTP operation so that on AuthExpiredError, the registered
+   * `onAuthFailure` callback runs (debounced across concurrent callers) and
+   * the operation is retried exactly once. XSRF and any session caches are
+   * also cleared so the retry uses fresh credentials end-to-end.
+   *
+   * Returns the original error if no `onAuthFailure` is configured.
+   */
+  private async withAuthRefresh<T>(op: () => Promise<T>): Promise<T> {
+    try {
+      return await op();
+    } catch (err) {
+      if (!(err instanceof AuthExpiredError) || !this.opts.onAuthFailure) throw err;
+      this.metrics?.inc('http.auth.refresh');
+      // Debounce: first concurrent caller spawns the refresh; the rest await it.
+      if (!this.authRefreshInFlight) {
+        this.authRefreshInFlight = this.opts.onAuthFailure().finally(() => {
+          this.authRefreshInFlight = null;
+        });
+      }
+      try {
+        await this.authRefreshInFlight;
+      } catch (refreshErr) {
+        // If refresh itself failed, surface the original auth error so the
+        // caller's hint chain stays clean.
+        throw err;
+      }
+      this.resetXsrfToken();
+      return op();
+    }
+  }
+
   private async postMultipartOnce<T>(
     path: string,
     formData: FormData,
@@ -356,8 +411,10 @@ export class D2lApiClient {
   }
 
   async postJson<T>(path: string, body: unknown): Promise<T> {
-    const token = await this.opts.getToken();
-    return this.withMiddlewares(() => this.postJsonOnce<T>(path, body, token));
+    return this.withAuthRefresh(async () => {
+      const token = await this.opts.getToken();
+      return this.withMiddlewares(() => this.postJsonOnce<T>(path, body, token));
+    });
   }
 
   private async postJsonOnce<T>(path: string, body: unknown, token: AccessToken): Promise<T> {

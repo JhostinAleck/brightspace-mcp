@@ -379,6 +379,8 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   });
 
   const getToken = async () => (await ensureAuth.execute({ profile: profileName, baseUrl })).token;
+  const onAuthFailure = async () =>
+    (await ensureAuth.reauthenticate({ profile: profileName, baseUrl })).token;
 
   // Wire up Playwright renderer when browser auth is configured — enables
   // JS-rendered page scraping. The renderer keeps a reusable browser singleton
@@ -394,6 +396,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const apiClient = new D2lApiClient({
     baseUrl,
     getToken,
+    onAuthFailure,
     userAgent,
     metrics,
     retry: { maxAttempts: 3, initialMs: 250, maxMs: 5_000 },
