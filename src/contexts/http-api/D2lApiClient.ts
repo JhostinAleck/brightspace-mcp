@@ -75,6 +75,11 @@ export class D2lApiClient {
   private readonly cache?: HttpResponseCache;
   private readonly cacheTtlMs: number;
   private readonly metrics?: MetricsRegistry;
+  // D2L requires an X-Csrf-Token header on write requests. The value is the
+  // `referrerToken` field returned by /d2l/lp/auth/xsrf-tokens. Cached for the
+  // lifetime of the client (the token is tied to the session). Invalidated by
+  // resetXsrfToken() if a write fails with a token-related 403.
+  private xsrfToken: string | null = null;
 
   constructor(private readonly opts: D2lApiClientOptions) {
     this.transport = opts.transportPolicy ?? TransportPolicy.strict();
@@ -217,6 +222,98 @@ export class D2lApiClient {
     return this.withMiddlewares(() => this.postMultipartOnce<T>(path, formData, token));
   }
 
+  /**
+   * POST a manually-constructed body with a caller-provided Content-Type. Used
+   * for D2L endpoints that require `multipart/mixed` (per Valence docs) rather
+   * than the standard `multipart/form-data` that FormData emits — most notably
+   * `/dropbox/folders/{id}/submissions/mysubmissions/`.
+   */
+  async postRawMultipart<T>(path: string, body: Buffer, contentType: string): Promise<T> {
+    const token = await this.opts.getToken();
+    return this.withMiddlewares(() => this.postRawMultipartOnce<T>(path, body, contentType, token));
+  }
+
+  private async postRawMultipartOnce<T>(
+    path: string,
+    body: Buffer,
+    contentType: string,
+    token: AccessToken,
+  ): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    this.transport.validate(url);
+    const { name, value } = token.toAuthHeader();
+    const xsrf = await this.getXsrfToken(token);
+    const headers: Record<string, string> = {
+      [name]: value,
+      'User-Agent': this.userAgent,
+      'Content-Type': contentType,
+    };
+    if (xsrf) headers['X-Csrf-Token'] = xsrf;
+
+    let response: Response;
+    const start = this.metrics ? performance.now() : 0;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers,
+        // Buffer extends Uint8Array but TS lib.dom.fetch types don't accept Buffer directly.
+        body: new Uint8Array(body),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (err) {
+      this.metrics?.inc('http.network_error');
+      throw new NetworkError(`POST ${path} failed`, err instanceof Error ? err : undefined);
+    } finally {
+      if (this.metrics) this.metrics.observe('http.duration_ms', performance.now() - start);
+    }
+    this.observeStatus(response.status);
+    if (response.status === 429) {
+      const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
+      throw new RateLimitedError(path, retryAfterMs);
+    }
+    if (response.status === 403 && xsrf) this.resetXsrfToken();
+    if (!response.ok) {
+      const responseBody = await response.text().catch(() => '');
+      throw new D2lApiError(response.status, path, responseBody);
+    }
+    const text = await response.text();
+    if (text.length === 0) return {} as T;
+    return JSON.parse(text) as T;
+  }
+
+  /**
+   * Lazy-fetch and cache the D2L XSRF token. Returns null when the endpoint is
+   * unavailable (e.g. api_token strategy that already authenticates via Bearer
+   * doesn't need it) so callers can decide whether to error or proceed.
+   */
+  private async getXsrfToken(authToken: AccessToken): Promise<string | null> {
+    if (this.xsrfToken) return this.xsrfToken;
+    const url = `${this.baseUrl}/d2l/lp/auth/xsrf-tokens`;
+    this.transport.validate(url);
+    const { name, value } = authToken.toAuthHeader();
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { [name]: value, 'User-Agent': this.userAgent, Accept: 'application/json' },
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+      if (!res.ok) return null;
+      const json = (await res.json()) as { referrerToken?: string };
+      if (json.referrerToken && typeof json.referrerToken === 'string') {
+        this.xsrfToken = json.referrerToken;
+        return this.xsrfToken;
+      }
+    } catch {
+      // Best-effort: non-D2L-web auth (api_token Bearer) won't expose this endpoint.
+    }
+    return null;
+  }
+
+  /** Force the next write request to refetch the XSRF token. */
+  resetXsrfToken(): void {
+    this.xsrfToken = null;
+  }
+
   private async postMultipartOnce<T>(
     path: string,
     formData: FormData,
@@ -225,13 +322,16 @@ export class D2lApiClient {
     const url = `${this.baseUrl}${path}`;
     this.transport.validate(url);
     const { name, value } = token.toAuthHeader();
+    const xsrf = await this.getXsrfToken(token);
+    const headers: Record<string, string> = { [name]: value, 'User-Agent': this.userAgent };
+    if (xsrf) headers['X-Csrf-Token'] = xsrf;
 
     let response: Response;
     const start = this.metrics ? performance.now() : 0;
     try {
       response = await fetch(url, {
         method: 'POST',
-        headers: { [name]: value, 'User-Agent': this.userAgent },
+        headers,
         body: formData,
         signal: AbortSignal.timeout(this.timeoutMs),
       });
@@ -246,6 +346,8 @@ export class D2lApiClient {
       const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
       throw new RateLimitedError(path, retryAfterMs);
     }
+    // Stale XSRF → drop cache so the next attempt refetches.
+    if (response.status === 403 && xsrf) this.resetXsrfToken();
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new D2lApiError(response.status, path, body);
@@ -262,17 +364,20 @@ export class D2lApiClient {
     const url = `${this.baseUrl}${path}`;
     this.transport.validate(url);
     const { name, value } = token.toAuthHeader();
+    const xsrf = await this.getXsrfToken(token);
+    const headers: Record<string, string> = {
+      [name]: value,
+      'User-Agent': this.userAgent,
+      'Content-Type': 'application/json',
+    };
+    if (xsrf) headers['X-Csrf-Token'] = xsrf;
 
     let response: Response;
     const start = this.metrics ? performance.now() : 0;
     try {
       response = await fetch(url, {
         method: 'POST',
-        headers: {
-          [name]: value,
-          'User-Agent': this.userAgent,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(this.timeoutMs),
       });
@@ -287,6 +392,7 @@ export class D2lApiClient {
       const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
       throw new RateLimitedError(path, retryAfterMs);
     }
+    if (response.status === 403 && xsrf) this.resetXsrfToken();
     if (!response.ok) {
       const responseBody = await response.text().catch(() => '');
       throw new D2lApiError(response.status, path, responseBody);

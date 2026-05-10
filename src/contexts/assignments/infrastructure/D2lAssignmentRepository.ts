@@ -14,11 +14,27 @@ import { D2lApiError } from '@/contexts/http-api/errors.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
 import { extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
+import type { D2lUiSubmitter } from './D2lUiSubmitter.js';
 
 interface SubmissionDto {
   Submitter?: { Identifier?: string | null } | null;
   SubmissionDate?: string | null;
   Comments?: { Text?: string | null } | null;
+}
+
+/**
+ * Shape returned by `/dropbox/folders/{id}/submissions/`. Each entry is one
+ * submitter (user OR group) with its history of submissions.
+ */
+interface SubmissionsByEntityDto {
+  Entity: { Name?: string; EntityId?: number; EntityType?: 'User' | 'Group' };
+  Submissions: Array<{
+    Id?: number;
+    SubmittedBy?: { Identifier?: string | null; DisplayName?: string | null };
+    SubmissionDate?: string | null;
+    Comment?: { Text?: string | null };
+    Files?: Array<{ FileId?: number; FileName?: string; Size?: number }>;
+  }>;
 }
 
 interface AttachmentDto {
@@ -51,6 +67,12 @@ export class D2lAssignmentRepository implements AssignmentRepository {
   constructor(
     private readonly client: D2lApiClient,
     private readonly versions: D2lAssignmentRepositoryOptions,
+    /**
+     * Optional UI fallback. When the Valence dropbox-submission API returns
+     * 403/404 (tenant restricted student writes), we re-attempt via the web
+     * UI flow. Without it, those failures bubble up to the user.
+     */
+    private readonly uiSubmitter?: D2lUiSubmitter,
   ) {}
 
   async findByCourse(courseId: OrgUnitId): Promise<Assignment[]> {
@@ -58,26 +80,69 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     const folders = await this.client.get<FolderDto[]>(
       `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/`,
     );
-    return folders.map((folder) => this.toAssignment(folder, orgUnit));
+    // The folders list endpoint omits `Submissions` for student users (admins
+    // see them inline). Fetch each folder's submissions in parallel from the
+    // dedicated endpoint so `assignment.hasSubmission` reflects reality.
+    const enriched = await Promise.all(
+      folders.map(async (folder) => {
+        try {
+          const subs = await this.client.get<SubmissionsByEntityDto[]>(
+            `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folder.Id}/submissions/mysubmissions/`,
+          );
+          return this.toAssignment(folder, orgUnit, subs);
+        } catch {
+          // 403/404 on locked or future folders — fall back to bare folder.
+          return this.toAssignment(folder, orgUnit);
+        }
+      }),
+    );
+    return enriched;
   }
 
   async submit(input: SubmitInput): Promise<SubmitResult> {
+    try {
+      return await this.submitViaApi(input);
+    } catch (err) {
+      // 403 (tenant disabled student API) or 404 (group submissions return
+      // "Assignment not found" via mysubmissions/) → try the UI flow if the
+      // submitter is wired.
+      const apiBlocked =
+        err instanceof D2lApiError && (err.status === 403 || err.status === 404);
+      if (apiBlocked && this.uiSubmitter) {
+        return this.uiSubmitter.submit(input);
+      }
+      throw err;
+    }
+  }
+
+  private async submitViaApi(input: SubmitInput): Promise<SubmitResult> {
     const orgUnit = OrgUnitId.toNumber(input.courseId);
     const path = `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${input.folderId}/submissions/mysubmissions/`;
 
-    const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([input.draft.content as BlobPart], {
-        type: input.draft.mimeType ?? 'application/octet-stream',
-      }),
-      input.draft.filename,
-    );
+    // D2L Valence docs require multipart/MIXED (not form-data):
+    //   Part 1: JSON SubmissionData (no Content-Disposition, just Content-Type)
+    //   Part 2: file with Content-Disposition: form-data; name="file"; filename="..."
+    // Reference: https://docs.valence.desire2learn.com/res/dropbox.html
+    const boundary = `----brightspaceMcp${Date.now()}${Math.random().toString(36).slice(2, 10)}`;
+    const mimeType = input.draft.mimeType ?? 'application/octet-stream';
+    const filename = input.draft.filename;
+    const fileContent = input.draft.content;
 
-    const response = await this.client.postMultipart<{
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\n`),
+      Buffer.from(`Content-Type: application/json\r\n\r\n`),
+      Buffer.from(JSON.stringify({ Text: '', Html: '' })),
+      Buffer.from(`\r\n--${boundary}\r\n`),
+      Buffer.from(`Content-Type: ${mimeType}\r\n`),
+      Buffer.from(`Content-Disposition: form-data; name="file"; filename="${filename}"\r\n\r\n`),
+      Buffer.from(fileContent),
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
+
+    const response = await this.client.postRawMultipart<{
       SubmissionId: string;
       SubmittedOn: string;
-    }>(path, formData);
+    }>(path, body, `multipart/mixed; boundary=${boundary}`);
 
     return {
       submissionId: response.SubmissionId,
@@ -200,11 +265,25 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     }
   }
 
-  private toAssignment(folder: FolderDto, orgUnit: number): Assignment {
+  private toAssignment(
+    folder: FolderDto,
+    orgUnit: number,
+    enrichedSubs?: SubmissionsByEntityDto[],
+  ): Assignment {
     const due = folder.DueDate ? DueDate.at(new Date(folder.DueDate)) : DueDate.unspecified();
-    const submissions: Submission[] = (folder.Submissions ?? [])
-      .map((s) => this.toSubmission(s))
-      .filter((s): s is Submission => s !== null);
+    let submissions: Submission[];
+    if (enrichedSubs && enrichedSubs.length > 0) {
+      // Flatten the entity-grouped submissions. Works for both individual
+      // (Entity = User) and group (Entity = Group) assignments.
+      submissions = enrichedSubs
+        .flatMap((entry) => entry.Submissions ?? [])
+        .map((s) => this.toEnrichedSubmission(s))
+        .filter((s): s is Submission => s !== null);
+    } else {
+      submissions = (folder.Submissions ?? [])
+        .map((s) => this.toSubmission(s))
+        .filter((s): s is Submission => s !== null);
+    }
     return new Assignment({
       id: AssignmentId.of(folder.Id),
       courseOrgUnitId: orgUnit,
@@ -212,6 +291,20 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       instructions: folder.CustomInstructions?.Html ?? null,
       dueDate: due,
       submissions,
+    });
+  }
+
+  private toEnrichedSubmission(
+    dto: SubmissionsByEntityDto['Submissions'][number],
+  ): Submission | null {
+    const rawUser = dto.SubmittedBy?.Identifier;
+    if (!rawUser || !dto.SubmissionDate) return null;
+    const parsed = Number.parseInt(rawUser, 10);
+    if (!Number.isInteger(parsed) || parsed <= 0) return null;
+    return new Submission({
+      submittedAt: new Date(dto.SubmissionDate),
+      submittedBy: UserId.of(parsed),
+      comments: dto.Comment?.Text ?? null,
     });
   }
 

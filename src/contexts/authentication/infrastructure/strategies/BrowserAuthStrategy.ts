@@ -18,6 +18,7 @@ export interface BrowserSelectors {
   submit: string;
   passwordSubmit?: string;    // if present → multi-step mode
   preMfaClicks?: string[];    // best-effort clicks before MFA input
+  postMfaClicks?: string[];   // best-effort clicks after MFA (e.g. "Stay signed in?" dialog)
   mfaInput: string;
   mfaSubmit: string;
   postLogin: string;
@@ -90,6 +91,16 @@ export class BrowserAuthStrategy implements AuthStrategy {
         }
       } catch {
         /* no MFA prompt — ignore and continue */
+      }
+
+      // Post-MFA best-effort clicks (e.g. "Stay signed in?" dialog)
+      for (const sel of selectors.postMfaClicks ?? []) {
+        try {
+          await page.waitForSelector(sel, { timeout: 5_000 });
+          await page.click(sel);
+        } catch {
+          // selector not present in this flow variant — skip
+        }
       }
 
       await page.waitForSelector(this.opts.selectors.postLogin, { timeout: 30_000 });

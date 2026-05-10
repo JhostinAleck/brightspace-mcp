@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-05-09
+
+### Added — Authentication & onboarding
+
+- **`brightspace-mcp record-auth` CLI command**: opens a non-headless Playwright browser, lets the user authenticate manually with whatever flow their tenant requires (FIDO2/Yubikey, biometric, Authenticator number-matching, push notifications — anything that cannot be scripted), captures the resulting session cookies, and writes a `session_cookie` profile to YAML. Storage modes: `keychain | file | env | print`. Closes the gap for tenants whose MFA cannot be automated.
+- **`postMfaClicks` browser-auth selectors**: best-effort clicks executed *after* the MFA submit, mirroring `pre_mfa_clicks`. Solves the Microsoft Azure AD post-TOTP "Stay signed in?" dialog. Schema: `profiles.<p>.auth.browser.selectors.post_mfa_clicks: string[]`.
+
+### Added — Write operations
+
+- **D2L XSRF token support** in the HTTP client: lazy-fetch from `/d2l/lp/auth/xsrf-tokens`, cache the `referrerToken` for the client lifetime, attach as `X-Csrf-Token` on every POST/PUT, invalidate on 403 so the next attempt refetches. Required for writes against tenants that authenticate via browser/session cookies.
+- **`multipart/mixed` body construction** for `submit_assignment`: per Valence docs, the dropbox submission endpoint requires `multipart/mixed` (not `multipart/form-data`) with a JSON `Dropbox.SubmissionData` block as the first part. New `D2lApiClient.postRawMultipart()` helper accepts a pre-built body and a caller-supplied `Content-Type`.
+- **`D2lUiSubmitter` Playwright fallback** for tenants where the Valence student-write API is restricted (returns 403/404 on POST despite GET working). Reuses the existing browser-auth cookies (no re-login), navigates the dropbox folders list to discover **group vs individual submission URLs automatically** (follows the link with the right `grpid` query parameter), drives the upload form via `filechooser` (avoids OS dialogs), and **verifies the submission landed via the Valence read API** — returns the real D2L `SubmissionId`, not a synthetic one. If the UI flow fails silently the verification catches it.
+- **Per-step UI selectors are config-driven** under `profile.ui_submit.selectors` (`add_file_button`, `my_computer_link`, `upload_button`, `commit_button`, `submit_button`, `confirm_button`). Defaults are English-first with ES/PT/FR fallbacks comma-joined into each selector. `force_locale` (default `en-US`) sets the Playwright context's `locale` + `Accept-Language` for deterministic English UI.
+
+### Fixed
+
+- **`get_assignments` shows real submission counts**: `D2lAssignmentRepository.findByCourse` now enriches each folder by querying `/dropbox/folders/{id}/submissions/mysubmissions/` in parallel (the folder list endpoint omits submissions for student users; only admin/instructor views include them inline). Handles individual + group submissions uniformly via the new `toEnrichedSubmission` mapper.
+
+### Added — Cross-cutting
+
+- **`UTC_WARNING` constant** centralized in `src/mcp/tool-helpers.ts` and appended to `get_assignments` (compact + detailed) and `get_upcoming_due_dates`. Prevents downstream LLMs from confusing ISO-8601 `Z`-suffixed timestamps with local time.
+
+### Documentation
+
+- New `AGENTS.md` (project map for AI assistants and humans, [agentsmd.org](https://agentsmd.org) format).
+- New `docs/setup-guide.md`, `docs/auth-strategies.md`, `docs/presets.md`, `docs/writes.md`, `docs/tools.md`, `docs/troubleshooting.md`, `docs/architecture.md`, `docs/README.md` (index). Mermaid diagrams for DDD layering, Microsoft AAD login flow, decision tree for picking auth strategy, and `submit_assignment` request flow.
+
+### Verification
+
+End-to-end tested against a Microsoft AAD-federated Brightspace tenant: full browser auth (push → fallback to TOTP → "Stay signed in?" → Brightspace home), 17 read tools functional with submission enrichment, 3 write tools register correctly behind the gates, XSRF token captured and reused, group-submission UI fallback executed and **verified** via Valence read API (returned real `SubmissionId 4545007`). 471/471 unit tests pass.
+
 ## [0.15.0] - 2026-05-09
 
 ### Added

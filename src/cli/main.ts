@@ -53,6 +53,30 @@ program
     await runAuth(opts);
   });
 
+program
+  .command('record-auth')
+  .description(
+    'Open a browser, let you authenticate manually, and capture the resulting session cookies. ' +
+    'Useful for tenants whose MFA cannot be scripted (Authenticator number-matching, Yubikey, etc.).',
+  )
+  .option('--profile <name>', 'Profile to update or create (default: "default")')
+  .option('--config <path>', 'Path to config YAML (default: ~/.brightspace-mcp/config.yaml)')
+  .option('--login-url <url>', 'Override the start URL (default: <base_url>/d2l/login)')
+  .option('--success-path <path>', 'Path fragment that signals successful login (default: /d2l/home)')
+  .option('--save-to <where>', 'keychain | file | env | print (default: print)')
+  .option('--timeout-min <minutes>', 'How long to wait for manual login (default: 10)')
+  .action(async (opts) => {
+    try {
+      const { runRecordAuth } = await import('./commands/record-auth.js');
+      await runRecordAuth(opts);
+    } catch (err) {
+      process.stderr.write(
+        `record-auth failed: ${err instanceof Error ? err.message : String(err)}\n`,
+      );
+      process.exit(1);
+    }
+  });
+
 const configCmd = program.command('config').description('Inspect or edit the config file');
 
 configCmd

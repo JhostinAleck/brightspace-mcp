@@ -39,6 +39,7 @@ const BrowserSelectorsSchema = z.object({
   submit: z.string(),
   password_submit: z.string().optional(),
   pre_mfa_clicks: z.array(z.string()).default([]),
+  post_mfa_clicks: z.array(z.string()).default([]),
   mfa_input: z.string(),
   mfa_submit: z.string(),
   post_login: z.string(),
@@ -76,6 +77,37 @@ const HeadlessStrategyConfigSchema = z.object({
   mfa_url: z.url().optional(),
   session_ttl_seconds: z.number().int().positive().default(3_600),
   mfa: MfaConfigSchema.default({ strategy: 'none' }),
+});
+
+/**
+ * Per-step selectors for the dropbox UI submit flow. Every field is optional
+ * because the defaults work for stock English Brightspace; tenants with custom
+ * UIs override individual steps without redefining the whole flow.
+ *
+ * Each entry is a Playwright locator: CSS or `:has-text(...)` are both fine.
+ * Comma-separated alternatives are tried left-to-right.
+ */
+const UiSubmitSelectorsSchema = z.object({
+  add_file_button: z.string().optional(),
+  my_computer_link: z.string().optional(),
+  upload_button: z.string().optional(),
+  commit_button: z.string().optional(),
+  submit_button: z.string().optional(),
+  /**
+   * Optional "Confirm submission" modal shown by some tenants after the
+   * primary Submit click. Failure to find this selector is silently ignored.
+   */
+  confirm_button: z.string().optional(),
+});
+
+const UiSubmitConfigSchema = z.object({
+  selectors: UiSubmitSelectorsSchema.optional(),
+  /**
+   * Force the Playwright context to render Brightspace in this locale.
+   * Defaults to `en-US` so the built-in selectors work. Set to `null` to
+   * inherit the user's profile locale (and configure custom selectors).
+   */
+  force_locale: z.string().nullable().optional(),
 });
 
 export const ProfileSchema = z.object({
@@ -116,6 +148,7 @@ export const ProfileSchema = z.object({
       file_path: z.string().optional(),
     })
     .default({ cache_backend: 'memory', preemptive_refresh_seconds: 300 }),
+  ui_submit: UiSubmitConfigSchema.optional(),
 });
 
 export const LoggingSchema = z.object({

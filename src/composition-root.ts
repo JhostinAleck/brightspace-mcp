@@ -44,6 +44,7 @@ import { CachedCourseRepository } from '@/contexts/courses/infrastructure/Cached
 import { D2lGradeRepository } from '@/contexts/grades/infrastructure/D2lGradeRepository.js';
 import { CachedGradeRepository } from '@/contexts/grades/infrastructure/CachedGradeRepository.js';
 import { D2lAssignmentRepository } from '@/contexts/assignments/infrastructure/D2lAssignmentRepository.js';
+import { D2lUiSubmitter } from '@/contexts/assignments/infrastructure/D2lUiSubmitter.js';
 import { CachedAssignmentRepository } from '@/contexts/assignments/infrastructure/CachedAssignmentRepository.js';
 import { D2lContentRepository } from '@/contexts/content/infrastructure/D2lContentRepository.js';
 import { CachedContentRepository } from '@/contexts/content/infrastructure/CachedContentRepository.js';
@@ -290,6 +291,7 @@ async function buildStrategies(
           ? { passwordSubmit: profile.auth.browser.selectors.password_submit }
           : {}),
         preMfaClicks: profile.auth.browser.selectors.pre_mfa_clicks,
+        postMfaClicks: profile.auth.browser.selectors.post_mfa_clicks,
         mfaInput: profile.auth.browser.selectors.mfa_input,
         mfaSubmit: profile.auth.browser.selectors.mfa_submit,
         postLogin: profile.auth.browser.selectors.post_login,
@@ -413,7 +415,39 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const rawGradeRepo = new D2lGradeRepository(apiClient, { le: versions.le });
   const gradeRepo = new CachedGradeRepository(rawGradeRepo, domainCacheBacking, { ttlMs: 60 * 1000 });
 
-  const rawAssignmentRepo = new D2lAssignmentRepository(apiClient, { le: versions.le });
+  // UI submitter (Playwright fallback for tenants where the Valence API is
+  // restricted). Always wired but lazy: playwrightLoader is only invoked when
+  // .submit() is actually called, so read-only flows never pay for it.
+  // Selectors and locale come from `profile.ui_submit` if set; otherwise the
+  // submitter falls back to its English-first defaults (which work for stock
+  // Brightspace tenants).
+  const uiSubmitCfg = profile.ui_submit;
+  const cfgSelectors = uiSubmitCfg?.selectors;
+  const uiSubmitter = new D2lUiSubmitter({
+    playwrightLoader,
+    baseUrl,
+    le: versions.le,
+    getToken,
+    headless: profile.auth.browser?.headless ?? true,
+    ...(cfgSelectors
+      ? {
+          selectors: {
+            ...(cfgSelectors.add_file_button !== undefined ? { addFileButton: cfgSelectors.add_file_button } : {}),
+            ...(cfgSelectors.my_computer_link !== undefined ? { myComputerLink: cfgSelectors.my_computer_link } : {}),
+            ...(cfgSelectors.upload_button !== undefined ? { uploadButton: cfgSelectors.upload_button } : {}),
+            ...(cfgSelectors.commit_button !== undefined ? { commitButton: cfgSelectors.commit_button } : {}),
+            ...(cfgSelectors.submit_button !== undefined ? { submitButton: cfgSelectors.submit_button } : {}),
+            ...(cfgSelectors.confirm_button !== undefined ? { confirmButton: cfgSelectors.confirm_button } : {}),
+          },
+        }
+      : {}),
+    ...(uiSubmitCfg?.force_locale !== undefined ? { forceLocale: uiSubmitCfg.force_locale } : {}),
+  });
+  const rawAssignmentRepo = new D2lAssignmentRepository(
+    apiClient,
+    { le: versions.le },
+    uiSubmitter,
+  );
   const assignmentRepo = new CachedAssignmentRepository(rawAssignmentRepo, domainCacheBacking, {
     listTtlMs: 60 * 1000,
     feedbackTtlMs: 5 * 60 * 1000,

@@ -63,6 +63,8 @@ export function feedbackToText(fb: Feedback | null): string {
   return `Feedback: ${score}${pct}${released}${text}`;
 }
 
+export const UTC_WARNING = '⚠️ All times are UTC — convert to local timezone before presenting to the user.';
+
 export function assignmentsToCompact(assignments: Assignment[]): string {
   if (assignments.length === 0) return 'No assignments.';
   const lines = assignments.map((a) => {
@@ -70,12 +72,12 @@ export function assignmentsToCompact(assignments: Assignment[]): string {
     const submitted = a.hasSubmission ? ' [submitted]' : '';
     return ` • ${a.name} — due ${due}${submitted} (id=${AssignmentId.toNumber(a.id)})`;
   });
-  return `Assignments:\n${lines.join('\n')}`;
+  return `Assignments:\n${lines.join('\n')}\n\n${UTC_WARNING}`;
 }
 
 export function assignmentsToDetailed(assignments: Assignment[]): string {
   if (assignments.length === 0) return 'No assignments.';
-  return assignments.map((a) => {
+  const items = assignments.map((a) => {
     const due = a.dueDate.toDate()?.toISOString() ?? 'no due date';
     const instructions = a.instructions ? `\n  Instructions: ${a.instructions.replace(/\s+/g, ' ').slice(0, 200)}` : '';
     const subs = a.submissions.length
@@ -83,6 +85,7 @@ export function assignmentsToDetailed(assignments: Assignment[]): string {
       : '\n  Submissions: none';
     return `• ${a.name} (id=${AssignmentId.toNumber(a.id)})\n  Due: ${due}${instructions}${subs}`;
   }).join('\n');
+  return `${items}\n\n${UTC_WARNING}`;
 }
 
 export function rosterToText(classmates: Classmate[]): string {

@@ -19,6 +19,25 @@ The interactive wizard handles everything: base URL, auth strategy, MFA, credent
 
 ---
 
+## Documentation
+
+Deep-dive guides live in [`docs/`](./docs/) — start with [`docs/README.md`](./docs/README.md).
+
+| Topic | Doc |
+|---|---|
+| Setup walkthrough | [`docs/setup-guide.md`](./docs/setup-guide.md) |
+| Auth strategies | [`docs/auth-strategies.md`](./docs/auth-strategies.md) |
+| Known-good presets (Microsoft AAD, etc.) | [`docs/presets.md`](./docs/presets.md) |
+| Write operations (submit, post, mark) | [`docs/writes.md`](./docs/writes.md) |
+| MCP tools reference | [`docs/tools.md`](./docs/tools.md) |
+| Troubleshooting | [`docs/troubleshooting.md`](./docs/troubleshooting.md) |
+| Architecture (DDD) | [`docs/architecture.md`](./docs/architecture.md) |
+| Register with MCP clients | [`docs/clients.md`](./docs/clients.md) |
+
+For AI assistants and contributors, [`AGENTS.md`](./AGENTS.md) is a one-page map of the repo.
+
+---
+
 ## Table of contents
 
 - [Installation](#installation)

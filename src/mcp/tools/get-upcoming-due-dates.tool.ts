@@ -5,6 +5,7 @@ import { getUpcomingDueDatesSchema } from '@/mcp/schemas.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
+import { UTC_WARNING } from '@/mcp/tool-helpers.js';
 
 export interface GetUpcomingDueDatesDeps {
   courseRepo: CourseRepository;
@@ -43,7 +44,7 @@ export async function handleGetUpcomingDueDates(
   });
   const text =
     input.format === 'detailed'
-      ? `Upcoming due dates (next ${input.days} days):\n${lines.join('\n')}`
-      : `Due in next ${input.days} days:\n${lines.join('\n')}`;
+      ? `Upcoming due dates (next ${input.days} days):\n${lines.join('\n')}\n\n${UTC_WARNING}`
+      : `Due in next ${input.days} days:\n${lines.join('\n')}\n\n${UTC_WARNING}`;
   return { content: [{ type: 'text' as const, text }] };
 }
