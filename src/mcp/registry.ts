@@ -42,6 +42,7 @@ import { handleGetAuditLog, type GetAuditLogDeps } from './tools/get-audit-log.t
 import { handleListQuizzes, type ListQuizzesDeps } from './tools/list-quizzes.tool.js';
 import { handleGetQuizAttempts, type GetQuizAttemptsDeps } from './tools/get-quiz-attempts.tool.js';
 import { handleGetMyGroups, getMyGroupsSchema, type GetMyGroupsDeps } from './tools/get-my-groups.tool.js';
+import { handleSearchCourse, searchCourseSchema, type SearchCourseDeps } from './tools/search-course.tool.js';
 import {
   handleSubmitAssignment,
   submitAssignmentSchema,
@@ -82,7 +83,8 @@ export interface ToolDeps
     GetAuditLogDeps,
     ListQuizzesDeps,
     GetQuizAttemptsDeps,
-    GetMyGroupsDeps {
+    GetMyGroupsDeps,
+    SearchCourseDeps {
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
@@ -324,6 +326,18 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getQuizAttemptsSchema.shape,
     },
     async (input: unknown) => handleGetQuizAttempts(deps, input),
+  );
+
+  server.registerTool(
+    'search_course',
+    {
+      title: 'Search Course',
+      description:
+        'Full-text search across course content, announcements, and discussion forums.\n' +
+        'Returns ranked snippets. Use when the user asks "where did the prof mention X" or "is there anything about Y in this class".',
+      inputSchema: searchCourseSchema.shape,
+    },
+    async (input: unknown) => handleSearchCourse(deps, input),
   );
 
   server.registerTool(
