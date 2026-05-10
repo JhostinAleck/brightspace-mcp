@@ -135,19 +135,32 @@ sequenceDiagram
 
 ## `submit_assignment` example
 
-The MCP tool expects the file as base64. Most MCP clients handle this automatically when you pass a file path:
+You can pass the file two ways. **`file_path` is preferred** for anything >1 MB — the server reads from disk locally, avoiding the ~33% token cost of base64-encoding through the LLM.
 
 ```jsonc
-// Tool args
+// Tool args — file_path (recommended)
 {
   "course_id": "424258",
   "folder_id": "405350",
-  "filename": "Lab4-final.zip",
-  "content_base64": "UEsDBBQA...",   // base64 of the file bytes
+  "file_path": "~/Downloads/Lab4-final.zip",   // ~/, %VAR%, or absolute
   "mime_type": "application/zip",
   "idempotency_key": "lab4-grp9-2026-05-09-attempt-1"
 }
 ```
+
+```jsonc
+// Tool args — content_base64 (when the file isn't on disk)
+{
+  "course_id": "424258",
+  "folder_id": "405350",
+  "filename": "Lab4-final.zip",
+  "content_base64": "UEsDBBQA...",
+  "mime_type": "application/zip",
+  "idempotency_key": "lab4-grp9-2026-05-09-attempt-1"
+}
+```
+
+`filename` is optional with `file_path` (defaults to the basename) and required with `content_base64`.
 
 Returns:
 

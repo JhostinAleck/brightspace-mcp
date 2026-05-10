@@ -297,7 +297,8 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       {
         title: 'Submit Assignment',
         description:
-          'Upload a file to a Brightspace Dropbox Folder. Writes: require --enable-writes + config writes.enabled: true.',
+          'Upload a file to a Brightspace Dropbox Folder. Pass either `file_path` (recommended for files >1 MB — read server-side, saves tokens) or `content_base64`. ' +
+          'Writes: require --enable-writes + config writes.enabled: true.',
         inputSchema: submitAssignmentSchema.shape,
       },
       async (args) => handleSubmitAssignment(args as SubmitAssignmentParams, deps),

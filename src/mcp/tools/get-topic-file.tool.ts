@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
 import { getTopicFileSchema } from '@/mcp/schemas.js';
+import { expandPath } from '@/shared-kernel/path/expandPath.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { extractDocxText, extractXlsxText } from '@/shared-kernel/zip/extractZipEntry.js';
 import { PDFParse } from 'pdf-parse';
@@ -41,14 +41,6 @@ function detectContentType(buf: Buffer): string {
   const printable = [...sample].filter(b => b >= 0x09 && b <= 0x7E).length;
   if (printable / sample.length > 0.85) return 'text/plain';
   return 'application/octet-stream';
-}
-
-function expandPath(rawPath: string): string {
-  // Unix: ~/... → /home/user/...
-  let p = rawPath.startsWith('~') ? rawPath.replace(/^~/, homedir()) : rawPath;
-  // Windows: %USERPROFILE%\... or any %VAR% token
-  p = p.replace(/%([^%]+)%/g, (_, name: string) => process.env[name] ?? `%${name}%`);
-  return p;
 }
 
 function saveToDisk(buf: Buffer, rawPath: string): string {
