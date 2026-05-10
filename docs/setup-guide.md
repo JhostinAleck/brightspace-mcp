@@ -118,9 +118,26 @@ The setup wizard covers 80% of cases. For the remaining 20%, edit the YAML manua
 
 ## Common setup checkpoints
 
-✅ `brightspace-mcp config show` prints your config (secrets redacted) without errors.
+The fastest way to verify everything: run **`brightspace-mcp doctor`**.
+
+```
+$ brightspace-mcp doctor
+✓ Config file (/Users/you/.brightspace-mcp/config.yaml)
+✓ Config validates (1 profile(s))
+✓ Profile resolves (myschool → https://learn.school.edu)
+✓ D2L API versions discovered (lp=1.59, le=1.93)
+✓ Authentication (Jane Doe, source: browser)
+✓ list_my_courses smoke read (12 course(s) enrolled)
+✓ Writes gate (enabled)
+
+All checks passed.
+```
+
+A red `✗` includes the next-action hint. Manually:
+
+✅ `brightspace-mcp config show` prints config (secrets redacted) without errors.
 ✅ `brightspace-mcp config validate` exits 0.
 ✅ `brightspace-mcp auth --test` shows your name and API versions.
 ✅ `npx brightspace-mcp serve` starts and prints `Discovered D2L API versions ...` to stderr.
 
-If all four pass, you're done. Move on to [clients.md](./clients.md).
+If `doctor` is green, you're done. Move on to [clients.md](./clients.md).

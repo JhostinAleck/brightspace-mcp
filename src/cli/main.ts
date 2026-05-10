@@ -54,6 +54,17 @@ program
   });
 
 program
+  .command('doctor')
+  .description('End-to-end smoke test: config → auth → API discovery → list_my_courses. Exit 0 on green.')
+  .option('--profile <name>', 'Profile to check')
+  .option('--config <path>', 'Path to config YAML')
+  .action(async (opts) => {
+    const { runDoctor } = await import('./commands/doctor.js');
+    const code = await runDoctor(opts);
+    process.exit(code);
+  });
+
+program
   .command('record-auth')
   .description(
     'Open a browser, let you authenticate manually, and capture the resulting session cookies. ' +
