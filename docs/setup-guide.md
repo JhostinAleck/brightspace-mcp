@@ -103,7 +103,9 @@ profiles:
     auth: { ... }
 ```
 
-Switch with `BRIGHTSPACE_PROFILE=research brightspace-mcp serve`.
+Switch the default with `brightspace-mcp profile use <name>` (persisted in YAML), or per-invocation with `BRIGHTSPACE_PROFILE=research brightspace-mcp serve`.
+
+List defined profiles with `brightspace-mcp profile list` (or just `brightspace-mcp profile`).
 
 ## What the wizard skips that you may need
 

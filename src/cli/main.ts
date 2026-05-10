@@ -77,6 +77,31 @@ program
     }
   });
 
+const profileCmd = program.command('profile').description('Manage profiles in the config file');
+
+profileCmd
+  .command('list', { isDefault: true })
+  .description('List defined profiles (* marks the default)')
+  .option('--config <path>', 'Path to config YAML')
+  .action(async (opts) => {
+    const { runProfileList } = await import('./commands/profile.js');
+    runProfileList(opts);
+  });
+
+profileCmd
+  .command('use <name>')
+  .description('Set the default profile')
+  .option('--config <path>', 'Path to config YAML')
+  .action(async (name: string, opts) => {
+    try {
+      const { runProfileUse } = await import('./commands/profile.js');
+      runProfileUse(name, opts);
+    } catch (err) {
+      process.stderr.write(`profile use failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.exit(1);
+    }
+  });
+
 const configCmd = program.command('config').description('Inspect or edit the config file');
 
 configCmd
