@@ -1,7 +1,11 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+
 import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
 import type { Module } from '@/contexts/content/domain/Module.js';
 import { getAssignmentFilesSchema } from '@/mcp/schemas.js';
+import { expandPath } from '@/shared-kernel/path/expandPath.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
@@ -47,12 +51,26 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
     lines.push('\n## Instructions\n' + result.instructions);
   }
 
+  // Resolve save_to once. Folder is created on first save.
+  const saveDir = input.save_to ? resolve(expandPath(input.save_to)) : null;
+  if (saveDir) mkdirSync(saveDir, { recursive: true });
+
   if (result.files.length > 0) {
     lines.push(`\n## Attachments (${result.files.length})`);
     for (const f of result.files) {
       lines.push(`\n### ${f.name}`);
       const content = result.fileContents[f.name];
       if (content) lines.push(content);
+      if (saveDir) {
+        try {
+          const bin = await deps.assignmentRepo.findFileBinary(courseId, f);
+          const out = join(saveDir, f.name);
+          writeFileSync(out, bin);
+          lines.push(`[Saved to: ${out}]`);
+        } catch (err) {
+          lines.push(`[Save failed: ${(err as Error).message}]`);
+        }
+      }
     }
   } else {
     // Fallback: search course content for topics matching the assignment name
@@ -73,15 +91,26 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
         matches.map(async (topic) => {
           try {
             const buf = await deps.contentRepo.findTopicFile(courseId, topic.id);
-            return { topic, body: topicToText(buf, topic.ext) };
+            return { topic, body: topicToText(buf, topic.ext), buf };
           } catch {
-            return { topic, body: '[download failed]' };
+            return { topic, body: '[download failed]', buf: null as Buffer | null };
           }
         }),
       );
-      for (const { topic, body } of fetched) {
+      for (const { topic, body, buf } of fetched) {
         lines.push(`\n### ${topic.title}`);
         lines.push(body);
+        if (saveDir && buf) {
+          // Use topic title + extension; sanitize slashes from the title.
+          const safe = topic.title.replace(/[/\\]/g, '_') + (topic.ext ?? '');
+          try {
+            const out = join(saveDir, safe);
+            writeFileSync(out, buf);
+            lines.push(`[Saved to: ${out}]`);
+          } catch (err) {
+            lines.push(`[Save failed: ${(err as Error).message}]`);
+          }
+        }
       }
     }
   }

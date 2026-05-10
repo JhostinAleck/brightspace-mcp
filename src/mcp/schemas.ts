@@ -104,6 +104,11 @@ export type GetCalendarEventsInputSchema = z.infer<typeof getCalendarEventsSchem
 export const getAssignmentFilesSchema = z.object({
   course_id: z.number().int().positive(),
   assignment_id: z.number().int().positive(),
+  save_to: z.string().optional().describe(
+    'Optional folder path (`~/...`, `%VAR%\\...`, or absolute) where each attached ' +
+    'file will be saved as `<save_to>/<filename>`. The folder is created if missing. ' +
+    'Extracted text is still returned alongside `[Saved to: ...]` confirmations.',
+  ),
 }).strict();
 export type GetAssignmentFilesInputSchema = z.infer<typeof getAssignmentFilesSchema>;
 

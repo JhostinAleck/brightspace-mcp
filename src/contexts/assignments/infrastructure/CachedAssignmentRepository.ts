@@ -115,6 +115,13 @@ export class CachedAssignmentRepository implements AssignmentRepository {
     return this.inner.findFiles(courseId, assignmentId);
   }
 
+  async findFileBinary(courseId: OrgUnitId, file: { name: string; url: string }): Promise<Buffer> {
+    // Binaries can be tens of MB — caching them in the domain cache backend
+    // (Redis especially) is expensive. The HTTP client already has its own
+    // cache layer for upstream responses.
+    return this.inner.findFileBinary(courseId, file);
+  }
+
   async submit(input: SubmitInput): Promise<SubmitResult> {
     // Writes bypass the cache — delegate directly to the inner repo.
     return this.inner.submit(input);

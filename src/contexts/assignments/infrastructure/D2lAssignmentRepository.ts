@@ -246,6 +246,10 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     return { assignmentId: String(folderId), assignmentName, instructions, files, fileContents };
   }
 
+  async findFileBinary(_courseId: OrgUnitId, file: { url: string }): Promise<Buffer> {
+    return this.client.getRaw(file.url);
+  }
+
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const fid = AssignmentId.toNumber(assignmentId);

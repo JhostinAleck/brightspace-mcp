@@ -33,5 +33,11 @@ export interface AssignmentRepository {
   findByCourse(courseId: OrgUnitId): Promise<Assignment[]>;
   findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null>;
   findFiles(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<AssignmentFilesResult>;
+  /**
+   * Download the raw bytes of a single attachment. Used by tools that want
+   * to save the binary to disk; `findFiles` already returns extracted text
+   * for AI consumption.
+   */
+  findFileBinary(courseId: OrgUnitId, file: AssignmentFile): Promise<Buffer>;
   submit(input: SubmitInput): Promise<SubmitResult>;
 }

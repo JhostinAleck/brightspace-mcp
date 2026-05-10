@@ -269,6 +269,7 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       description:
         'Download and read the attachments (instructions, templates) posted on a Brightspace assignment.\n' +
         'Returns the text content of DOCX files and file info for other formats.\n' +
+        'Pass save_to with a folder path (~/..., %VAR%\\..., or absolute) to also save each binary to disk.\n' +
         'Use when the user asks "what do I have to do", "download the assignment", or "read the instructions".',
       inputSchema: getAssignmentFilesSchema.shape,
     },
