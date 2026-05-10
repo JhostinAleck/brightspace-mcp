@@ -38,7 +38,7 @@ Cross-course view of what's coming due.
 - `days` *(integer 1–365, default 14)*
 - `format` *(`compact|detailed`)*
 
-⚠️ **All times are UTC.** The tool emits a warning footer reminding LLMs to convert to local before answering "vence mañana"-type questions.
+⚠️ **All times are UTC.** The tool emits a warning footer reminding LLMs to convert to local before answering "due tomorrow"-type questions.
 
 ### `get_feedback`
 Submission feedback (score + comments).
