@@ -31,6 +31,10 @@ Thumbs.db
 coverage/
 .nyc_output/
 
+# VitePress
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
 # Test artifacts
 tests/fixtures/_local/
 

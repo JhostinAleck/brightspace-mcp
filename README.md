@@ -1,9 +1,12 @@
 # brightspace-mcp
 
 [![CI](https://github.com/JhostinAleck/brightspace-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/JhostinAleck/brightspace-mcp/actions/workflows/ci.yml)
+[![Docs](https://github.com/JhostinAleck/brightspace-mcp/actions/workflows/docs.yml/badge.svg)](https://jhostinaleck.github.io/brightspace-mcp/)
 [![npm version](https://img.shields.io/npm/v/brightspace-mcp.svg)](https://www.npmjs.com/package/brightspace-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/node/v/brightspace-mcp.svg)](./package.json)
+
+📖 **[Full documentation site →](https://jhostinaleck.github.io/brightspace-mcp/)**
 
 MCP server for D2L Brightspace. Gives Claude (and any MCP-compatible client) access to your courses, grades, assignments, content, calendar, and more — with multi-strategy authentication, full MFA support, and production-grade resilience built in.
 
