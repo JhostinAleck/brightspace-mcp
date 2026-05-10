@@ -359,7 +359,7 @@ export class D2lApiClient {
       }
       try {
         await this.authRefreshInFlight;
-      } catch (refreshErr) {
+      } catch {
         // If refresh itself failed, surface the original auth error so the
         // caller's hint chain stays clean.
         throw err;

@@ -99,7 +99,7 @@ export async function handleSubmitAssignment(
     try {
       size = statSync(abs).size;
     } catch (err) {
-      throw new Error(`file_path could not be read: ${abs} (${(err as Error).message})`);
+      throw new Error(`file_path could not be read: ${abs} (${(err as Error).message})`, { cause: err });
     }
     if (size === 0) throw new Error(`file_path is empty: ${abs}`);
     if (size > SUBMIT_MAX_BYTES) {

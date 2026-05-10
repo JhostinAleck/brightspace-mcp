@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-05-09
+
+### Added — New tools
+
+- **`get_audit_log`**: query the local NDJSON audit history of writes (filter by tool/since/limit). The `AuditLogger` now also persists each entry to `~/.brightspace-mcp/audit.log` (mode 0600) on top of the existing stderr emission.
+- **`list_quizzes`** and **`get_quiz_attempts`**: read-only access to the D2L Quizzes API. Returns metadata, attempt counts, time limits, scores. Quiz questions and answer keys are intentionally NOT exposed.
+- **`get_my_groups`**: list group enrollments per course with member rosters. Useful for "who's in my Lab 4 group?" and finding the right `grpid` for a manual UI URL.
+- **`search_course`**: ranked full-text search across content modules, announcements, and discussion forums for a given course. In-memory term-frequency scoring; configurable scope and limit.
+- **`list_notifications`**: Brightspace user activity feed (announcements, due-date reminders, grade releases). Filter by unread.
+
+### Added — submit_assignment refinements
+
+- **`file_path` parameter**: alternative to `content_base64`. Read file from disk server-side, avoiding the ~33% base64 overhead in LLM tokens. Path expansion (`~`, `%VAR%`) supported. `filename` defaults to basename when `file_path` is used. Mutually exclusive via Zod `superRefine`.
+- **Resubmit guard**: `submit_assignment` now reads the assignment's `SubmissionType` before submitting. If the type is `replace_previous` (D2L SubmissionType=0) or `only_one` (=2) AND a submission already exists, the tool refuses with a clear error including the existing timestamp. Pass `replace: true` to confirm and proceed.
+
+### Added — get_assignment_files
+
+- **`save_to` parameter**: parity with `get_topic_file`. Pass a folder path; each attachment is written as `<save_to>/<filename>` alongside the extracted text. New `AssignmentRepository.findFileBinary` powers it.
+
+### Added — onboarding & operations
+
+- **`brightspace-mcp doctor`**: end-to-end smoke test. Walks: config exists → config validates → profile resolves → API versions discovered → auth → list_my_courses → writes-gate state. Each red ✗ includes a next-action hint. Exit 0 on green.
+- **`brightspace-mcp profile {list,use}`**: list profiles (with `*` on default) and switch the default profile without editing YAML by hand.
+
+### Added — reliability
+
+- **Auto-refresh auth on 401**: `D2lApiClient` now invokes `onAuthFailure` (wired to `EnsureAuthenticated.reauthenticate`) when a request fails with `AuthExpiredError`, then retries the request once with the fresh token. Concurrent failures debounce to a single refresh. For `session_cookie` strategy where re-auth is impossible without user interaction, the original error bubbles with a hint to re-run `record-auth`.
+- **Semantic error classification**: new `AuthExpiredError` and `WritesDisabledByTenantError` subclasses of `D2lApiError`. Heuristic classifier maps 401s and 403s on writes-paths to typed errors with `.hint` strings. All `D2lApiClient` throw sites now run the classifier so callers get useful subtypes without parsing HTTP status.
+
+### Fixed
+
+- **`get_assignments` enriched submission counts**: `findByCourse` now queries `/dropbox/folders/{id}/submissions/mysubmissions/` per folder in parallel; the folder list endpoint omits submissions for student users (admin-only inline).
+- **DDD layering**: `lazy-playwright` moved from `contexts/authentication/...` to `shared-kernel/playwright/`. Multiple contexts now consume it (auth, assignments-UI-submitter, CLI record-auth) and the cross-context import was a depcruise violation. 0 violations across 197 modules.
+
+### Documentation
+
+- BACKLOG section "v0.17+ proposals" with status updates: 13 features shipped (A, B, C, E, F, G, H, J, L, M, N, P, S), 6 deferred to v0.18 (D, I, K, O, Q, R) with reasons.
+- `docs/troubleshooting.md`: new entries for non-scriptable MFA flows (Yubikey/biometric → use `record-auth`), session-cookie expiration UX, and `submit_assignment` UI fallback selector overrides per tenant.
+- `docs/setup-guide.md`: three setup paths (wizard, recorder, manual YAML); `doctor` command demo.
+- `docs/auth-strategies.md`: recorder section with full flow.
+- `docs/tools.md`: 5 new tool entries.
+
+### Verification
+
+509/509 unit tests pass. depcruise 0 violations. Build clean. End-to-end submit + read flow verified against a Microsoft AAD-federated Brightspace tenant.
+
 ## [0.16.0] - 2026-05-09
 
 ### Added — Authentication & onboarding
