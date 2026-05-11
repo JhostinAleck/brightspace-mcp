@@ -38,7 +38,7 @@ export async function handleListNotifications(deps: ListNotificationsDeps, rawIn
   return {
     content: [{
       type: 'text' as const,
-      text: `Notifications (${items.length}${input.unread_only ? ' unread' : ''}):\n${lines.join('\n')}${deps.output.metaFooter() ? `\n\n${deps.output.metaFooter()}` : ''}`,
+      text: `Notifications (${items.length}${input.unread_only ? ' unread' : ''}):\n${lines.join('\n')}`,
     }],
   };
 }

@@ -32,7 +32,7 @@ export async function handleGetQuizAttempts(deps: GetQuizAttemptsDeps, rawInput:
   return {
     content: [{
       type: 'text' as const,
-      text: `${attempts.length} attempt(s):\n${lines.join('\n')}${deps.output.metaFooter() ? `\n\n${deps.output.metaFooter()}` : ''}`,
+      text: `${attempts.length} attempt(s):\n${lines.join('\n')}`,
     }],
   };
 }
