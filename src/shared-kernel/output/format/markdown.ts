@@ -1,6 +1,6 @@
 export type Heading = 1 | 2 | 3 | 4 | 5 | 6;
 
-const escapeChars = /[\\`*_{}\[\]()#+\-.!|>]/g;
+const escapeChars = /[\\`*_{}[\]()#+\-.!|>]/g;
 
 export const markdown = {
   h1: (t: string) => `# ${t}`,
@@ -15,7 +15,11 @@ export const markdown = {
   code: (t: string) => `\`${t}\``,
   codeBlock: (lang: string, t: string) => `\`\`\`${lang}\n${t}\n\`\`\``,
   link: (label: string, url: string) => `[${label}](${url})`,
-  blockquote: (t: string) => t.split('\n').map((l) => `> ${l}`).join('\n'),
+  blockquote: (t: string) =>
+    t
+      .split('\n')
+      .map((l) => `> ${l}`)
+      .join('\n'),
   escape: (t: string) => t.replace(escapeChars, (c) => `\\${c}`),
 } as const;
 
