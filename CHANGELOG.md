@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-05-11
+
+### Added — MCP Resources
+
+Four new `brightspace://` Resources exposed via `resources/read`:
+
+| Resource | URI pattern | Returns |
+|---|---|---|
+| Syllabus | `brightspace://{courseId}/syllabus` | `text/plain` — HTML stripped, date localised |
+| Content topic | `brightspace://{courseId}/content/topics/{topicId}` | `text/plain` (pdf-parse) or `application/pdf` fallback |
+| Assignment files | `brightspace://{courseId}/assignments/{assignmentId}/files` | All attachments as text (with base64 fallback per file) |
+| Announcement | `brightspace://{courseId}/announcements/{announcementId}` | `text/plain` — HTML stripped, date localised |
+
+Use IDs obtained from existing tools (`list_my_courses`, `get_assignments`, etc.) to construct URIs.
+
+### Added — MCP Prompts
+
+Four new Prompts visible in `prompts/list` and invokable by MCP clients:
+
+| Prompt | Arguments | Purpose |
+|---|---|---|
+| `weekly_briefing` | none | 7-day briefing: due dates + announcements + grades |
+| `grade_audit` | `course_id?` | Grade analysis + pass-rate projection |
+| `study_planner` | `days_ahead?` (default 7) | Study plan based on due dates + calendar |
+| `course_summary` | `course_id` (required) | Full course overview |
+
+All prompts return localised `user` messages (per `output.locale`) guiding the LLM to use available tools.
+
+### Added — Infrastructure
+- `src/mcp/resources/` module with URI builder, PDF extractor, and 4 resource handlers
+- `src/mcp/prompts/` module with 4 prompt handlers
+- `prompts.*` namespace added to all 4 i18n catalogs (en-US, es-419, pt-BR, fr-CA)
+- depcruise rules extended for `resources/` and `prompts/` layers
+
 ## [0.18.0] - 2026-05-11
 
 ### BREAKING
