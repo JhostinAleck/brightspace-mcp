@@ -102,6 +102,35 @@ program
   });
 
 program
+  .command('ui')
+  .description('Start local web dashboard at http://localhost:9876')
+  .option('--port <number>', 'HTTP port', '9876')
+  .option('--profile <name>', 'Profile to load')
+  .option('--config <path>', 'Config file path')
+  .option('--open', 'Open browser automatically on start')
+  .action(async (opts) => {
+    try {
+      const port = parseInt(opts.port ?? '9876', 10);
+      const { existsSync } = await import('node:fs');
+      const { loadConfig } = await import('@/shared-kernel/config/loader.js');
+      const { buildDependencies } = await import('@/composition-root.js');
+      const { Paths } = await import('@/shared-kernel/config/paths.js');
+      const path = opts.config ?? Paths.configYaml();
+      const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
+      const cliOverrides: Record<string, unknown> = {};
+      if (opts.profile) cliOverrides['default_profile'] = opts.profile;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const config = loadConfig({ fileContent, env: process.env, cliOverrides: cliOverrides as any });
+      const deps = await buildDependencies({ config, enableWrites: false });
+      const { runUi } = await import('./commands/ui.js');
+      await runUi({ port, open: opts.open ?? false, deps });
+    } catch (err) {
+      process.stderr.write(`ui failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('auth')
   .description('Manually re-authenticate the current profile')
   .option('--profile <name>', 'Profile to authenticate')
