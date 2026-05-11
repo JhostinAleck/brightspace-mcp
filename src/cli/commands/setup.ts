@@ -2,8 +2,14 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { confirm } from '@inquirer/prompts';
+import { confirm, input, select } from '@inquirer/prompts';
 import { stringify as stringifyYaml } from 'yaml';
+
+import { detectSystemTz, isValidTz } from '@/shared-kernel/output/time/tz-detector.js';
+import {
+  detectSystemLocale,
+  type SupportedLocale,
+} from '@/shared-kernel/output/i18n/locale-detector.js';
 
 import {
   promptApiToken,
@@ -30,8 +36,7 @@ export interface SetupOptions {
 }
 
 export async function runSetup(opts: SetupOptions): Promise<void> {
-  const configPath =
-    opts.config ?? join(homedir(), '.brightspace-mcp', 'config.yaml');
+  const configPath = opts.config ?? join(homedir(), '.brightspace-mcp', 'config.yaml');
 
   process.stdout.write('Brightspace MCP setup wizard\n\n');
 
@@ -58,6 +63,32 @@ export async function runSetup(opts: SetupOptions): Promise<void> {
   } else if (authStrategy === 'session_cookie') {
     await configureSessionCookie(auth);
   }
+
+  const detectedTz = detectSystemTz();
+  const tz = await input({
+    message: 'Time zone for displaying dates (IANA name, e.g. America/Bogota):',
+    default: detectedTz,
+    validate: (v) => (isValidTz(v) ? true : `Not a valid IANA timezone. Try "${detectedTz}".`),
+  });
+
+  const detectedLocale = detectSystemLocale();
+  const locale = await select<SupportedLocale>({
+    message: 'Display language:',
+    default: detectedLocale,
+    choices: [
+      { value: 'en-US' as const, name: 'English (US)' },
+      { value: 'es-419' as const, name: 'Español (Latinoamérica)' },
+      { value: 'pt-BR' as const, name: 'Português (Brasil)' },
+      { value: 'fr-CA' as const, name: 'Français (Canada)' },
+    ],
+  });
+
+  config.output = {
+    tz,
+    locale,
+    format: 'markdown',
+    include_meta_footer: true,
+  };
 
   mkdirSync(dirname(configPath), { recursive: true });
   writeFileSync(configPath, stringifyYaml(config), { encoding: 'utf8', mode: 0o600 });
@@ -94,7 +125,9 @@ export async function runSetup(opts: SetupOptions): Promise<void> {
 }
 
 async function configureBrowser(auth: Record<string, unknown>, baseUrl: string): Promise<void> {
-  process.stdout.write('\nBrowser strategy uses Playwright to automate login in a headless browser.\n');
+  process.stdout.write(
+    '\nBrowser strategy uses Playwright to automate login in a headless browser.\n',
+  );
   process.stdout.write('You need: npm install playwright && npx playwright install chromium\n\n');
 
   const preset = await promptBrowserPreset();
@@ -107,9 +140,8 @@ async function configureBrowser(auth: Record<string, unknown>, baseUrl: string):
     selectors = await promptSimpleSelectors();
   }
 
-  const loginUrl = preset === 'microsoft_sso'
-    ? `${baseUrl.replace(/\/$/, '')}/d2l/login`
-    : await promptLoginUrl();
+  const loginUrl =
+    preset === 'microsoft_sso' ? `${baseUrl.replace(/\/$/, '')}/d2l/login` : await promptLoginUrl();
 
   const usernameVarName = await promptUsernameRef();
   const username = await promptUsername();
@@ -149,7 +181,9 @@ async function configureBrowser(auth: Record<string, unknown>, baseUrl: string):
 }
 
 async function configureHeadless(auth: Record<string, unknown>): Promise<void> {
-  process.stdout.write('\nHeadless strategy automates login via HTTP — no browser window needed.\n');
+  process.stdout.write(
+    '\nHeadless strategy automates login via HTTP — no browser window needed.\n',
+  );
   process.stdout.write('Supports Duo Push, TOTP, and Manual Prompt MFA.\n\n');
 
   const loginUrl = await promptLoginUrl();
