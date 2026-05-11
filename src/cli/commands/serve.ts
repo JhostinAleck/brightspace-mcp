@@ -5,6 +5,7 @@ import { Paths } from '@/shared-kernel/config/paths.js';
 import { buildDependencies } from '@/composition-root.js';
 import { startServer } from '@/mcp/server.js';
 import { TransportPolicy } from '@/contexts/http-api/transport/TransportPolicy.js';
+import { isNewerVersion } from './upgrade.js';
 
 export interface ServeOptions {
   profile?: string;
@@ -13,7 +14,39 @@ export interface ServeOptions {
   enableWrites?: boolean;
 }
 
+export async function checkForUpdate(): Promise<void> {
+  if (process.env['BRIGHTSPACE_NO_UPDATE_CHECK'] === '1') return;
+  try {
+    const { readFileSync: rfs, existsSync: es } = await import('node:fs');
+    const { dirname: dn, join: jn } = await import('node:path');
+    const { fileURLToPath: ftu } = await import('node:url');
+    const __f = ftu(import.meta.url);
+    const __d = dn(__f);
+    const candidates = [jn(__d, '..', '..', '..', 'package.json'), jn(__d, '..', '..', 'package.json')];
+    let current = '0.0.0';
+    for (const p of candidates) {
+      if (es(p)) {
+        current = (JSON.parse(rfs(p, 'utf8')) as { version: string }).version;
+        break;
+      }
+    }
+    const signal = AbortSignal.timeout(3000);
+    const res = await fetch('https://registry.npmjs.org/brightspace-mcp/latest', { signal });
+    if (!res.ok) return;
+    const data = (await res.json()) as { version: string };
+    if (data.version && isNewerVersion(data.version, current)) {
+      process.stderr.write(
+        `\n  ⬆  New version available: v${data.version} (you have v${current})\n` +
+        `     Run: brightspace-mcp upgrade\n\n`,
+      );
+    }
+  } catch {
+    // Never break startup for an update check failure
+  }
+}
+
 export async function runServe(opts: ServeOptions): Promise<void> {
+  void checkForUpdate(); // fire-and-forget; never await
   const path = opts.config ?? Paths.configYaml();
   const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
 
