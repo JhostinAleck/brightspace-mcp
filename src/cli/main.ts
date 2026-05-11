@@ -44,6 +44,64 @@ program
   });
 
 program
+  .command('init')
+  .description('Non-interactive config writer for CI and scripts (no TTY required)')
+  .requiredOption('--base-url <url>', 'Brightspace instance URL')
+  .requiredOption('--strategy <name>', 'api_token | browser | headless | session_cookie | oauth')
+  .option('--profile <name>', 'Profile name in config', 'default')
+  .option('--config <path>', 'Config file path')
+  .option('--tz <iana>', 'Display timezone (IANA, auto-detected if omitted)')
+  .option('--locale <code>', 'Display locale: en-US|es-419|pt-BR|fr-CA')
+  .option('--force', 'Overwrite existing profile without confirmation')
+  .option('--token-ref <ref>', 'Secret ref for API token (e.g. env:BRIGHTSPACE_API_TOKEN)')
+  .option('--username-ref <ref>', 'Secret ref for username (e.g. env:BRIGHTSPACE_USERNAME)')
+  .option('--password-ref <ref>', 'Secret ref for password (e.g. env:BRIGHTSPACE_PASSWORD)')
+  .option('--login-url <url>', 'Login page URL (default: {base-url}/d2l/login)')
+  .option('--preset <name>', 'Browser preset: microsoft | none')
+  .option('--mfa-strategy <name>', 'none | totp | duo_push | manual_prompt', 'none')
+  .option('--totp-secret-ref <ref>', 'Secret ref for TOTP (e.g. env:BRIGHTSPACE_TOTP_SECRET)')
+  .option('--no-headless', 'Run browser in non-headless mode (shows window)')
+  .option('--cookie-ref <ref>', 'Secret ref for session cookie (e.g. env:BRIGHTSPACE_COOKIE)')
+  .option('--authorize-url <url>', 'OAuth authorize endpoint')
+  .option('--token-url <url>', 'OAuth token endpoint')
+  .option('--client-id <id>', 'OAuth client ID')
+  .option('--redirect-uri <url>', 'OAuth redirect URI')
+  .option('--scopes <scopes>', 'OAuth scopes (space or comma separated)')
+  .option('--refresh-token-ref <ref>', 'Secret ref for OAuth refresh token')
+  .action(async (opts) => {
+    try {
+      const { runInit } = await import('./commands/init.js');
+      await runInit({
+        baseUrl: opts.baseUrl,
+        strategy: opts.strategy,
+        profile: opts.profile,
+        config: opts.config,
+        tz: opts.tz,
+        locale: opts.locale,
+        force: opts.force,
+        tokenRef: opts.tokenRef,
+        usernameRef: opts.usernameRef,
+        passwordRef: opts.passwordRef,
+        loginUrl: opts.loginUrl,
+        preset: opts.preset,
+        mfaStrategy: opts.mfaStrategy,
+        totpSecretRef: opts.totpSecretRef,
+        headless: opts.headless,
+        cookieRef: opts.cookieRef,
+        authorizeUrl: opts.authorizeUrl,
+        tokenUrl: opts.tokenUrl,
+        clientId: opts.clientId,
+        redirectUri: opts.redirectUri,
+        scopes: opts.scopes,
+        refreshTokenRef: opts.refreshTokenRef,
+      });
+    } catch (err) {
+      process.stderr.write(`init failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('auth')
   .description('Manually re-authenticate the current profile')
   .option('--profile <name>', 'Profile to authenticate')
