@@ -1,8 +1,8 @@
-import { readFile, writeFile, chmod, rename, mkdir, unlink } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
+import { atomicWrite } from '@/shared-kernel/fs/atomicWrite.js';
 import type { SessionCache } from '@/contexts/authentication/domain/SessionCache.js';
 import type { Session } from '@/contexts/authentication/domain/Session.js';
 import {
@@ -78,17 +78,7 @@ export class FileSessionCache implements SessionCache {
 
   private async saveFile(file: SessionFile): Promise<void> {
     await mkdir(dirname(this.opts.path), { recursive: true });
-    const tmp = `${this.opts.path}.tmp-${randomBytes(4).toString('hex')}`;
-    await writeFile(tmp, JSON.stringify(file), { encoding: 'utf8' });
-    if (process.platform !== 'win32') await chmod(tmp, 0o600);
-    try {
-      await rename(tmp, this.opts.path);
-    } catch (err) {
-      await unlink(tmp).catch(() => {
-        /* best-effort */
-      });
-      throw err;
-    }
+    await atomicWrite(this.opts.path, JSON.stringify(file), { mode: 0o600 });
   }
 
   private async withLock<T>(op: () => Promise<T>): Promise<T> {

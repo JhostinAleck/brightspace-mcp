@@ -1,9 +1,9 @@
-import { readFile, writeFile, mkdir, rename, unlink, chmod } from 'node:fs/promises';
+import { readFile, mkdir, chmod } from 'node:fs/promises';
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
 import type { Cache } from './Cache.js';
+import { atomicWrite } from '@/shared-kernel/fs/atomicWrite.js';
 
 interface Entry { value: unknown; expiresAt: number; }
 interface CacheFile { version: 1; entries: Record<string, Entry>; }
@@ -37,15 +37,7 @@ export class FileCache implements Cache {
 
   private async save(file: CacheFile): Promise<void> {
     await mkdir(dirname(this.opts.path), { recursive: true });
-    const tmp = `${this.opts.path}.tmp-${randomBytes(4).toString('hex')}`;
-    await writeFile(tmp, JSON.stringify(file), { encoding: 'utf8' });
-    if (process.platform !== 'win32') await chmod(tmp, 0o600);
-    try {
-      await rename(tmp, this.opts.path);
-    } catch (err) {
-      await unlink(tmp).catch(() => {});
-      throw err;
-    }
+    await atomicWrite(this.opts.path, JSON.stringify(file), { mode: 0o600 });
   }
 
   private async withLock<T>(op: () => Promise<T>): Promise<T> {

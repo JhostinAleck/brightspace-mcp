@@ -1,8 +1,9 @@
-import { readFile, writeFile, chmod, rename, mkdir, unlink } from 'node:fs/promises';
+import { readFile, mkdir, chmod } from 'node:fs/promises';
 import { existsSync, writeFileSync } from 'node:fs';
 import { randomBytes, scryptSync, createCipheriv, createDecipheriv } from 'node:crypto';
 import { dirname } from 'node:path';
 import lockfile from 'proper-lockfile';
+import { atomicWrite } from '@/shared-kernel/fs/atomicWrite.js';
 import type {
   CredentialStore,
   CredentialKey,
@@ -112,15 +113,7 @@ export class EncryptedFileCredentialStore implements CredentialStore {
 
   private async saveFile(file: EncryptedFile): Promise<void> {
     await mkdir(dirname(this.opts.path), { recursive: true });
-    const tmp = `${this.opts.path}.tmp-${randomBytes(4).toString('hex')}`;
-    await writeFile(tmp, JSON.stringify(file), { encoding: 'utf8' });
-    if (process.platform !== 'win32') await chmod(tmp, 0o600);
-    try {
-      await rename(tmp, this.opts.path);
-    } catch (err) {
-      await unlink(tmp).catch(() => { /* best-effort cleanup */ });
-      throw err;
-    }
+    await atomicWrite(this.opts.path, JSON.stringify(file), { mode: 0o600 });
   }
 
   async get(key: CredentialKey): Promise<SecretValue | null> {

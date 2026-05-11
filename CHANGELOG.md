@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.17.2] - 2026-05-11
+
+### Fixed
+
+- **Windows CI flaky `EPERM: operation not permitted, rename`** on `domain-cache.json` (and any other atomically-written file). Windows raises `EPERM`/`EBUSY`/`EACCES` on `rename(tmp, target)` when another handle to the target is still being released (antivirus scans, concurrent test workers, tail-end fs caching). The fix retries the rename with short exponential backoff — the conventional approach used by `write-file-atomic` and `npm`. Applied to all 3 callers of the atomic-write pattern: `FileCache`, `FileSessionCache`, `EncryptedFileCredentialStore`.
+
+### Added
+
+- `atomicWrite` / `renameWithRetry` helpers in `shared-kernel/fs/` that encapsulate the stage-then-rename pattern with the Windows-resilient retry built in.
+
 ## [0.17.1] - 2026-05-10
 
 ### Fixed
