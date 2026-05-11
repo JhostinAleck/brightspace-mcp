@@ -208,7 +208,7 @@ export const ConfigSchema = z.object({
   logging: LoggingSchema.default({ level: 'info' }),
   writes: WritesConfigSchema,
   redis: RedisCacheConfigSchema.optional(),
-  output: OutputConfigSchema,
+  output: OutputConfigSchema.optional().default({ format: 'markdown', include_meta_footer: true }),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

@@ -21,4 +21,5 @@ export const DEFAULT_CONFIG: Config = {
   },
   logging: { level: 'info' },
   writes: { enabled: false, dry_run: false },
+  output: { format: 'markdown', include_meta_footer: true },
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildOutputContext, resetCatalogCache } from '@/shared-kernel/output/output-context.js';
+import { buildOutputContext } from '@/shared-kernel/output/output-context.js';
 
 describe('OutputContext', () => {
   it('uses provided tz and locale', () => {

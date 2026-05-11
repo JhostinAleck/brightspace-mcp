@@ -1,6 +1,6 @@
 export interface NumberOpts {
   locale: string;
-  digits?: number;
+  digits?: number | undefined;
 }
 
 export function formatPercent(n: number, opts: NumberOpts): string {

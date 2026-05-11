@@ -1,7 +1,7 @@
 export interface FormatOptions {
   tz: string;
   locale: string;
-  style?: 'short' | 'long' | 'datetime';
+  style?: 'short' | 'long' | 'datetime' | undefined;
 }
 
 export function formatDate(d: Date | null, opts: FormatOptions): string {
