@@ -1,10 +1,11 @@
 import { listQuizzes } from '@/contexts/quizzes/application/listQuizzes.js';
 import type { QuizRepository } from '@/contexts/quizzes/domain/QuizRepository.js';
 import { listQuizzesSchema } from '@/mcp/schemas.js';
-import { UTC_WARNING } from '@/mcp/tool-helpers.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
 export interface ListQuizzesDeps {
   quizRepo: QuizRepository;
+  output: OutputContext;
 }
 
 export async function handleListQuizzes(deps: ListQuizzesDeps, rawInput: unknown) {
@@ -30,10 +31,13 @@ export async function handleListQuizzes(deps: ListQuizzesDeps, rawInput: unknown
   });
 
   const header = `Quizzes (${quizzes.length}):`;
+  const text = `${header}\n${lines.join('\n')}`;
+  const footer = deps.output.metaFooter();
+  const body = footer ? `${text}\n\n${footer}` : text;
   return {
     content: [{
       type: 'text' as const,
-      text: `${header}\n${lines.join('\n')}\n\n${UTC_WARNING}`,
+      text: body,
     }],
   };
 }

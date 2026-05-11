@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { handleListQuizzes } from '@/mcp/tools/list-quizzes.tool.js';
 import { Quiz } from '@/contexts/quizzes/domain/Quiz.js';
 import type { QuizRepository } from '@/contexts/quizzes/domain/QuizRepository.js';
+import { testOutputContext } from '../../helpers/test-output-context.js';
 
 const mkRepo = (quizzes: Quiz[]): QuizRepository => ({
   findByCourse: async () => quizzes,
@@ -11,7 +12,7 @@ const mkRepo = (quizzes: Quiz[]): QuizRepository => ({
 
 describe('handleListQuizzes', () => {
   it('returns "no quizzes" when the course has none', async () => {
-    const result = await handleListQuizzes({ quizRepo: mkRepo([]) }, { course_id: 100 });
+    const result = await handleListQuizzes({ quizRepo: mkRepo([]), output: testOutputContext() }, { course_id: 100 });
     expect(result.content[0]?.text).toContain('No quizzes');
   });
 
@@ -24,14 +25,13 @@ describe('handleListQuizzes', () => {
           attemptsTaken: 1, attemptsAllowed: 3, timeLimitMinutes: 30,
           autoGrade: true, instructions: null,
         }),
-      ]) },
+      ]), output: testOutputContext() },
       { course_id: 100 },
     );
     const text = result.content[0]?.text ?? '';
     expect(text).toContain('Quiz 1');
     expect(text).toContain('1/3 taken');
     expect(text).toContain('2 remaining');
-    expect(text).toContain('UTC');
   });
 
   it('renders detailed format with time limit and instructions snippet', async () => {
@@ -43,7 +43,7 @@ describe('handleListQuizzes', () => {
           attemptsTaken: 0, attemptsAllowed: null, timeLimitMinutes: 60,
           autoGrade: false, instructions: '<p>Read carefully</p>',
         }),
-      ]) },
+      ]), output: testOutputContext() },
       { course_id: 100, format: 'detailed' },
     );
     const text = result.content[0]?.text ?? '';

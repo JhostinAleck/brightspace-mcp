@@ -3,11 +3,12 @@ import { getClasslistEmails } from '@/contexts/courses/application/getClasslistE
 import { getClasslistEmailsSchema } from '@/mcp/schemas.js';
 import { emailsToText } from '@/mcp/tool-helpers.js';
 import { CourseId } from '@/contexts/courses/domain/CourseId.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
-export interface GetClasslistEmailsDeps { courseRepo: CourseRepository; }
+export interface GetClasslistEmailsDeps { courseRepo: CourseRepository; output: OutputContext; }
 
 export async function handleGetClasslistEmails(deps: GetClasslistEmailsDeps, rawInput: unknown) {
   const input = getClasslistEmailsSchema.parse(rawInput);
   const emails = await getClasslistEmails({ repo: deps.courseRepo, courseId: CourseId.of(input.course_id) });
-  return { content: [{ type: 'text' as const, text: emailsToText(emails) }] };
+  return { content: [{ type: 'text' as const, text: emailsToText(emails, deps.output) }] };
 }

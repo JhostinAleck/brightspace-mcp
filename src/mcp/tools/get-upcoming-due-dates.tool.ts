@@ -5,11 +5,12 @@ import { getUpcomingDueDatesSchema } from '@/mcp/schemas.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
-import { UTC_WARNING } from '@/mcp/tool-helpers.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
 export interface GetUpcomingDueDatesDeps {
   courseRepo: CourseRepository;
   assignmentRepo: AssignmentRepository;
+  output: OutputContext;
 }
 
 export async function handleGetUpcomingDueDates(
@@ -44,7 +45,9 @@ export async function handleGetUpcomingDueDates(
   });
   const text =
     input.format === 'detailed'
-      ? `Upcoming due dates (next ${input.days} days):\n${lines.join('\n')}\n\n${UTC_WARNING}`
-      : `Due in next ${input.days} days:\n${lines.join('\n')}\n\n${UTC_WARNING}`;
-  return { content: [{ type: 'text' as const, text }] };
+      ? `Upcoming due dates (next ${input.days} days):\n${lines.join('\n')}`
+      : `Due in next ${input.days} days:\n${lines.join('\n')}`;
+  const footer = deps.output.metaFooter();
+  const body = footer ? `${text}\n\n${footer}` : text;
+  return { content: [{ type: 'text' as const, text: body }] };
 }

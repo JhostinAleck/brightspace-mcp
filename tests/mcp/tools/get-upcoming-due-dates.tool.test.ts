@@ -7,6 +7,7 @@ import { CourseId } from '@/contexts/courses/domain/CourseId';
 import { Assignment } from '@/contexts/assignments/domain/Assignment';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId';
 import { DueDate } from '@/contexts/assignments/domain/DueDate';
+import { testOutputContext } from '../../helpers/test-output-context.js';
 
 const course = (id: number, name: string) =>
   new Course({ id: CourseId.of(id), name, code: `C${id}`, active: true });
@@ -29,7 +30,7 @@ describe('get_upcoming_due_dates tool', () => {
       [202, [asn(2, 202, 'MA Test', new Date(Date.now() + 48 * 60 * 60 * 1000))]],
     ]));
     const r = await handleGetUpcomingDueDates(
-      { courseRepo, assignmentRepo },
+      { courseRepo, assignmentRepo, output: testOutputContext() },
       { days: 7 },
     );
     expect(r.content[0]?.text).toContain('ECE Essay');
@@ -42,7 +43,7 @@ describe('get_upcoming_due_dates tool', () => {
       [101, [asn(1, 101, 'FarFuture', new Date(Date.now() + 60 * 24 * 60 * 60 * 1000))]],
     ]));
     const r = await handleGetUpcomingDueDates(
-      { courseRepo, assignmentRepo },
+      { courseRepo, assignmentRepo, output: testOutputContext() },
       { days: 7 },
     );
     expect(r.content[0]?.text).toMatch(/nothing|no upcoming/i);
@@ -52,7 +53,7 @@ describe('get_upcoming_due_dates tool', () => {
     const courseRepo = new FakeCourseRepository([]);
     const assignmentRepo = new FakeAssignmentRepository(new Map());
     const r = await handleGetUpcomingDueDates(
-      { courseRepo, assignmentRepo },
+      { courseRepo, assignmentRepo, output: testOutputContext() },
       { days: 7 },
     );
     expect(r.content[0]?.text).toMatch(/no upcoming|nothing/i);

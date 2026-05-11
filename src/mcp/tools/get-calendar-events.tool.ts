@@ -3,8 +3,9 @@ import { getCalendarEvents } from '@/contexts/calendar/application/getCalendarEv
 import { getCalendarEventsSchema } from '@/mcp/schemas.js';
 import { calendarEventsToText } from '@/mcp/tool-helpers.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
-export interface GetCalendarEventsDeps { calendarRepo: CalendarRepository; }
+export interface GetCalendarEventsDeps { calendarRepo: CalendarRepository; output: OutputContext; }
 
 export async function handleGetCalendarEvents(deps: GetCalendarEventsDeps, rawInput: unknown) {
   const input = getCalendarEventsSchema.parse(rawInput);
@@ -16,5 +17,8 @@ export async function handleGetCalendarEvents(deps: GetCalendarEventsDeps, rawIn
     from,
     to,
   });
-  return { content: [{ type: 'text' as const, text: calendarEventsToText(events, input.days) }] };
+  const text = calendarEventsToText(events, input.days, deps.output);
+  const footer = deps.output.metaFooter();
+  const body = footer ? `${text}\n\n${footer}` : text;
+  return { content: [{ type: 'text' as const, text: body }] };
 }

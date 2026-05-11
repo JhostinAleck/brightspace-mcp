@@ -1,10 +1,11 @@
 import { getQuizAttempts } from '@/contexts/quizzes/application/getQuizAttempts.js';
 import type { QuizRepository } from '@/contexts/quizzes/domain/QuizRepository.js';
 import { getQuizAttemptsSchema } from '@/mcp/schemas.js';
-import { UTC_WARNING } from '@/mcp/tool-helpers.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
 export interface GetQuizAttemptsDeps {
   quizRepo: QuizRepository;
+  output: OutputContext;
 }
 
 export async function handleGetQuizAttempts(deps: GetQuizAttemptsDeps, rawInput: unknown) {
@@ -31,7 +32,7 @@ export async function handleGetQuizAttempts(deps: GetQuizAttemptsDeps, rawInput:
   return {
     content: [{
       type: 'text' as const,
-      text: `${attempts.length} attempt(s):\n${lines.join('\n')}\n\n${UTC_WARNING}`,
+      text: `${attempts.length} attempt(s):\n${lines.join('\n')}${deps.output.metaFooter() ? `\n\n${deps.output.metaFooter()}` : ''}`,
     }],
   };
 }

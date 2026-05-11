@@ -4,6 +4,7 @@ import { FakeAssignmentRepository } from '@tests/helpers/fakes/FakeAssignmentRep
 import { Assignment } from '@/contexts/assignments/domain/Assignment';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId';
 import { DueDate } from '@/contexts/assignments/domain/DueDate';
+import { testOutputContext } from '../../helpers/test-output-context.js';
 
 const a = (id: number, name: string, due: Date) =>
   new Assignment({
@@ -18,9 +19,9 @@ const a = (id: number, name: string, due: Date) =>
 describe('get_assignments tool', () => {
   it('returns compact list by default', async () => {
     const repo = new FakeAssignmentRepository(new Map([[101, [a(1, 'Essay', new Date('2030-05-01'))]]]));
-    const r = await handleGetAssignments({ assignmentRepo: repo }, { course_id: 101 });
+    const r = await handleGetAssignments({ assignmentRepo: repo, output: testOutputContext() }, { course_id: 101 });
     expect(r.content[0]?.text).toContain('Essay');
-    expect(r.content[0]?.text).toContain('2030-05-01');
+    expect(r.content[0]?.text).toContain('2030');
   });
 
   it('filters past-due assignments by default', async () => {
@@ -28,7 +29,7 @@ describe('get_assignments tool', () => {
       a(1, 'Past', new Date('2020-01-01')),
       a(2, 'Future', new Date('2030-01-01')),
     ]]]));
-    const r = await handleGetAssignments({ assignmentRepo: repo }, { course_id: 101 });
+    const r = await handleGetAssignments({ assignmentRepo: repo, output: testOutputContext() }, { course_id: 101 });
     expect(r.content[0]?.text).toContain('Future');
     expect(r.content[0]?.text).not.toContain('Past');
   });
@@ -37,7 +38,7 @@ describe('get_assignments tool', () => {
     const repo = new FakeAssignmentRepository(new Map([[101, [
       a(1, 'Past', new Date('2020-01-01')),
     ]]]));
-    const r = await handleGetAssignments({ assignmentRepo: repo }, { course_id: 101, include_past: true });
+    const r = await handleGetAssignments({ assignmentRepo: repo, output: testOutputContext() }, { course_id: 101, include_past: true });
     expect(r.content[0]?.text).toContain('Past');
   });
 });

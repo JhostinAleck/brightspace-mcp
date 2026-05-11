@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type { NotificationRepository } from '@/contexts/notifications/domain/Notification.js';
-import { UTC_WARNING } from '@/mcp/tool-helpers.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
 export const listNotificationsSchema = z.object({
   unread_only: z.boolean().default(false),
@@ -10,6 +10,7 @@ export const listNotificationsSchema = z.object({
 
 export interface ListNotificationsDeps {
   notificationRepo: NotificationRepository;
+  output: OutputContext;
 }
 
 export async function handleListNotifications(deps: ListNotificationsDeps, rawInput: unknown) {
@@ -37,7 +38,7 @@ export async function handleListNotifications(deps: ListNotificationsDeps, rawIn
   return {
     content: [{
       type: 'text' as const,
-      text: `Notifications (${items.length}${input.unread_only ? ' unread' : ''}):\n${lines.join('\n')}\n\n${UTC_WARNING}`,
+      text: `Notifications (${items.length}${input.unread_only ? ' unread' : ''}):\n${lines.join('\n')}${deps.output.metaFooter() ? `\n\n${deps.output.metaFooter()}` : ''}`,
     }],
   };
 }
