@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, vi } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerContentTopicResource } from '@/mcp/resources/content-topic.resource.js';
 
 function makeServer() { return new McpServer({ name: 'test', version: '0.0.0' }); }
 

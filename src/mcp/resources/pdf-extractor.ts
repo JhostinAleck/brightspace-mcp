@@ -9,7 +9,10 @@ export interface ExtractResult {
 export async function extractTextFromBuffer(buffer: Buffer, uri: string): Promise<ExtractResult> {
   try {
     const pdfParse = await import('pdf-parse');
-    const data = await pdfParse.default(buffer);
+    // pdf-parse ESM exports the function as default; CJS wraps it under .default
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parseFn = (pdfParse as any).default ?? pdfParse;
+    const data = await (parseFn as (buf: Buffer) => Promise<{ text: string }>)(buffer);
     if (data.text && data.text.trim().length >= 50) {
       return { contents: [{ uri, mimeType: 'text/plain', text: data.text.trim() }] };
     }
