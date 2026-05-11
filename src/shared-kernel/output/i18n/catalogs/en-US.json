@@ -1,0 +1,74 @@
+{
+  "courses": {
+    "header": "Courses",
+    "empty": "You have no courses.",
+    "count": { "one": "You have {count} course:", "other": "You have {count} courses:" },
+    "inactive": "inactive",
+    "table_headers": { "name": "Course", "code": "Code", "status": "Status" }
+  },
+  "assignments": {
+    "header": "Assignments",
+    "empty": "No assignments.",
+    "due": "due {when}",
+    "no_due": "no due date",
+    "submitted": "submitted",
+    "not_submitted": "not submitted",
+    "instructions": "Instructions",
+    "submissions_none": "Submissions: none",
+    "submissions_count": {
+      "one": "Submissions: {count}, last at {when}",
+      "other": "Submissions: {count}, last at {when}"
+    },
+    "table_headers": { "name": "Assignment", "course": "Course", "due": "Due", "status": "Status" }
+  },
+  "grades": {
+    "header": "Grades",
+    "empty": "No grades posted yet.",
+    "ungraded": "ungraded",
+    "table_headers": { "item": "Item", "score": "Score", "percent": "%", "letter": "Letter" }
+  },
+  "feedback": {
+    "header": "Feedback",
+    "none": "No feedback posted yet.",
+    "released_at": "Released: {when}"
+  },
+  "roster": {
+    "header": "Roster",
+    "empty": "No classmates found.",
+    "count": { "one": "{count} classmate", "other": "{count} classmates" }
+  },
+  "emails": {
+    "header": "Emails",
+    "empty": "No emails found."
+  },
+  "syllabus": {
+    "header": "Syllabus",
+    "empty": "No syllabus posted yet.",
+    "updated_at": "Updated: {when}"
+  },
+  "content": {
+    "header": "Course content",
+    "empty": "No course content posted yet."
+  },
+  "announcements": {
+    "header": "Announcements",
+    "empty": "No announcements.",
+    "table_headers": { "date": "Date", "title": "Title", "author": "Author" }
+  },
+  "discussions": {
+    "header": "Discussion forums",
+    "empty": "No discussion forums.",
+    "no_topics": "(no topics)",
+    "post_count": { "one": "{count} post", "other": "{count} posts" },
+    "last_post": "last {when}"
+  },
+  "calendar": {
+    "header": "Upcoming events",
+    "empty_window": "No events in the next {days} days.",
+    "title_window": "Events in next {days} days:"
+  },
+  "common": {
+    "no_data": "—",
+    "footer_meta": "_Data as of {timestamp} · Time zone: {tz}_"
+  }
+}
