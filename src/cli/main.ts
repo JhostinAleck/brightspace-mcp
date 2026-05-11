@@ -131,6 +131,19 @@ program
   });
 
 program
+  .command('upgrade')
+  .description('Upgrade brightspace-mcp to the latest version')
+  .action(async () => {
+    try {
+      const { runUpgrade } = await import('./commands/upgrade.js');
+      await runUpgrade();
+    } catch (err) {
+      process.stderr.write(`upgrade failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('auth')
   .description('Manually re-authenticate the current profile')
   .option('--profile <name>', 'Profile to authenticate')
