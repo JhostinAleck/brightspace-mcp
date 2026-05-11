@@ -74,7 +74,7 @@
   "prompts": {
     "weekly_briefing": {
       "description": "Weekly overview: due dates, announcements, and recent grades",
-      "message": "Using the available tools, give me a weekly briefing: tasks due in the next 7 days, recent announcements from the past 7 days, and grades published this week. Format: one section per course, ordered by urgency."
+      "message": "Using the available tools (get_upcoming_due_dates, get_announcements, get_my_grades), give me a weekly briefing: tasks due in the next 7 days, recent announcements from the past 7 days, and grades published this week. Format: one section per course, ordered by urgency."
     },
     "grade_audit": {
       "description": "Grade audit: current standing and what is needed to pass",
