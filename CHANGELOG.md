@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-05-11
+
+### Added — `brightspace-mcp ui`
+- New `brightspace-mcp ui [--port 9876] [--open]` command launches a local HTTP dashboard.
+- Dashboard pages: Inicio, Autenticación, Cursos, Tareas, Calificaciones, Anuncios,
+  Configuración, Caché, Logs, Diagnósticos.
+- Dark / light mode with system-preference auto-detection and localStorage persistence.
+- Tooltips (?) on every field explain purpose and accepted values.
+- Configuración page: visual form + "Ver YAML raw" toggle; validates YAML before saving.
+- Re-auth button triggers a forced session refresh via the REST API.
+- Cache clear button via POST `/api/cache/clear`.
+- SSE at `/api/events` pushes auth status and cache stats to the browser in real time.
+- Built with Hono + `@hono/node-server`; frontend uses Tailwind CSS + Alpine.js (CDN, zero build step).
+
 ## [0.20.0] - 2026-05-11
 
 ### Added — `brightspace-mcp init`
