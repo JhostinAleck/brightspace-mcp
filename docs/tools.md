@@ -38,7 +38,7 @@ Cross-course view of what's coming due.
 - `days` *(integer 1–365, default 14)*
 - `format` *(`compact|detailed`)*
 
-⚠️ **All times are UTC.** The tool emits a warning footer reminding LLMs to convert to local before answering "due tomorrow"-type questions.
+All times are formatted in the timezone configured in `output.tz` (auto-detected from system if not set). ISO timestamps are included in the meta footer.
 
 ### `get_feedback`
 Submission feedback (score + comments).
@@ -167,7 +167,35 @@ Mark an announcement as read.
 
 ## Output format conventions
 
-- **Dates** are emitted as ISO-8601 with `Z` suffix (UTC). The `get_upcoming_due_dates` and `get_assignments` tools append a UTC warning footer.
+- **Dates** are emitted in the timezone configured under `output.tz` (auto-detected from system if not set). ISO timestamps are included in the meta footer. The `output.format: markdown` default renders headers and tables for better LLM readability.
 - **IDs** are emitted as integers in tool output but the schemas accept either integer or string — both are coerced.
 - **Compact format** is one line per record; `detailed` adds nested fields.
 - **Errors** are returned as plain text in `content[0].text` prefixed with `Error: …` rather than throwing, so the LLM can react.
+
+---
+
+## MCP Resources
+
+In addition to tools, the server exposes Brightspace content as MCP Resources with stable `brightspace://` URIs. Resources can be read by any MCP client via `resources/read`.
+
+| Resource name | URI pattern | Returns |
+|---|---|---|
+| brightspace-syllabus | `brightspace://{courseId}/syllabus` | `text/plain` — HTML stripped, date formatted |
+| brightspace-content-topic | `brightspace://{courseId}/content/topics/{topicId}` | `text/plain` from pdf-parse, or `application/pdf` base64 fallback |
+| brightspace-assignment-files | `brightspace://{courseId}/assignments/{assignmentId}/files` | All attachments as text (one per file) |
+| brightspace-announcement | `brightspace://{courseId}/announcements/{announcementId}` | `text/plain` — HTML stripped |
+
+Use IDs from tools (`list_my_courses` → courseId, `get_assignments` → assignmentId, etc.) to construct URIs.
+
+## MCP Prompts
+
+Four pre-built prompt templates visible in the MCP client's prompt picker:
+
+| Prompt | Arguments | Description |
+|---|---|---|
+| `weekly_briefing` | none | Ask the LLM for a 7-day briefing using available tools |
+| `grade_audit` | `course_id?` (int, optional) | Grade analysis and pass-rate projection |
+| `study_planner` | `days_ahead?` (int, default 7) | Study plan based on due dates and calendar |
+| `course_summary` | `course_id` (int, required) | Full course overview: syllabus, content, assignments, grades |
+
+Prompts return a pre-filled `user` message that guides the LLM to use the available tools.

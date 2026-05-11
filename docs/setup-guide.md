@@ -2,6 +2,23 @@
 
 Step-by-step setup for `brightspace-mcp`. If your school uses Microsoft Azure AD or Google Workspace SSO, also read [presets.md](./presets.md).
 
+## Step 0 (optional): Non-interactive setup for CI/scripts
+
+If you're in a CI pipeline or DevContainer with no TTY, use `init` instead of `setup`:
+
+```bash
+brightspace-mcp init \
+  --base-url https://yourschool.brightspace.com \
+  --strategy browser \
+  --preset microsoft \
+  --username-ref env:BRIGHTSPACE_USERNAME \
+  --password-ref env:BRIGHTSPACE_PASSWORD \
+  --tz America/Bogota \
+  --locale es-419
+```
+
+Run `brightspace-mcp init --help` to see all flags and strategy-specific options.
+
 ## Step 1 — Install
 
 ```bash
@@ -168,3 +185,14 @@ A red `✗` includes the next-action hint. Manually:
 ✅ `npx brightspace-mcp serve` starts and prints `Discovered D2L API versions ...` to stderr.
 
 If `doctor` is green, you're done. Move on to [clients.md](./clients.md).
+
+## Web UI dashboard
+
+Once configured, start the visual dashboard:
+
+```bash
+brightspace-mcp ui          # opens at http://localhost:9876
+brightspace-mcp ui --open   # auto-opens your browser
+```
+
+The dashboard shows auth status, upcoming due dates, grades, announcements, and lets you edit config without touching YAML. It also provides cache management, audit logs, and diagnostics — all in one place.

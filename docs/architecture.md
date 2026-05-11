@@ -7,7 +7,7 @@
 ```mermaid
 flowchart TD
     CLI["src/cli/<br/><i>Commander entry points</i>"]
-    MCP["src/mcp/<br/><i>Tool registry + handlers</i>"]
+    MCP["src/mcp/<br/><i>Tools · Resources · Prompts</i>"]
     APP["contexts/{ctx}/application/<br/><i>Use cases</i>"]
     DOM["contexts/{ctx}/domain/<br/><i>Pure types + repository interfaces</i>"]
     INF["contexts/{ctx}/infrastructure/<br/><i>D2L API adapters + cache</i>"]
@@ -71,6 +71,10 @@ Recipe (the `submit_assignment` writes-gated example is good to copy):
 6. **Registry** — `src/mcp/registry.ts` → register inside `registerAllTools`. If it's a write, gate behind `deps.writesGate.allowsWrites`.
 7. **Tests** — mirror the file in `tests/` with both unit and integration coverage.
 
+**Add a new Resource:** Create `src/mcp/resources/<name>.resource.ts` with `registerXxxResource(server, deps)`. Register it in `src/mcp/resources/registry.ts`.
+
+**Add a new Prompt:** Create `src/mcp/prompts/<name>.prompt.ts` with `registerXxxPrompt(server, deps)`. Register it in `src/mcp/prompts/registry.ts`. Add prompt text to all 4 i18n catalogs under `prompts.<name>.*`.
+
 Run `npm run check` before pushing. Coverage threshold is 85% statements.
 
 ## Cross-cutting components
@@ -84,6 +88,8 @@ Run `npm run check` before pushing. Coverage threshold is 85% statements.
 | Writes gate | `src/shared-kernel/writes/WritesGate.ts` |
 | ZIP/DOCX/XLSX text extraction | `src/shared-kernel/zip/extractZipEntry.ts` |
 | Path expansion (`~/`, `%VAR%`, absolute) | `src/mcp/tools/get-topic-file.tool.ts` (helper) |
+| Locale, timezone, markdown formatting | `src/shared-kernel/output/` |
+| Web dashboard (Hono HTTP server + Alpine.js SPA) | `src/cli/commands/ui.ts` + `src/ui/` |
 
 ## CLI commands
 
@@ -91,6 +97,8 @@ Run `npm run check` before pushing. Coverage threshold is 85% statements.
 
 - `serve` — start the MCP stdio server
 - `setup` — interactive YAML wizard
+- `init` — non-interactive config writer (CI/scripts, no TTY required)
+- `ui` — local web dashboard at `http://localhost:9876` (Hono HTTP server)
 - `auth` — manual re-auth, useful when sessions expire
 - `config show / validate / set` — inspect / edit YAML
 - `cache clear / status` — cache management

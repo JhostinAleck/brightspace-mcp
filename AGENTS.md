@@ -14,8 +14,14 @@ src/                       ← TypeScript sources (DDD layout)
     {ctx}/application/     ← Use cases (orchestrate domain)
     {ctx}/infrastructure/  ← D2L API + cache adapters
   mcp/                     ← MCP tool registry & schemas
+    resources/             ← MCP Resource handlers (brightspace:// URIs)
+    prompts/               ← MCP Prompt templates
   shared-kernel/           ← Cross-cutting (config, types, audit, writes gate)
+    output/                ← i18n, timezone formatting, markdown builder
   cli/                     ← Commander entry points (serve, setup, auth, config)
+    commands/ui.ts         ← brightspace-mcp ui (Hono HTTP server)
+    commands/init.ts       ← brightspace-mcp init (non-interactive config)
+  ui/                      ← Web dashboard static files (HTML + Alpine.js)
 build/                     ← tsc output (do not edit)
 docs/                      ← Detailed documentation (see docs/README.md)
 tests/                     ← Vitest mirror of src/
@@ -25,7 +31,8 @@ tests/                     ← Vitest mirror of src/
 
 1. **Install** — `npm install -g brightspace-mcp` *(or use `npx`)*
 2. **Config** — pick one:
-   - `brightspace-mcp setup` — wizard for typed credentials (TOTP-scriptable MFA)
+   - `brightspace-mcp setup` — interactive wizard for typed credentials (TOTP-scriptable MFA)
+   - `brightspace-mcp init [flags]` — non-interactive config writer for CI/scripts (no TTY required)
    - `brightspace-mcp record-auth --save-to keychain` — opens a browser, you log in manually, cookies captured (works with ANY MFA: push notifications, FIDO2, biometric, etc.)
 3. **Test auth** — `brightspace-mcp auth --test`
 4. **Register** — point your MCP client at `brightspace-mcp serve` *(see [docs/clients.md](./docs/clients.md))*
@@ -61,6 +68,8 @@ tests/                     ← Vitest mirror of src/
 
 - **DDD layering is enforced** by `dependency-cruiser`. Domain cannot import infrastructure. Run `npm run check:deps` to verify.
 - **Add a new MCP tool** by creating: domain method (if needed) → application use case → infrastructure adapter → tool handler in `src/mcp/tools/` → register in `src/mcp/registry.ts` → schema in `src/mcp/schemas.ts`. See `submit-assignment` for a writes-gated example.
+- **Add a Resource:** `src/mcp/resources/<name>.resource.ts` → register in `resources/registry.ts`
+- **Add a Prompt:** `src/mcp/prompts/<name>.prompt.ts` → register in `prompts/registry.ts` → add i18n keys to all 4 catalogs
 - **Tests live in `tests/`** mirroring `src/`. Coverage threshold is 85% statements (see `vitest.config.ts`).
 - **Never commit secrets**. `~/.brightspace-mcp/config.yaml` lives outside the repo; the wizard writes it with mode 0600.
 - **Run before pushing**: `npm run check` (lint + typecheck + tests + depcruise).

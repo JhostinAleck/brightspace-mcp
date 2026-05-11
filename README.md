@@ -15,10 +15,19 @@ MCP server for D2L Brightspace. Gives Claude (and any MCP-compatible client) acc
 ## Quick start
 
 ```bash
-npx brightspace-mcp setup
+npx brightspace-mcp setup   # interactive wizard (recommended for first time)
 ```
 
 The interactive wizard handles everything: base URL, auth strategy, MFA, credential storage, and auto-registration with Claude Desktop / Cursor / Windsurf.
+
+For CI pipelines or DevContainers with no TTY, use the non-interactive `init` command instead:
+
+```bash
+npx brightspace-mcp init \
+  --base-url https://yourschool.brightspace.com \
+  --strategy api_token \
+  --token-ref env:BRIGHTSPACE_API_TOKEN
+```
 
 ---
 
@@ -33,6 +42,7 @@ Deep-dive guides live in [`docs/`](./docs/) — start with [`docs/README.md`](./
 | Known-good presets (Microsoft AAD, etc.) | [`docs/presets.md`](./docs/presets.md) |
 | Write operations (submit, post, mark) | [`docs/writes.md`](./docs/writes.md) |
 | MCP tools reference | [`docs/tools.md`](./docs/tools.md) |
+| MCP Resources + Prompts | [`docs/tools.md#mcp-resources`](./docs/tools.md#mcp-resources) |
 | Troubleshooting | [`docs/troubleshooting.md`](./docs/troubleshooting.md) |
 | Architecture (DDD) | [`docs/architecture.md`](./docs/architecture.md) |
 | Register with MCP clients | [`docs/clients.md`](./docs/clients.md) |
@@ -47,9 +57,13 @@ For AI assistants and contributors, [`AGENTS.md`](./AGENTS.md) is a one-page map
 - [Authentication strategies](#authentication-strategies)
 - [MFA strategies](#mfa-strategies)
 - [Configuration reference](#configuration-reference)
+- [Output: timezone and language](#output-timezone-and-language)
 - [Redis cache](#redis-cache)
 - [Write operations](#write-operations)
 - [Available tools](#available-tools)
+- [MCP Resources](#mcp-resources)
+- [MCP Prompts](#mcp-prompts)
+- [Web UI dashboard](#web-ui-dashboard)
 - [Register with an MCP client](#register-with-an-mcp-client)
 - [CLI reference](#cli-reference)
 - [Docker](#docker)
@@ -255,6 +269,22 @@ Secret values are never stored in plain text. Use `ref:` notation to point to th
 
 ---
 
+## Output: timezone and language
+
+All tool responses are formatted in your configured timezone and language.
+
+```yaml
+output:
+  tz: America/Bogota       # IANA name; default: auto-detected from system
+  locale: es-419           # en-US | es-419 | pt-BR | fr-CA; default: auto-detected
+  format: markdown         # markdown (default) | plain
+  include_meta_footer: true
+```
+
+Run `brightspace-mcp setup` and choose your timezone and language. Or set it in `~/.brightspace-mcp/config.yaml`.
+
+---
+
 ## Redis cache
 
 When running multiple instances or want cache persistence across restarts, enable Redis:
@@ -348,6 +378,46 @@ All write operations:
 
 ---
 
+## MCP Resources
+
+Four stable URIs for Brightspace content (readable by any MCP client via `resources/read`):
+
+| URI | Content |
+|---|---|
+| `brightspace://{courseId}/syllabus` | Course syllabus, HTML stripped |
+| `brightspace://{courseId}/content/topics/{topicId}` | Topic file (text extracted from PDF, or base64 fallback) |
+| `brightspace://{courseId}/assignments/{assignmentId}/files` | All assignment attachments as text |
+| `brightspace://{courseId}/announcements/{announcementId}` | Announcement text |
+
+Obtain IDs from tools like `list_my_courses`, `get_assignments`, `get_announcements`.
+
+---
+
+## MCP Prompts
+
+Four pre-built prompt templates visible in your MCP client's prompt picker:
+
+| Prompt | Arguments | Purpose |
+|---|---|---|
+| `weekly_briefing` | none | 7-day overview: due dates, announcements, recent grades |
+| `grade_audit` | `course_id?` | Grade analysis + what you need to pass |
+| `study_planner` | `days_ahead?` (default 7) | Study plan from due dates and calendar |
+| `course_summary` | `course_id` (required) | Full course overview |
+
+---
+
+## Web UI dashboard
+
+```bash
+brightspace-mcp ui             # open at http://localhost:9876
+brightspace-mcp ui --open      # open browser automatically
+brightspace-mcp ui --port 8080 # custom port
+```
+
+Provides: auth status, upcoming due dates, grades, announcements, config editor (form + YAML), cache stats, audit logs, diagnostics. Dark/light mode, tooltips on all fields.
+
+---
+
 ## Register with an MCP client
 
 See [`docs/clients.md`](./docs/clients.md) for Claude Desktop, Cursor, and Windsurf snippets, or run `brightspace-mcp setup` which auto-detects and registers for you.
@@ -374,8 +444,10 @@ See [`docs/clients.md`](./docs/clients.md) for Claude Desktop, Cursor, and Winds
 
 ```
 brightspace-mcp setup                      Interactive first-time setup wizard
+brightspace-mcp init [flags]               Non-interactive config writer (CI/scripts, no TTY)
 brightspace-mcp serve                      Start the MCP server (stdio transport)
 brightspace-mcp serve --enable-writes      Start with write tools enabled
+brightspace-mcp ui [flags]                 Local web dashboard at http://localhost:9876
 brightspace-mcp auth                       Re-authenticate and test the config
 brightspace-mcp config show                Print config (secrets redacted)
 brightspace-mcp config show --resolved     Show all secret refs as [redacted]
