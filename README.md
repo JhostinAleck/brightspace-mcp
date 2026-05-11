@@ -244,6 +244,12 @@ profiles:
       cache_backend: memory        # memory | file | redis
       preemptive_refresh_seconds: 300
 
+output:
+  tz: America/Bogota               # IANA timezone; default: auto-detected from system
+  locale: es-419                   # en-US | es-419 | pt-BR | fr-CA; default: auto-detected
+  format: markdown                 # markdown (default) | plain
+  include_meta_footer: true
+
 logging:
   level: info                      # debug | info | warn | error
 
@@ -365,6 +371,12 @@ All write operations:
 | `get_calendar_events` | List calendar events in a date range |
 | `get_roster` | Get the full course roster |
 | `get_classlist_emails` | Get classmate email addresses |
+| `get_my_groups` | List group enrollments per course with member rosters |
+| `list_quizzes` | List quizzes with attempt counts, time limits, due dates |
+| `get_quiz_attempts` | Your attempts on a quiz with scores and timestamps |
+| `list_notifications` | User activity feed (announcements, due-date reminders, grade releases) |
+| `search_course` | Full-text search across content, announcements, and discussions |
+| `get_audit_log` | Local history of write operations (correlation IDs, redacted args) |
 | `get_diagnostics` | Show cache stats, circuit breaker state, and version info |
 | `clear_cache` | Clear memory and persistent cache backends |
 
@@ -443,12 +455,16 @@ See [`docs/clients.md`](./docs/clients.md) for Claude Desktop, Cursor, and Winds
 ## CLI reference
 
 ```
-brightspace-mcp setup                      Interactive first-time setup wizard
+brightspace-mcp setup                      Interactive first-time setup wizard (detects system language)
 brightspace-mcp init [flags]               Non-interactive config writer (CI/scripts, no TTY)
 brightspace-mcp serve                      Start the MCP server (stdio transport)
 brightspace-mcp serve --enable-writes      Start with write tools enabled
-brightspace-mcp ui [flags]                 Local web dashboard at http://localhost:9876
+brightspace-mcp ui [--port 9876] [--open]  Local web dashboard at http://localhost:9876
 brightspace-mcp auth                       Re-authenticate and test the config
+brightspace-mcp record-auth                Open browser for manual login, capture session cookies
+brightspace-mcp doctor                     End-to-end smoke test: config → auth → API → list_my_courses
+brightspace-mcp profile list               List profiles (* marks the default)
+brightspace-mcp profile use <name>         Switch the default profile
 brightspace-mcp config show                Print config (secrets redacted)
 brightspace-mcp config show --resolved     Show all secret refs as [redacted]
 brightspace-mcp config validate            Validate config schema without running
@@ -490,7 +506,7 @@ The `config.yaml` inside `~/.brightspace-mcp/` must have the `redis:` section po
 - **Resilience**: retry with exponential backoff + jitter, circuit breaker (5 failures → 30s cooldown), request coalescing, bulkhead (max 5 concurrent requests)
 - **Cache tiers**: HTTP response cache (L1, in-memory, 60s TTL) + domain cache (L2, layered memory → file or Redis)
 - **Security**: HTTPS-only transport, secrets redaction in all log output, OS keychain integration, AES-256-GCM encrypted credential file, session tokens expire with the D2L token
-- **DDD structure**: bounded contexts (`assignments`, `authentication`, `calendar`, `communications`, `content`, `courses`, `grades`) with clean domain / application / infrastructure separation
+- **DDD structure**: bounded contexts (`assignments`, `authentication`, `calendar`, `communications`, `content`, `courses`, `grades`, `groups`, `notifications`, `quizzes`) with clean domain / application / infrastructure separation
 
 ---
 

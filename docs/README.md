@@ -9,12 +9,17 @@ Detailed guides for `brightspace-mcp`. The top-level [`README.md`](../README.md)
 | Goal | Doc |
 |---|---|
 | Get up and running | [setup-guide.md](./setup-guide.md) |
+| Set up non-interactively (CI / DevContainers) | [setup-guide.md §0](./setup-guide.md#step-0-optional-non-interactive-setup-for-ciscripts) |
 | Capture cookies from a manual login (FIDO2 / biometric / push) | [setup-guide.md §3 option B](./setup-guide.md#b-recorder-you-log-in-manually-we-steal-the-cookie) |
 | Pick the right auth strategy | [auth-strategies.md](./auth-strategies.md) |
 | Use a known config for my school | [presets.md](./presets.md) |
+| Configure timezone and display language | [setup-guide.md §Output](./setup-guide.md#output-timezone-and-language) |
 | Enable writes (submit, post, mark) | [writes.md](./writes.md) |
 | Customize the UI fallback for a non-English tenant | [writes.md §UI fallback](./writes.md#ui-fallback-for-restricted-tenants) |
 | Look up an MCP tool's args | [tools.md](./tools.md) |
+| Use MCP Resources (stable URIs for syllabi, PDFs) | [tools.md §MCP Resources](./tools.md#mcp-resources) |
+| Use MCP Prompts (weekly briefing, grade audit, etc.) | [tools.md §MCP Prompts](./tools.md#mcp-prompts) |
+| Open the web dashboard | [setup-guide.md §Web UI](./setup-guide.md#web-ui-dashboard) |
 | Troubleshoot a broken setup | [troubleshooting.md](./troubleshooting.md) |
 | Register with Claude Desktop / Cursor / Windsurf | [clients.md](./clients.md) |
 | Understand the code structure | [architecture.md](./architecture.md) |
@@ -29,6 +34,8 @@ Detailed guides for `brightspace-mcp`. The top-level [`README.md`](../README.md)
 
 **Capabilities:**
 - [tools.md](./tools.md) — read tools (always available)
+- [tools.md §MCP Resources](./tools.md#mcp-resources) — stable `brightspace://` URIs for syllabi, PDFs, announcements
+- [tools.md §MCP Prompts](./tools.md#mcp-prompts) — pre-built LLM prompt templates
 - [writes.md](./writes.md) — write tools (gated)
 
 **Internals:**

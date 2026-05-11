@@ -97,6 +97,13 @@ If you prefer Docker, the `command`/`args` pair becomes:
 }
 ```
 
+## MCP Resources and Prompts
+
+If your MCP client supports Resources and Prompts (Claude Desktop, Cursor), they are automatically available once the server starts:
+
+- **Resources** — ask "read `brightspace://{courseId}/syllabus`" or let the LLM construct URIs from tool output IDs.
+- **Prompts** — look for `weekly_briefing`, `grade_audit`, `study_planner`, `course_summary` in the prompt picker (⌘/ or `/` in the chat).
+
 ## Verification
 
 Once registered, ask the client: *"List my Brightspace courses."* The client should invoke `list_my_courses` and return the result.
@@ -105,3 +112,4 @@ If the tool does not appear:
 - Check the client's log (Claude Desktop: `~/Library/Logs/Claude/mcp*.log`)
 - Confirm `BRIGHTSPACE_API_TOKEN` or `BRIGHTSPACE_CONFIG` is set in the `env` block
 - Run `npx brightspace-mcp serve` manually in a terminal and confirm it starts without crashing
+- Run `brightspace-mcp doctor` to diagnose config, auth, and API connectivity in one step

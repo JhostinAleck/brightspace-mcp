@@ -47,6 +47,10 @@ flowchart TD
 | `content` | `Module`, `Topic` | Course content tree, file extraction |
 | `communications` | `Announcement`, `Discussion` | News feed, forum threads |
 | `calendar` | `CalendarEvent` | Course calendar |
+| `groups` | `Group` | Group enrollments and member rosters |
+| `notifications` | `Notification` | User activity feed |
+| `quizzes` | `Quiz`, `QuizAttempt` | Quiz metadata and attempt history |
+| `http-api` | `D2lApiClient` | Shared HTTP client, resilience, XSRF, auth wiring |
 
 ## Composition root
 
@@ -57,7 +61,8 @@ flowchart TD
 3. Build the `D2lHttpClient` with the right auth strategy (or chain).
 4. Instantiate one repository per context (D2L impl + cache decorator).
 5. Create the `WritesGate` from config + CLI flag.
-6. Pass everything as `ToolDeps` to `registerAllTools(server, deps)`.
+6. Build `OutputContext` from `config.output` (tz, locale, format).
+7. Pass everything as `ToolDeps` to `registerAllTools(server, deps)`, `registerAllResources(server, deps)`, and `registerAllPrompts(server, deps)`.
 
 ## Adding a new MCP tool
 

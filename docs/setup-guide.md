@@ -47,7 +47,7 @@ Three setup paths:
 brightspace-mcp setup
 ```
 
-Asks 5 questions and writes `~/.brightspace-mcp/config.yaml` with mode 0600.
+Walks through base URL, auth strategy, credentials, MFA, timezone, and display language — then writes `~/.brightspace-mcp/config.yaml` with mode 0600. Prompts appear in your system language automatically.
 
 ### B. Recorder (you log in manually, we steal the cookie)
 

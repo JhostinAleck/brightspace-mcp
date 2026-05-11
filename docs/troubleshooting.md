@@ -111,7 +111,9 @@ Cache scopes: `all`, `http`, `courses`, `grades`, `assignments`, `content`, `com
 
 **Diagnosis:** GET against `/d2l/api/le/{ver}/{ou}/dropbox/folders/{fid}/submissions/mysubmissions/` returns `200 []`, but POST returns `403 {"Errors":[{"Message":"Forbidden"}]}` even with the correct XSRF token. This holds inside an already-authenticated browser session, confirming it's tenant policy, not auth.
 
-**Fix:** Upload manually via the Brightspace web UI. A future release will add a Playwright-based fallback that drives the upload form headlessly (treating it as a UI flow rather than an API call).
+**Fix:** Nothing extra to configure. When the API POST returns 403/404, `submit_assignment` **automatically retries via Playwright**, scripting the actual web upload form headlessly. The fallback verifies the submission landed by re-checking the Valence read API.
+
+If your tenant has a customized UI with non-standard button labels, override the selectors via YAML — see [writes.md §UI fallback](./writes.md#ui-fallback-for-restricted-tenants).
 
 If your tenant *does* allow API submissions, you'll see something like `Submitted Lab4.zip — submissionId 12345 …`. The implementation works against tenants that haven't restricted the endpoint.
 

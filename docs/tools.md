@@ -129,6 +129,22 @@ Local NDJSON audit history of write attempts (`submit_assignment`, `post_discuss
 
 The log lives at `~/.brightspace-mcp/audit.log` (mode 0600). Secret-shaped fields are pre-redacted before being written.
 
+### `list_notifications`
+User activity feed — due-date reminders, grade releases, announcement posts.
+
+**Args:**
+- `unread_only` *(boolean, default `false`)*
+- `limit` *(integer 1–100, default 25)*
+
+### `search_course`
+Ranked full-text search across content modules, announcements, and discussion forums for a single course. In-memory term-frequency scoring.
+
+**Args:**
+- `course_id` *(integer, required)*
+- `query` *(string, required)*
+- `scope` *(`all|content|announcements|discussions`, default `all`)*
+- `limit` *(integer, default 20)*
+
 ### `get_diagnostics`
 JSON report on server state — profile, base URL, discovered API versions, cache hit/miss counters, HTTP timings.
 
