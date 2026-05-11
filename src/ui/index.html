@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es" x-data="app()" :class="{ 'dark': dark }">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brightspace MCP Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] } } }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<script src="/js/tooltips.js"></script>
+<script src="/js/app.js"></script>
+<style>
+  [x-cloak]{display:none!important}
+  .nav-item{cursor:pointer;border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;transition:all .15s}
+  .nav-item:hover{background:rgba(99,102,241,.08)}
+  .nav-item.active{background:#eef2ff;color:#4f46e5}
+  .dark .nav-item:hover{background:rgba(99,102,241,.15)}
+  .dark .nav-item.active{background:rgba(99,102,241,.2);color:#a5b4fc}
+  [data-tooltip]{position:relative}
+  [data-tooltip]::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 4px);left:0;z-index:50;white-space:pre-wrap;max-width:220px;background:#1e293b;color:#f1f5f9;font-size:11px;padding:6px 8px;border-radius:6px;pointer-events:none;opacity:0;transition:opacity .15s;line-height:1.4}
+  .dark [data-tooltip]::after{background:#f8fafc;color:#1e293b}
+  [data-tooltip]:hover::after{opacity:1}
+  .toggle{position:relative;width:40px;height:22px;display:inline-block}
+  .toggle input{opacity:0;width:0;height:0}
+  .toggle-slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:22px;transition:.3s}
+  .toggle-slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s}
+  input:checked+.toggle-slider{background:#6366f1}
+  input:checked+.toggle-slider:before{transform:translateX(18px)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .pulse{animation:pulse 2s ease-in-out infinite}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
+  .dark ::-webkit-scrollbar-thumb{background:#334155}
+</style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen" x-cloak>
+
+<div class="flex h-screen overflow-hidden">
+  <!-- SIDEBAR -->
+  <aside class="w-56 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col">
+    <div class="px-5 py-5 border-b border-gray-100 dark:border-gray-800">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">B</div>
+        <div><div class="text-sm font-semibold dark:text-white">Brightspace</div><div class="text-xs text-gray-400">MCP Dashboard</div></div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mb-2">Principal</div>
+      <div class="nav-item" :class="{active:page==='home'}" @click="navigate('home')">🏠 <span>Inicio</span></div>
+      <div class="nav-item" :class="{active:page==='auth'}" @click="navigate('auth')">🔐 <span>Autenticación</span></div>
+      <div class="nav-item" :class="{active:page==='courses'}" @click="navigate('courses')">📚 <span>Cursos</span></div>
+      <div class="nav-item" :class="{active:page==='assignments'}" @click="navigate('assignments')">
+        📋 <span>Tareas</span>
+        <span x-show="pendingCount>0" class="ml-auto bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-xs font-semibold px-1.5 py-0.5 rounded-full" x-text="pendingCount"></span>
+      </div>
+      <div class="nav-item" :class="{active:page==='grades'}" @click="navigate('grades')">📊 <span>Calificaciones</span></div>
+      <div class="nav-item" :class="{active:page==='announcements'}" @click="navigate('announcements')">📢 <span>Anuncios</span></div>
+      <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mt-4 mb-2">Sistema</div>
+      <div class="nav-item" :class="{active:page==='config'}" @click="navigate('config')">⚙️ <span>Configuración</span></div>
+      <div class="nav-item" :class="{active:page==='cache'}" @click="navigate('cache')">⚡ <span>Caché</span></div>
+      <div class="nav-item" :class="{active:page==='logs'}" @click="navigate('logs')">🗂️ <span>Logs</span></div>
+      <div class="nav-item" :class="{active:page==='diagnostics'}" @click="navigate('diagnostics')">🔍 <span>Diagnósticos</span></div>
+    </nav>
+    <div class="px-3 py-3 border-t border-gray-100 dark:border-gray-800">
+      <div class="p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+        <div class="text-xs font-semibold dark:text-gray-200" x-text="status.locale||'cargando...'"></div>
+        <div class="text-xs text-gray-400" x-text="status.tz||''"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
+    <div class="sticky top-0 z-10 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-6 py-3.5 flex items-center justify-between">
+      <div>
+        <h1 class="text-base font-semibold dark:text-white" x-text="pageTitle[page]||'Dashboard'"></h1>
+        <p class="text-xs text-gray-400" x-text="status.tz?`${new Date().toLocaleDateString('es-419',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} · ${status.tz}`:''"></p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5">
+          <span class="text-sm">☀️</span>
+          <label class="toggle"><input type="checkbox" :checked="dark" @change="dark=!dark;localStorage.setItem('dark',String(dark))"><span class="toggle-slider"></span></label>
+          <span class="text-sm">🌙</span>
+        </div>
+        <button @click="reauth()" class="text-xs font-medium px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">🔄 Re-auth</button>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast" x-transition class="fixed top-14 right-4 z-50 px-4 py-2.5 rounded-lg shadow-lg text-xs font-medium"
+         :class="toast?.error?'bg-red-100 text-red-700':'bg-emerald-100 text-emerald-700'"
+         x-text="toast?.msg"></div>
+
+    <!-- Page content -->
+    <div x-show="page==='home'"><div x-html="pages.home"></div></div>
+    <div x-show="page==='auth'"><div x-html="pages.auth"></div></div>
+    <div x-show="page==='courses'"><div x-html="pages.courses"></div></div>
+    <div x-show="page==='assignments'"><div x-html="pages.assignments"></div></div>
+    <div x-show="page==='grades'"><div x-html="pages.grades"></div></div>
+    <div x-show="page==='announcements'"><div x-html="pages.announcements"></div></div>
+    <div x-show="page==='config'"><div x-html="pages.config"></div></div>
+    <div x-show="page==='cache'"><div x-html="pages.cache"></div></div>
+    <div x-show="page==='logs'"><div x-html="pages.logs"></div></div>
+    <div x-show="page==='diagnostics'"><div x-html="pages.diagnostics"></div></div>
+  </main>
+</div>
+</body>
+</html>

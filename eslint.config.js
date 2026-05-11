@@ -9,7 +9,7 @@ import js from '@eslint/js';
 // that registers the plugin/parser, disables conflicting core rules on TS
 // files, and adds the @typescript-eslint recommended rules).
 export default [
-  { ignores: ['build/**', 'node_modules/**', 'coverage/**', 'docs/**'] },
+  { ignores: ['build/**', 'node_modules/**', 'coverage/**', 'docs/**', 'src/ui/**'] },
   js.configs.recommended,
   ...tsPlugin.configs['flat/recommended'],
   {
