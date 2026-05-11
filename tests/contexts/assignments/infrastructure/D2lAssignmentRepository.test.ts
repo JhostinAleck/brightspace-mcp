@@ -154,6 +154,30 @@ describe('D2lAssignmentRepository', () => {
     expect(result.assignmentName).toBe('Essay 1');
   });
 
+  it('filters out submissions whose SubmissionDate is unparseable (no Invalid Date bombs)', async () => {
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/')
+      .reply(200, [{
+        Id: 5003,
+        Name: 'Bad date folder',
+        DueDate: '2026-06-01T00:00:00Z',
+        Submissions: [
+          { Submitter: { Identifier: '99' }, SubmissionDate: 'not-a-date', Comments: { Text: '' } },
+          { Submitter: { Identifier: '99' }, SubmissionDate: '2026-05-10T22:36:38.470Z', Comments: { Text: 'good one' } },
+        ],
+      }]);
+
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lAssignmentRepository(client, { le: '1.91' });
+    const out = await repo.findByCourse(OrgUnitId.of(101));
+    const folder = out.find((a) => a.name === 'Bad date folder');
+
+    // Only the valid-date submission survives; toISOString() must not throw.
+    expect(folder?.submissions.length).toBe(1);
+    expect(() => folder!.submissions[0]!.submittedAt.toISOString()).not.toThrow();
+    expect(folder!.submissions[0]!.submittedAt.toISOString()).toBe('2026-05-10T22:36:38.470Z');
+  });
+
   it('extractZipEntry returns null for truncated ZIP instead of throwing from zlib', async () => {
     // Build a malformed DOCX (ZIP) where compressedSize points past buffer end
     const buf = Buffer.alloc(50);

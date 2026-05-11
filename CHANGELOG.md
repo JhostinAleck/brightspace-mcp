@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-05-10
+
+### Fixed
+
+- **`submit_assignment` crashed with `RangeError: Invalid time value`** when the assignment already had a previous submission whose `SubmissionDate` came back from D2L in an unparseable form. The pre-submit guard ("you already have N submissions") tried `.toISOString()` on an Invalid Date and aborted the entire submit. The repository now filters out submissions with unparseable timestamps at the trust boundary, so downstream callers never see an Invalid Date. The submit itself was unaffected — the file was uploaded to Brightspace, only the confirmation message blew up.
+
+### Added
+
+- `parseValidDate` helper in `shared-kernel/date/` for safe parsing of D2L date strings (returns `null` for Invalid Dates instead of letting them detonate downstream).
+
 ## [0.17.0] - 2026-05-09
 
 ### Added — New tools

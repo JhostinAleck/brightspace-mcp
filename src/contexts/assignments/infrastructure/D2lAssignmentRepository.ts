@@ -23,6 +23,7 @@ import { D2lApiError } from '@/contexts/http-api/errors.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
 import { extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
+import { parseValidDate } from '@/shared-kernel/date/parseValidDate.js';
 import type { D2lUiSubmitter } from './D2lUiSubmitter.js';
 
 interface SubmissionDto {
@@ -323,8 +324,10 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     if (!rawUser || !dto.SubmissionDate) return null;
     const parsed = Number.parseInt(rawUser, 10);
     if (!Number.isInteger(parsed) || parsed <= 0) return null;
+    const submittedAt = parseValidDate(dto.SubmissionDate);
+    if (!submittedAt) return null;
     return new Submission({
-      submittedAt: new Date(dto.SubmissionDate),
+      submittedAt,
       submittedBy: UserId.of(parsed),
       comments: dto.Comment?.Text ?? null,
     });
@@ -335,8 +338,10 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     if (!rawUser || !dto.SubmissionDate) return null;
     const parsed = Number.parseInt(rawUser, 10);
     if (!Number.isInteger(parsed) || parsed <= 0) return null;
+    const submittedAt = parseValidDate(dto.SubmissionDate);
+    if (!submittedAt) return null;
     return new Submission({
-      submittedAt: new Date(dto.SubmissionDate),
+      submittedAt,
       submittedBy: UserId.of(parsed),
       comments: dto.Comments?.Text ?? null,
     });
