@@ -1,0 +1,413 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`tool-helpers @ en-US > announcementsToText 1`] = `
+"### Announcements
+
+| Date | Title | Author |
+|---|---|---|
+| May 1, 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
+`;
+
+exports[`tool-helpers @ en-US > assignmentsToCompact 1`] = `
+"### Assignments
+
+| Assignment | Due | Status |
+|---|---|---|
+| Taller 1 (id=10) | Jun 15, 2026, 11:00 AM | not submitted |"
+`;
+
+exports[`tool-helpers @ en-US > assignmentsToDetailed 1`] = `
+"### Assignments
+
+#### Taller 1 (id=10)
+**Due**: Jun 15, 2026, 11:00 AM
+**Instructions**: Resolver los ejercicios del libro.
+Submissions: none"
+`;
+
+exports[`tool-helpers @ en-US > calendarEventsToText 1`] = `
+"### Events in next 30 days:
+
+- May 20, 2026, 4:00 AM → 6:00 AM — **Parcial Final** @ Aula ML-102"
+`;
+
+exports[`tool-helpers @ en-US > courseContentToText 1`] = `
+"### Course content
+
+- **Módulo 1: Límites**
+  - Introducción a límites _[File]_ (id=101)"
+`;
+
+exports[`tool-helpers @ en-US > coursesToCompact 1`] = `
+"### You have 2 courses:
+
+- **Cálculo I** — MATE-1101
+- **Programación** — ISIS-1221 _[inactive]_"
+`;
+
+exports[`tool-helpers @ en-US > coursesToDetailed 1`] = `
+"### Courses
+
+| Course | Code | Status |
+|---|---|---|
+| Cálculo I (id=1) | MATE-1101 |  |
+| Programación (id=2) | ISIS-1221 | inactive |"
+`;
+
+exports[`tool-helpers @ en-US > discussionsToText 1`] = `
+"### Discussion forums
+
+#### Foro general
+- Preguntas del parcial (5 posts, last May 10, 2026)"
+`;
+
+exports[`tool-helpers @ en-US > emailsToText 1`] = `"student1@uni.edu, student2@uni.edu"`;
+
+exports[`tool-helpers @ en-US > feedbackToText 1`] = `
+"#### Feedback
+
+17/20 (85.0%)
+Released: Apr 15, 2026
+
+> Buen trabajo, pero revisar los límites laterales."
+`;
+
+exports[`tool-helpers @ en-US > gradesToCompact 1`] = `
+"### Grades
+
+- **Quiz 1**: 85.5% (B)
+- **Lab 2**: ungraded"
+`;
+
+exports[`tool-helpers @ en-US > gradesToDetailed 1`] = `
+"### Grades
+
+| Item | Score | % | Letter |
+|---|---|---|---|
+| Quiz 1 | 17/20 | 85.5% | B |
+| Lab 2 | — | ungraded |  |"
+`;
+
+exports[`tool-helpers @ en-US > rosterToText 1`] = `
+"### 2 classmates
+
+- **Ana García** _[Student]_ · ana@uni.edu
+- **Prof. Rodríguez** _[Instructor]_"
+`;
+
+exports[`tool-helpers @ en-US > syllabusToText 1`] = `
+"### Programa del curso MATE-1101
+
+_Updated: Jan 10, 2026_
+
+Este curso cubre cálculo diferencial e integral."
+`;
+
+exports[`tool-helpers @ es-419 > announcementsToText 1`] = `
+"### Anuncios
+
+| Fecha | Título | Autor |
+|---|---|---|
+| 1 may 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
+`;
+
+exports[`tool-helpers @ es-419 > assignmentsToCompact 1`] = `
+"### Tareas
+
+| Tarea | Vence | Estado |
+|---|---|---|
+| Taller 1 (id=10) | 15 jun 2026, 11:00 a.m. | sin entregar |"
+`;
+
+exports[`tool-helpers @ es-419 > assignmentsToDetailed 1`] = `
+"### Tareas
+
+#### Taller 1 (id=10)
+**Vence**: 15 jun 2026, 11:00 a.m.
+**Instrucciones**: Resolver los ejercicios del libro.
+Entregas: ninguna"
+`;
+
+exports[`tool-helpers @ es-419 > calendarEventsToText 1`] = `
+"### Eventos en los próximos 30 días:
+
+- 20 may 2026, 4:00 a.m. → 6:00 a.m. — **Parcial Final** @ Aula ML-102"
+`;
+
+exports[`tool-helpers @ es-419 > courseContentToText 1`] = `
+"### Contenido del curso
+
+- **Módulo 1: Límites**
+  - Introducción a límites _[File]_ (id=101)"
+`;
+
+exports[`tool-helpers @ es-419 > coursesToCompact 1`] = `
+"### Tienes 2 cursos:
+
+- **Cálculo I** — MATE-1101
+- **Programación** — ISIS-1221 _[inactivo]_"
+`;
+
+exports[`tool-helpers @ es-419 > coursesToDetailed 1`] = `
+"### Cursos
+
+| Curso | Código | Estado |
+|---|---|---|
+| Cálculo I (id=1) | MATE-1101 |  |
+| Programación (id=2) | ISIS-1221 | inactivo |"
+`;
+
+exports[`tool-helpers @ es-419 > discussionsToText 1`] = `
+"### Foros de discusión
+
+#### Foro general
+- Preguntas del parcial (5 publicaciones, última el 10 may 2026)"
+`;
+
+exports[`tool-helpers @ es-419 > emailsToText 1`] = `"student1@uni.edu, student2@uni.edu"`;
+
+exports[`tool-helpers @ es-419 > feedbackToText 1`] = `
+"#### Retroalimentación
+
+17/20 (85.0%)
+Publicada: 15 abr 2026
+
+> Buen trabajo, pero revisar los límites laterales."
+`;
+
+exports[`tool-helpers @ es-419 > gradesToCompact 1`] = `
+"### Calificaciones
+
+- **Quiz 1**: 85.5% (B)
+- **Lab 2**: sin calificar"
+`;
+
+exports[`tool-helpers @ es-419 > gradesToDetailed 1`] = `
+"### Calificaciones
+
+| Elemento | Puntaje | % | Letra |
+|---|---|---|---|
+| Quiz 1 | 17/20 | 85.5% | B |
+| Lab 2 | — | sin calificar |  |"
+`;
+
+exports[`tool-helpers @ es-419 > rosterToText 1`] = `
+"### 2 compañeros
+
+- **Ana García** _[Student]_ · ana@uni.edu
+- **Prof. Rodríguez** _[Instructor]_"
+`;
+
+exports[`tool-helpers @ es-419 > syllabusToText 1`] = `
+"### Programa del curso MATE-1101
+
+_Actualizado: 10 ene 2026_
+
+Este curso cubre cálculo diferencial e integral."
+`;
+
+exports[`tool-helpers @ fr-CA > announcementsToText 1`] = `
+"### Annonces
+
+| Date | Titre | Auteur |
+|---|---|---|
+| 1 mai 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
+`;
+
+exports[`tool-helpers @ fr-CA > assignmentsToCompact 1`] = `
+"### Travaux
+
+| Travail | Remise | Statut |
+|---|---|---|
+| Taller 1 (id=10) | 15 juin 2026, 11 h 00 | non remis |"
+`;
+
+exports[`tool-helpers @ fr-CA > assignmentsToDetailed 1`] = `
+"### Travaux
+
+#### Taller 1 (id=10)
+**Remise**: 15 juin 2026, 11 h 00
+**Instructions**: Resolver los ejercicios del libro.
+Remises : aucune"
+`;
+
+exports[`tool-helpers @ fr-CA > calendarEventsToText 1`] = `
+"### Événements au cours des 30 prochains jours :
+
+- 20 mai 2026, 04 h 00 → 06 h 00 — **Parcial Final** @ Aula ML-102"
+`;
+
+exports[`tool-helpers @ fr-CA > courseContentToText 1`] = `
+"### Contenu du cours
+
+- **Módulo 1: Límites**
+  - Introducción a límites _[File]_ (id=101)"
+`;
+
+exports[`tool-helpers @ fr-CA > coursesToCompact 1`] = `
+"### Vous avez 2 cours :
+
+- **Cálculo I** — MATE-1101
+- **Programación** — ISIS-1221 _[inactif]_"
+`;
+
+exports[`tool-helpers @ fr-CA > coursesToDetailed 1`] = `
+"### Cours
+
+| Cours | Code | Statut |
+|---|---|---|
+| Cálculo I (id=1) | MATE-1101 |  |
+| Programación (id=2) | ISIS-1221 | inactif |"
+`;
+
+exports[`tool-helpers @ fr-CA > discussionsToText 1`] = `
+"### Forums de discussion
+
+#### Foro general
+- Preguntas del parcial (5 messages, dernier le 10 mai 2026)"
+`;
+
+exports[`tool-helpers @ fr-CA > emailsToText 1`] = `"student1@uni.edu, student2@uni.edu"`;
+
+exports[`tool-helpers @ fr-CA > feedbackToText 1`] = `
+"#### Rétroaction
+
+17/20 (85,0%)
+Publiée : 15 avr. 2026
+
+> Buen trabajo, pero revisar los límites laterales."
+`;
+
+exports[`tool-helpers @ fr-CA > gradesToCompact 1`] = `
+"### Notes
+
+- **Quiz 1**: 85,5% (B)
+- **Lab 2**: non noté"
+`;
+
+exports[`tool-helpers @ fr-CA > gradesToDetailed 1`] = `
+"### Notes
+
+| Élément | Score | % | Lettre |
+|---|---|---|---|
+| Quiz 1 | 17/20 | 85,5% | B |
+| Lab 2 | — | non noté |  |"
+`;
+
+exports[`tool-helpers @ fr-CA > rosterToText 1`] = `
+"### 2 camarades
+
+- **Ana García** _[Student]_ · ana@uni.edu
+- **Prof. Rodríguez** _[Instructor]_"
+`;
+
+exports[`tool-helpers @ fr-CA > syllabusToText 1`] = `
+"### Programa del curso MATE-1101
+
+_Mis à jour : 10 janv. 2026_
+
+Este curso cubre cálculo diferencial e integral."
+`;
+
+exports[`tool-helpers @ pt-BR > announcementsToText 1`] = `
+"### Avisos
+
+| Data | Título | Autor |
+|---|---|---|
+| 1 de mai. de 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
+`;
+
+exports[`tool-helpers @ pt-BR > assignmentsToCompact 1`] = `
+"### Tarefas
+
+| Tarefa | Entrega | Status |
+|---|---|---|
+| Taller 1 (id=10) | 15 de jun. de 2026, 11:00 | não entregue |"
+`;
+
+exports[`tool-helpers @ pt-BR > assignmentsToDetailed 1`] = `
+"### Tarefas
+
+#### Taller 1 (id=10)
+**Entrega**: 15 de jun. de 2026, 11:00
+**Instruções**: Resolver los ejercicios del libro.
+Entregas: nenhuma"
+`;
+
+exports[`tool-helpers @ pt-BR > calendarEventsToText 1`] = `
+"### Eventos nos próximos 30 dias:
+
+- 20 de mai. de 2026, 04:00 → 06:00 — **Parcial Final** @ Aula ML-102"
+`;
+
+exports[`tool-helpers @ pt-BR > courseContentToText 1`] = `
+"### Conteúdo do curso
+
+- **Módulo 1: Límites**
+  - Introducción a límites _[File]_ (id=101)"
+`;
+
+exports[`tool-helpers @ pt-BR > coursesToCompact 1`] = `
+"### Você tem 2 cursos:
+
+- **Cálculo I** — MATE-1101
+- **Programación** — ISIS-1221 _[inativo]_"
+`;
+
+exports[`tool-helpers @ pt-BR > coursesToDetailed 1`] = `
+"### Cursos
+
+| Curso | Código | Status |
+|---|---|---|
+| Cálculo I (id=1) | MATE-1101 |  |
+| Programación (id=2) | ISIS-1221 | inativo |"
+`;
+
+exports[`tool-helpers @ pt-BR > discussionsToText 1`] = `
+"### Fóruns de discussão
+
+#### Foro general
+- Preguntas del parcial (5 publicações, última em 10 de mai. de 2026)"
+`;
+
+exports[`tool-helpers @ pt-BR > emailsToText 1`] = `"student1@uni.edu, student2@uni.edu"`;
+
+exports[`tool-helpers @ pt-BR > feedbackToText 1`] = `
+"#### Feedback
+
+17/20 (85,0%)
+Publicado: 15 de abr. de 2026
+
+> Buen trabajo, pero revisar los límites laterales."
+`;
+
+exports[`tool-helpers @ pt-BR > gradesToCompact 1`] = `
+"### Notas
+
+- **Quiz 1**: 85,5% (B)
+- **Lab 2**: sem nota"
+`;
+
+exports[`tool-helpers @ pt-BR > gradesToDetailed 1`] = `
+"### Notas
+
+| Item | Pontuação | % | Letra |
+|---|---|---|---|
+| Quiz 1 | 17/20 | 85,5% | B |
+| Lab 2 | — | sem nota |  |"
+`;
+
+exports[`tool-helpers @ pt-BR > rosterToText 1`] = `
+"### 2 colegas
+
+- **Ana García** _[Student]_ · ana@uni.edu
+- **Prof. Rodríguez** _[Instructor]_"
+`;
+
+exports[`tool-helpers @ pt-BR > syllabusToText 1`] = `
+"### Programa del curso MATE-1101
+
+_Atualizado: 10 de jan. de 2026_
+
+Este curso cubre cálculo diferencial e integral."
+`;
