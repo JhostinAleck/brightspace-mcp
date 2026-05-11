@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-11
+
+### 🎉 First stable release
+
+`brightspace-mcp` is now v1.0.0 with a formal SemVer stability commitment (see `STABILITY.md`).
+
+### Summary of features in 1.0.0
+
+- **Multi-strategy auth**: api_token, browser (Playwright + SSO presets), headless, session_cookie, oauth; full MFA (TOTP, Duo Push, manual prompt, record-auth for FIDO2/biometric)
+- **26 read tools** + 3 write tools (gated behind double-flag)
+- **MCP Resources**: stable `brightspace://` URIs for syllabi, content topics, assignment files, announcements
+- **MCP Prompts**: weekly_briefing, grade_audit, study_planner, course_summary
+- **Localized output**: en-US, es-419, pt-BR, fr-CA; timezone-aware; Markdown-by-default
+- **`brightspace-mcp init`**: non-interactive setup for CI/DevContainers
+- **`brightspace-mcp ui`**: local Hono web dashboard with dark/light mode, tooltips, config editor
+- **`brightspace-mcp upgrade`**: self-update command + startup notification when newer version is available
+- **MCP registry**: `server.json` descriptor + `mcpName: io.github.jhostinaleck/brightspace`
+- **Production resilience**: retry, circuit breaker, request coalescing, multi-tier cache (memory/file/Redis), audit log, idempotency
+
+### Breaking changes from 0.x
+
+None intentional — v0.x was pre-stable. The public API as defined in `STABILITY.md` is now frozen for semver purposes.
+
 ## [0.21.0] - 2026-05-11
 
 ### Added — `brightspace-mcp ui`
