@@ -1,4 +1,5 @@
 export interface ExtractResult {
+  [key: string]: unknown;
   contents: Array<
     | { uri: string; mimeType: 'text/plain'; text: string }
     | { uri: string; mimeType: 'application/pdf'; blob: string }
