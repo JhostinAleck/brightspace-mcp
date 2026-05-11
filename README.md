@@ -15,7 +15,7 @@ MCP server for D2L Brightspace. Gives Claude (and any MCP-compatible client) acc
 ## Quick start
 
 ```bash
-npx brightspace-mcp setup   # interactive wizard (recommended for first time)
+npx brightspace-mcp@latest setup   # interactive wizard (recommended for first time)
 ```
 
 The interactive wizard handles everything: base URL, auth strategy, MFA, credential storage, and auto-registration with Claude Desktop / Cursor / Windsurf.
@@ -23,7 +23,7 @@ The interactive wizard handles everything: base URL, auth strategy, MFA, credent
 For CI pipelines or DevContainers with no TTY, use the non-interactive `init` command instead:
 
 ```bash
-npx brightspace-mcp init \
+npx brightspace-mcp@latest init \
   --base-url https://yourschool.brightspace.com \
   --strategy api_token \
   --token-ref env:BRIGHTSPACE_API_TOKEN
@@ -75,8 +75,8 @@ For AI assistants and contributors, [`AGENTS.md`](./AGENTS.md) is a one-page map
 ### npx (recommended — no install needed)
 
 ```bash
-npx brightspace-mcp setup   # first-time wizard
-npx brightspace-mcp serve   # run the server
+npx brightspace-mcp@latest setup   # first-time wizard
+npx brightspace-mcp@latest serve   # run the server
 ```
 
 ### Global install
@@ -102,7 +102,7 @@ node build/cli/main.js serve
 
 ## Authentication strategies
 
-Pick the strategy that matches your Brightspace setup. Run `brightspace-mcp setup` and it will walk you through the right one.
+Pick the strategy that matches your Brightspace setup. Run `npx brightspace-mcp@latest setup` and it will walk you through the right one.
 
 ### API Token (simplest)
 
@@ -120,7 +120,7 @@ profiles:
 
 ```bash
 export BRIGHTSPACE_API_TOKEN="your-token"
-brightspace-mcp serve
+npx brightspace-mcp@latest serve
 ```
 
 ### Headless (username + password)
@@ -318,7 +318,7 @@ npm install ioredis
 
 ```bash
 docker run -d -p 6379:6379 redis:7-alpine
-brightspace-mcp serve
+npx brightspace-mcp@latest serve
 ```
 
 The domain cache (courses, grades, assignments, etc.) automatically uses Redis as persistent layer when the `redis:` section is present in config. Session tokens are stored with TTL derived from the token expiry.
@@ -340,7 +340,7 @@ writes:
 **2. CLI flag:**
 
 ```bash
-brightspace-mcp serve --enable-writes
+npx brightspace-mcp@latest serve --enable-writes
 ```
 
 All write operations:
@@ -441,7 +441,7 @@ See [`docs/clients.md`](./docs/clients.md) for Claude Desktop, Cursor, and Winds
   "mcpServers": {
     "brightspace": {
       "command": "npx",
-      "args": ["--yes", "brightspace-mcp", "serve"],
+      "args": ["--yes", "brightspace-mcp@latest", "serve"],
       "env": {
         "BRIGHTSPACE_CONFIG": "/Users/you/.brightspace-mcp/config.yaml"
       }
@@ -455,22 +455,22 @@ See [`docs/clients.md`](./docs/clients.md) for Claude Desktop, Cursor, and Winds
 ## CLI reference
 
 ```
-brightspace-mcp setup                      Interactive first-time setup wizard (detects system language)
-brightspace-mcp init [flags]               Non-interactive config writer (CI/scripts, no TTY)
-brightspace-mcp serve                      Start the MCP server (stdio transport)
-brightspace-mcp serve --enable-writes      Start with write tools enabled
-brightspace-mcp ui [--port 9876] [--open]  Local web dashboard at http://localhost:9876
-brightspace-mcp auth                       Re-authenticate and test the config
-brightspace-mcp record-auth                Open browser for manual login, capture session cookies
-brightspace-mcp doctor                     End-to-end smoke test: config → auth → API → list_my_courses
-brightspace-mcp profile list               List profiles (* marks the default)
-brightspace-mcp profile use <name>         Switch the default profile
-brightspace-mcp config show                Print config (secrets redacted)
-brightspace-mcp config show --resolved     Show all secret refs as [redacted]
-brightspace-mcp config validate            Validate config schema without running
-brightspace-mcp config set <path> <value>  Edit a nested config value
-brightspace-mcp cache clear                Clear memory + file/Redis cache
-brightspace-mcp cache clear --context <n>  Clear a specific cache context
+npx brightspace-mcp@latest setup                      Interactive first-time setup wizard (detects system language)
+npx brightspace-mcp@latest init [flags]               Non-interactive config writer (CI/scripts, no TTY)
+npx brightspace-mcp@latest serve                      Start the MCP server (stdio transport)
+npx brightspace-mcp@latest serve --enable-writes      Start with write tools enabled
+npx brightspace-mcp@latest ui [--port 9876] [--open]  Local web dashboard at http://localhost:9876
+npx brightspace-mcp@latest auth                       Re-authenticate and test the config
+npx brightspace-mcp@latest record-auth                Open browser for manual login, capture session cookies
+npx brightspace-mcp@latest doctor                     End-to-end smoke test: config → auth → API → list_my_courses
+npx brightspace-mcp@latest profile list               List profiles (* marks the default)
+npx brightspace-mcp@latest profile use <name>         Switch the default profile
+npx brightspace-mcp@latest config show                Print config (secrets redacted)
+npx brightspace-mcp@latest config show --resolved     Show all secret refs as [redacted]
+npx brightspace-mcp@latest config validate            Validate config schema without running
+npx brightspace-mcp@latest config set <path> <value>  Edit a nested config value
+npx brightspace-mcp@latest cache clear                Clear memory + file/Redis cache
+npx brightspace-mcp@latest cache clear --context <n>  Clear a specific cache context
 ```
 
 ---

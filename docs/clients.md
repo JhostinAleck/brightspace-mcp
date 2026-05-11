@@ -11,7 +11,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
   "mcpServers": {
     "brightspace": {
       "command": "npx",
-      "args": ["--yes", "brightspace-mcp", "serve"],
+      "args": ["--yes", "brightspace-mcp@latest", "serve"],
       "env": {
         "BRIGHTSPACE_API_TOKEN": "your-token-here"
       }
@@ -31,7 +31,7 @@ Edit `~/.cursor/mcp.json`:
   "mcpServers": {
     "brightspace": {
       "command": "npx",
-      "args": ["--yes", "brightspace-mcp", "serve"],
+      "args": ["--yes", "brightspace-mcp@latest", "serve"],
       "env": {
         "BRIGHTSPACE_API_TOKEN": "your-token-here"
       }
@@ -49,7 +49,7 @@ Edit `~/.codeium/windsurf/mcp_config.json`:
   "mcpServers": {
     "brightspace": {
       "command": "npx",
-      "args": ["--yes", "brightspace-mcp", "serve"],
+      "args": ["--yes", "brightspace-mcp@latest", "serve"],
       "env": {
         "BRIGHTSPACE_API_TOKEN": "your-token-here"
       }
@@ -67,7 +67,7 @@ Point the server to a YAML config via `BRIGHTSPACE_CONFIG`:
   "mcpServers": {
     "brightspace": {
       "command": "npx",
-      "args": ["--yes", "brightspace-mcp", "serve"],
+      "args": ["--yes", "brightspace-mcp@latest", "serve"],
       "env": {
         "BRIGHTSPACE_CONFIG": "/Users/you/.brightspace-mcp/config.yaml"
       }
@@ -111,5 +111,5 @@ Once registered, ask the client: *"List my Brightspace courses."* The client sho
 If the tool does not appear:
 - Check the client's log (Claude Desktop: `~/Library/Logs/Claude/mcp*.log`)
 - Confirm `BRIGHTSPACE_API_TOKEN` or `BRIGHTSPACE_CONFIG` is set in the `env` block
-- Run `npx brightspace-mcp serve` manually in a terminal and confirm it starts without crashing
-- Run `brightspace-mcp doctor` to diagnose config, auth, and API connectivity in one step
+- Run `npx brightspace-mcp@latest serve` manually in a terminal and confirm it starts without crashing
+- Run `npx brightspace-mcp@latest doctor` to diagnose config, auth, and API connectivity in one step

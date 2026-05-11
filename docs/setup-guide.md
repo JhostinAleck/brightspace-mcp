@@ -7,7 +7,7 @@ Step-by-step setup for `brightspace-mcp`. If your school uses Microsoft Azure AD
 If you're in a CI pipeline or DevContainer with no TTY, use `init` instead of `setup`:
 
 ```bash
-brightspace-mcp init \
+npx brightspace-mcp@latest init \
   --base-url https://yourschool.brightspace.com \
   --strategy browser \
   --preset microsoft \
@@ -17,14 +17,14 @@ brightspace-mcp init \
   --locale es-419
 ```
 
-Run `brightspace-mcp init --help` to see all flags and strategy-specific options.
+Run `npx brightspace-mcp@latest init --help` to see all flags and strategy-specific options.
 
 ## Step 1 — Install
 
 ```bash
 npm install -g brightspace-mcp     # global
 # or
-npx brightspace-mcp setup          # one-shot, no install
+npx brightspace-mcp@latest setup   # one-shot, no install
 ```
 
 Requires Node ≥ 20.
@@ -44,7 +44,7 @@ Three setup paths:
 ### A. Interactive wizard (typed credentials)
 
 ```bash
-brightspace-mcp setup
+npx brightspace-mcp@latest setup
 ```
 
 Walks through base URL, auth strategy, credentials, MFA, timezone, and display language — then writes `~/.brightspace-mcp/config.yaml` with mode 0600. Prompts appear in your system language automatically.
@@ -52,7 +52,7 @@ Walks through base URL, auth strategy, credentials, MFA, timezone, and display l
 ### B. Recorder (you log in manually, we steal the cookie)
 
 ```bash
-brightspace-mcp record-auth --save-to keychain
+npx brightspace-mcp@latest record-auth --save-to keychain
 ```
 
 Opens a real browser. You log in however your tenant requires — TOTP, push notification, biometric, Yubikey, anything. As soon as you reach `/d2l/home`, the recorder captures your session cookies and writes them into the config under the `session_cookie` strategy.
@@ -73,7 +73,7 @@ If you know what you need, edit the YAML directly. See [auth-strategies.md](./au
 ## Step 4 — Verify auth works
 
 ```bash
-brightspace-mcp auth --test
+npx brightspace-mcp@latest auth --test
 ```
 
 Expected output:
@@ -147,9 +147,9 @@ profiles:
     auth: { ... }
 ```
 
-Switch the default with `brightspace-mcp profile use <name>` (persisted in YAML), or per-invocation with `BRIGHTSPACE_PROFILE=research brightspace-mcp serve`.
+Switch the default with `npx brightspace-mcp@latest profile use <name>` (persisted in YAML), or per-invocation with `BRIGHTSPACE_PROFILE=research npx brightspace-mcp@latest serve`.
 
-List defined profiles with `brightspace-mcp profile list` (or just `brightspace-mcp profile`).
+List defined profiles with `npx brightspace-mcp@latest profile list` (or just `npx brightspace-mcp@latest profile`).
 
 ## What the wizard skips that you may need
 
@@ -162,7 +162,7 @@ The setup wizard covers 80% of cases. For the remaining 20%, edit the YAML manua
 
 ## Common setup checkpoints
 
-The fastest way to verify everything: run **`brightspace-mcp doctor`**.
+The fastest way to verify everything: run **`npx brightspace-mcp@latest doctor`**.
 
 ```
 $ brightspace-mcp doctor
@@ -179,10 +179,10 @@ All checks passed.
 
 A red `✗` includes the next-action hint. Manually:
 
-✅ `brightspace-mcp config show` prints config (secrets redacted) without errors.
-✅ `brightspace-mcp config validate` exits 0.
-✅ `brightspace-mcp auth --test` shows your name and API versions.
-✅ `npx brightspace-mcp serve` starts and prints `Discovered D2L API versions ...` to stderr.
+✅ `npx brightspace-mcp@latest config show` prints config (secrets redacted) without errors.
+✅ `npx brightspace-mcp@latest config validate` exits 0.
+✅ `npx brightspace-mcp@latest auth --test` shows your name and API versions.
+✅ `npx brightspace-mcp@latest serve` starts and prints `Discovered D2L API versions ...` to stderr.
 
 If `doctor` is green, you're done. Move on to [clients.md](./clients.md).
 
@@ -191,8 +191,8 @@ If `doctor` is green, you're done. Move on to [clients.md](./clients.md).
 Once configured, start the visual dashboard:
 
 ```bash
-brightspace-mcp ui          # opens at http://localhost:9876
-brightspace-mcp ui --open   # auto-opens your browser
+npx brightspace-mcp@latest ui          # opens at http://localhost:9876
+npx brightspace-mcp@latest ui --open   # auto-opens your browser
 ```
 
 The dashboard shows auth status, upcoming due dates, grades, announcements, and lets you edit config without touching YAML. It also provides cache management, audit logs, and diagnostics — all in one place.

@@ -115,7 +115,7 @@ export async function runSetup(opts: SetupOptions): Promise<void> {
             home: homedir(),
             platform: platform(),
             command: 'npx',
-            args: ['--yes', 'brightspace-mcp', 'serve'],
+            args: ['--yes', 'brightspace-mcp@latest', 'serve'],
             env: { BRIGHTSPACE_CONFIG: configPath },
           });
           process.stdout.write(`Registered with ${client.name}.\n`);
