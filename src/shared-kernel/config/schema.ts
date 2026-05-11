@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 export const AuthStrategyKindSchema = z.enum([
-  'auto', 'api_token', 'browser', 'oauth', 'session_cookie', 'headless',
+  'auto',
+  'api_token',
+  'browser',
+  'oauth',
+  'session_cookie',
+  'headless',
 ]);
 
 export const MfaStrategyKindSchema = z.enum(['none', 'totp', 'duo_push', 'manual_prompt']);
@@ -26,10 +31,16 @@ const MfaConfigSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.strategy === 'totp' && !data.totp) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'mfa.totp is required when mfa.strategy=totp' });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'mfa.totp is required when mfa.strategy=totp',
+      });
     }
     if (data.strategy === 'duo_push' && !data.duo_push) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'mfa.duo_push is required when mfa.strategy=duo_push' });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'mfa.duo_push is required when mfa.strategy=duo_push',
+      });
     }
   });
 
@@ -126,19 +137,34 @@ export const ProfileSchema = z.object({
     .superRefine((auth, ctx) => {
       const k = auth.strategy;
       if (k === 'api_token' && !auth.api_token) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'auth.api_token is required when strategy=api_token' });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'auth.api_token is required when strategy=api_token',
+        });
       }
       if (k === 'browser' && !auth.browser) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'auth.browser is required when strategy=browser' });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'auth.browser is required when strategy=browser',
+        });
       }
       if (k === 'oauth' && !auth.oauth) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'auth.oauth is required when strategy=oauth' });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'auth.oauth is required when strategy=oauth',
+        });
       }
       if (k === 'session_cookie' && !auth.session_cookie) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'auth.session_cookie is required when strategy=session_cookie' });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'auth.session_cookie is required when strategy=session_cookie',
+        });
       }
       if (k === 'headless' && !auth.headless) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'auth.headless is required when strategy=headless' });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'auth.headless is required when strategy=headless',
+        });
       }
     }),
   session: z
@@ -167,12 +193,22 @@ const RedisCacheConfigSchema = z.object({
   key_prefix: z.string().default('brightspace:'),
 });
 
+const OutputConfigSchema = z
+  .object({
+    tz: z.string().optional(),
+    locale: z.enum(['en-US', 'es-419', 'pt-BR', 'fr-CA']).optional(),
+    format: z.enum(['markdown', 'plain']).default('markdown'),
+    include_meta_footer: z.boolean().default(true),
+  })
+  .default({ format: 'markdown', include_meta_footer: true });
+
 export const ConfigSchema = z.object({
   default_profile: z.string(),
   profiles: z.record(z.string(), ProfileSchema),
   logging: LoggingSchema.default({ level: 'info' }),
   writes: WritesConfigSchema,
   redis: RedisCacheConfigSchema.optional(),
+  output: OutputConfigSchema,
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
