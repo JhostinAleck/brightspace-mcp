@@ -1,0 +1,83 @@
+{
+  "id": "io.github.jhostinaleck/brightspace",
+  "name": "brightspace-mcp",
+  "description": "MCP server for D2L Brightspace. Access courses, grades, assignments, syllabus, announcements, calendar, and more — with multi-strategy auth, MCP Resources, MCP Prompts, and a local web dashboard.",
+  "publisher": {
+    "id": "JhostinAleck",
+    "name": "Jhostin Aleck",
+    "url": "https://github.com/JhostinAleck"
+  },
+  "isOfficial": false,
+  "sourceUrl": "https://github.com/JhostinAleck/brightspace-mcp",
+  "homepage": "https://jhostinaleck.github.io/brightspace-mcp/",
+  "license": "MIT",
+  "runtime": "node",
+  "categories": ["education"],
+  "tags": ["brightspace", "d2l", "lms", "education", "grades", "assignments", "courses", "mcp"],
+  "installations": {
+    "npm": {
+      "type": "npm",
+      "command": "npx",
+      "args": ["-y", "brightspace-mcp@latest", "serve"],
+      "env": {
+        "BRIGHTSPACE_CONFIG": {
+          "description": "Path to config.yaml (default: ~/.brightspace-mcp/config.yaml)",
+          "required": false
+        }
+      },
+      "setupCommand": "npx brightspace-mcp@latest setup"
+    }
+  },
+  "tools": [
+    { "name": "list_my_courses", "description": "List enrolled courses" },
+    { "name": "get_my_grades", "description": "Get grades for a course" },
+    { "name": "get_assignments", "description": "List assignments and dropbox folders" },
+    { "name": "get_upcoming_due_dates", "description": "List assignments due in the next N days" },
+    { "name": "get_syllabus", "description": "Fetch the course syllabus" },
+    { "name": "get_course_content", "description": "Browse content modules and topics" },
+    { "name": "get_announcements", "description": "List course announcements" },
+    { "name": "get_discussions", "description": "Browse discussion forums" },
+    { "name": "get_calendar_events", "description": "List calendar events" },
+    { "name": "get_assignment_files", "description": "Download instructor-posted assignment files" },
+    { "name": "get_topic_file", "description": "Download a content topic file" },
+    { "name": "get_feedback", "description": "Read instructor feedback on submissions" },
+    { "name": "get_roster", "description": "Get the course roster" },
+    { "name": "get_classlist_emails", "description": "Get classmate email addresses" },
+    { "name": "get_my_groups", "description": "List group enrollments with member rosters" },
+    { "name": "list_quizzes", "description": "List quizzes with attempt info" },
+    { "name": "get_quiz_attempts", "description": "Your attempts on a quiz with scores" },
+    { "name": "list_notifications", "description": "User activity feed" },
+    { "name": "search_course", "description": "Full-text search within a course" },
+    { "name": "get_audit_log", "description": "Local history of write operations" },
+    { "name": "get_diagnostics", "description": "Cache stats and server state" },
+    { "name": "clear_cache", "description": "Clear cached responses" },
+    { "name": "check_auth", "description": "Verify authentication status" },
+    { "name": "submit_assignment", "description": "Upload a file to Dropbox (gated)" },
+    { "name": "post_discussion_reply", "description": "Reply to a discussion thread (gated)" },
+    { "name": "mark_announcement_read", "description": "Mark an announcement read (gated)" }
+  ],
+  "prompts": [
+    { "name": "weekly_briefing", "description": "7-day overview: due dates, announcements, grades" },
+    { "name": "grade_audit", "description": "Grade analysis and pass-rate projection" },
+    { "name": "study_planner", "description": "Study plan from due dates and calendar" },
+    { "name": "course_summary", "description": "Full course overview" }
+  ],
+  "resources": [
+    {
+      "uriPattern": "brightspace://{courseId}/syllabus",
+      "description": "Course syllabus as plain text"
+    },
+    {
+      "uriPattern": "brightspace://{courseId}/content/topics/{topicId}",
+      "description": "Content topic file (text or base64 PDF fallback)"
+    },
+    {
+      "uriPattern": "brightspace://{courseId}/assignments/{assignmentId}/files",
+      "description": "Assignment attachment files as text"
+    },
+    {
+      "uriPattern": "brightspace://{courseId}/announcements/{announcementId}",
+      "description": "Announcement text"
+    }
+  ]
+}
