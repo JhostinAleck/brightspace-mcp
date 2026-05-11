@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-05-11
+
+### Added — `brightspace-mcp init`
+- New non-interactive `init` command for CI, scripts, and DevContainers.
+- Writes a complete `config.yaml` from CLI flags — no TTY required.
+- Supports all 5 auth strategies: `api_token`, `browser`, `headless`, `session_cookie`, `oauth`.
+- `--preset microsoft` auto-populates Microsoft Azure AD / Office 365 browser selectors.
+- Validates all required flags per strategy before writing any file.
+- Refuses to overwrite an existing profile without `--force` (or TTY confirmation).
+
+### Added — Wizard i18n
+- Setup wizard now detects the system language (`$LANG` / `LC_ALL`) and displays all
+  prompts in that language from the first line.
+- New `wizard.*` i18n namespace added to all 4 catalogs (en-US, es-419, pt-BR, fr-CA).
+- ~40 hardcoded English strings in `setup/prompts.ts` replaced with `ctx.t('wizard.*')`.
+- `OutputContext` constructed at wizard startup using `detectSystemLocale()`.
+
 ## [0.19.0] - 2026-05-11
 
 ### Added — MCP Resources
