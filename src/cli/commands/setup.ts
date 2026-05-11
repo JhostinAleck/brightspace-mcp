@@ -10,6 +10,8 @@ import {
   detectSystemLocale,
   type SupportedLocale,
 } from '@/shared-kernel/output/i18n/locale-detector.js';
+import { buildOutputContext } from '@/shared-kernel/output/index.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
 import {
   promptApiToken,
@@ -38,10 +40,17 @@ export interface SetupOptions {
 export async function runSetup(opts: SetupOptions): Promise<void> {
   const configPath = opts.config ?? join(homedir(), '.brightspace-mcp', 'config.yaml');
 
-  process.stdout.write('Brightspace MCP setup wizard\n\n');
+  const ctx = buildOutputContext({
+    tz: detectSystemTz(),
+    locale: detectSystemLocale(),
+    format: 'markdown',
+    includeMetaFooter: false,
+  });
 
-  const baseUrl = await promptBaseUrl();
-  const authStrategy = await promptAuthStrategy();
+  process.stdout.write(`${ctx.t('wizard.welcome')}\n\n`);
+
+  const baseUrl = await promptBaseUrl(ctx);
+  const authStrategy = await promptAuthStrategy(ctx);
 
   const auth: Record<string, unknown> = { strategy: authStrategy };
   const profile: Record<string, unknown> = { base_url: baseUrl, auth };
@@ -51,29 +60,29 @@ export async function runSetup(opts: SetupOptions): Promise<void> {
   };
 
   if (authStrategy === 'api_token') {
-    const token = await promptApiToken();
+    const token = await promptApiToken(ctx);
     process.env.BRIGHTSPACE_API_TOKEN = token;
     auth['api_token'] = {
       token_ref: chooseSecretRef({ strategy: 'env', varName: 'BRIGHTSPACE_API_TOKEN' }),
     };
   } else if (authStrategy === 'browser') {
-    await configureBrowser(auth, baseUrl);
+    await configureBrowser(auth, baseUrl, ctx);
   } else if (authStrategy === 'headless') {
-    await configureHeadless(auth);
+    await configureHeadless(auth, ctx);
   } else if (authStrategy === 'session_cookie') {
-    await configureSessionCookie(auth);
+    await configureSessionCookie(auth, ctx);
   }
 
   const detectedTz = detectSystemTz();
   const tz = await input({
-    message: 'Time zone for displaying dates (IANA name, e.g. America/Bogota):',
+    message: ctx.t('wizard.tz_prompt'),
     default: detectedTz,
-    validate: (v) => (isValidTz(v) ? true : `Not a valid IANA timezone. Try "${detectedTz}".`),
+    validate: (v) => (isValidTz(v) ? true : ctx.t('wizard.tz_invalid', { detected: detectedTz })),
   });
 
   const detectedLocale = detectSystemLocale();
   const locale = await select<SupportedLocale>({
-    message: 'Display language:',
+    message: ctx.t('wizard.locale_prompt'),
     default: detectedLocale,
     choices: [
       { value: 'en-US' as const, name: 'English (US)' },
@@ -92,7 +101,7 @@ export async function runSetup(opts: SetupOptions): Promise<void> {
 
   mkdirSync(dirname(configPath), { recursive: true });
   writeFileSync(configPath, stringifyYaml(config), { encoding: 'utf8', mode: 0o600 });
-  process.stdout.write(`\nConfig written to ${configPath}\n`);
+  process.stdout.write(`\n${ctx.t('wizard.done', { path: configPath })}\n`);
 
   if (!opts.skipClientDetection) {
     const detected = detectMcpClients({ home: homedir(), platform: platform() });
@@ -119,42 +128,46 @@ export async function runSetup(opts: SetupOptions): Promise<void> {
     }
   }
 
-  process.stdout.write(
-    '\nSetup complete. Test with: npx brightspace-mcp serve (or launch your MCP client)\n',
-  );
+  process.stdout.write(`\n${ctx.t('wizard.next_step')}\n`);
 }
 
-async function configureBrowser(auth: Record<string, unknown>, baseUrl: string): Promise<void> {
+async function configureBrowser(
+  auth: Record<string, unknown>,
+  baseUrl: string,
+  ctx: OutputContext,
+): Promise<void> {
   process.stdout.write(
     '\nBrowser strategy uses Playwright to automate login in a headless browser.\n',
   );
   process.stdout.write('You need: npm install playwright && npx playwright install chromium\n\n');
 
-  const preset = await promptBrowserPreset();
+  const preset = await promptBrowserPreset(ctx);
 
   let selectors: Record<string, unknown>;
   if (preset === 'microsoft_sso') {
     selectors = buildMicrosoftSsoSelectors();
     process.stdout.write('Using Microsoft SSO selector preset.\n');
   } else {
-    selectors = await promptSimpleSelectors();
+    selectors = await promptSimpleSelectors(ctx);
   }
 
   const loginUrl =
-    preset === 'microsoft_sso' ? `${baseUrl.replace(/\/$/, '')}/d2l/login` : await promptLoginUrl();
+    preset === 'microsoft_sso'
+      ? `${baseUrl.replace(/\/$/, '')}/d2l/login`
+      : await promptLoginUrl(ctx);
 
-  const usernameVarName = await promptUsernameRef();
-  const username = await promptUsername();
+  const usernameVarName = await promptUsernameRef(ctx);
+  const username = await promptUsername(ctx);
   process.env[usernameVarName] = username;
 
-  const passwordVarName = await promptPasswordRef();
-  const passwordValue = await promptPasswordValue();
+  const passwordVarName = await promptPasswordRef(ctx);
+  const passwordValue = await promptPasswordValue(ctx);
   process.env[passwordVarName] = passwordValue;
 
-  const mfaStrategy = await promptMfaStrategy();
+  const mfaStrategy = await promptMfaStrategy(ctx);
   const mfaBlock: Record<string, unknown> = { strategy: mfaStrategy };
   if (mfaStrategy === 'totp') {
-    const secret = await promptTotpSecret();
+    const secret = await promptTotpSecret(ctx);
     process.env['BRIGHTSPACE_TOTP_SECRET'] = secret;
     mfaBlock['totp'] = {
       secret_ref: chooseSecretRef({ strategy: 'env', varName: 'BRIGHTSPACE_TOTP_SECRET' }),
@@ -180,26 +193,26 @@ async function configureBrowser(auth: Record<string, unknown>, baseUrl: string):
   }
 }
 
-async function configureHeadless(auth: Record<string, unknown>): Promise<void> {
+async function configureHeadless(auth: Record<string, unknown>, ctx: OutputContext): Promise<void> {
   process.stdout.write(
     '\nHeadless strategy automates login via HTTP — no browser window needed.\n',
   );
   process.stdout.write('Supports Duo Push, TOTP, and Manual Prompt MFA.\n\n');
 
-  const loginUrl = await promptLoginUrl();
+  const loginUrl = await promptLoginUrl(ctx);
 
-  const usernameVarName = await promptUsernameRef();
-  const username = await promptUsername();
+  const usernameVarName = await promptUsernameRef(ctx);
+  const username = await promptUsername(ctx);
   process.env[usernameVarName] = username;
 
-  const passwordVarName = await promptPasswordRef();
-  const passwordValue = await promptPasswordValue();
+  const passwordVarName = await promptPasswordRef(ctx);
+  const passwordValue = await promptPasswordValue(ctx);
   process.env[passwordVarName] = passwordValue;
 
-  const mfaStrategy = await promptMfaStrategy();
+  const mfaStrategy = await promptMfaStrategy(ctx);
   const mfaBlock: Record<string, unknown> = { strategy: mfaStrategy };
   if (mfaStrategy === 'totp') {
-    const secret = await promptTotpSecret();
+    const secret = await promptTotpSecret(ctx);
     process.env['BRIGHTSPACE_TOTP_SECRET'] = secret;
     mfaBlock['totp'] = {
       secret_ref: chooseSecretRef({ strategy: 'env', varName: 'BRIGHTSPACE_TOTP_SECRET' }),
@@ -224,11 +237,14 @@ async function configureHeadless(auth: Record<string, unknown>): Promise<void> {
   }
 }
 
-async function configureSessionCookie(auth: Record<string, unknown>): Promise<void> {
+async function configureSessionCookie(
+  auth: Record<string, unknown>,
+  ctx: OutputContext,
+): Promise<void> {
   process.stdout.write('\nSession cookie strategy: log in manually in your browser,\n');
   process.stdout.write('then copy the D2L cookies (d2lSessionVal + d2lSecureSessionVal).\n\n');
 
-  const cookieRef = await promptCookieRef();
+  const cookieRef = await promptCookieRef(ctx);
   auth['session_cookie'] = { cookie_ref: cookieRef };
 
   if (cookieRef.startsWith('env:')) {
