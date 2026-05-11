@@ -1,0 +1,22 @@
+<div class="p-6 space-y-4" x-data="diagPage()" x-init="init()">
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
+    <h2 class="text-sm font-semibold dark:text-white mb-4">Información del servidor</h2>
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div><span class="text-xs text-gray-400">Versión</span><div class="font-mono font-semibold dark:text-white mt-1" x-text="diag.version?`v${diag.version}`:'—'"></div></div>
+      <div><span class="text-xs text-gray-400" data-tooltip="Segundos que lleva corriendo este proceso del MCP UI server.">Uptime</span><div class="font-mono dark:text-white mt-1" x-text="diag.uptime?`${Math.round(diag.uptime)}s`:'—'"></div></div>
+      <div><span class="text-xs text-gray-400">Zona horaria</span><div class="dark:text-white mt-1" x-text="diag.tz||'—'"></div></div>
+      <div><span class="text-xs text-gray-400">Locale</span><div class="dark:text-white mt-1" x-text="diag.locale||'—'"></div></div>
+      <div><span class="text-xs text-gray-400">Formato salida</span><div class="dark:text-white mt-1" x-text="diag.format||'—'"></div></div>
+    </div>
+  </div>
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold dark:text-white">Test de conectividad</h2>
+      <button @click="ping()" :disabled="pinging" class="text-xs px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 disabled:opacity-50 transition-colors" x-text="pinging?'Ejecutando...':'▶ Ejecutar ping'"></button>
+    </div>
+    <div x-show="pingResult" class="text-xs font-mono px-3 py-2 rounded bg-gray-50 dark:bg-gray-800 dark:text-gray-300" x-text="pingResult"></div>
+  </div>
+</div>
+<script>
+function diagPage(){return{diag:{},pingResult:null,pinging:false,async init(){const[s,d]=await Promise.allSettled([fetch('/api/status').then(r=>r.json()),fetch('/api/diagnostics').then(r=>r.json())]);if(s.status==='fulfilled')this.diag={...this.diag,...s.value};if(d.status==='fulfilled')this.diag={...this.diag,...d.value}},async ping(){this.pinging=true;const t=Date.now();try{await fetch('/api/courses');this.pingResult=`✓ ${Date.now()-t}ms — API de Brightspace accesible`}catch(e){this.pingResult=`✗ Error: ${e.message}`}this.pinging=false}}}
+</script>

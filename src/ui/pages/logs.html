@@ -1,0 +1,28 @@
+<div class="p-6" x-data="logsPage()" x-init="init()">
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
+      <h2 class="text-sm font-semibold dark:text-white">Audit log <span class="text-xs font-normal text-gray-400" data-tooltip="Historial de operaciones de escritura. Los argumentos secretos están redactados automáticamente.">(ops de escritura)</span></h2>
+      <input type="text" placeholder="Filtrar por tool…" x-model="filter" class="ml-auto text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300 w-40 focus:outline-none focus:border-indigo-400">
+    </div>
+    <div x-show="entries.length===0" class="px-5 py-4 text-xs text-gray-400">Sin entradas en el audit log.</div>
+    <table class="w-full" x-show="filtered.length>0">
+      <thead><tr class="border-b border-gray-100 dark:border-gray-800">
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Timestamp</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Tool</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Args</th>
+      </tr></thead>
+      <tbody>
+        <template x-for="e in filtered" :key="e.cid">
+          <tr class="border-b border-gray-50 dark:border-gray-800 last:border-0">
+            <td class="px-5 py-2.5 text-xs text-gray-400 font-mono" x-text="(e.audit_ts||'').slice(0,19).replace('T',' ')"></td>
+            <td class="px-5 py-2.5 text-xs font-semibold dark:text-gray-300" x-text="e.tool"></td>
+            <td class="px-5 py-2.5 text-xs text-gray-500 font-mono truncate max-w-xs" x-text="JSON.stringify(e.args||{}).slice(0,80)"></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+function logsPage(){return{entries:[],filter:'',get filtered(){if(!this.filter)return this.entries;const f=this.filter.toLowerCase();return this.entries.filter(e=>e.tool?.toLowerCase().includes(f))},async init(){const r=await fetch('/api/audit?limit=50');const d=await r.json();this.entries=d.entries||[]}}}
+</script>

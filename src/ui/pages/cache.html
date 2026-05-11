@@ -1,0 +1,23 @@
+<div class="p-6 space-y-4" x-data="cachePage()" x-init="init()">
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-sm font-semibold dark:text-white">Estado del caché</h2>
+      <button @click="clearAll()" data-tooltip="Elimina todas las entradas del caché. La próxima consulta irá directamente a la API de D2L."
+              class="text-xs px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors">
+        🗑️ Limpiar todo
+      </button>
+    </div>
+    <div class="grid grid-cols-3 gap-4 text-center">
+      <div><div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400" x-text="`${hitRate}%`" data-tooltip="% de solicitudes servidas desde caché sin llamar a la API de Brightspace."></div><div class="text-xs text-gray-400 mt-1">Hit rate</div></div>
+      <div><div class="text-2xl font-bold dark:text-white" x-text="totalOps"></div><div class="text-xs text-gray-400 mt-1">Operaciones</div></div>
+      <div><div class="text-2xl font-bold dark:text-white" x-text="misses"></div><div class="text-xs text-gray-400 mt-1">Misses</div></div>
+    </div>
+    <div class="mt-4 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+      <div class="bg-indigo-500 h-2 rounded-full transition-all" :style="`width:${hitRate}%`"></div>
+    </div>
+  </div>
+  <div x-show="clearMsg" class="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg" x-text="clearMsg"></div>
+</div>
+<script>
+function cachePage(){return{hitRate:0,totalOps:0,misses:0,clearMsg:null,async init(){const r=await fetch('/api/cache/stats');const d=await r.json();const c=d.stats?.counters||{};const h=c.cache_hit||0,m=c.cache_miss||0;this.totalOps=h+m;this.misses=m;this.hitRate=this.totalOps>0?Math.round(h/this.totalOps*100):0},async clearAll(){await fetch('/api/cache/clear',{method:'POST'});this.clearMsg=`Caché limpiado · ${new Date().toLocaleTimeString('es-419')}`;await this.init()}}}
+</script>

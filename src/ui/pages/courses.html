@@ -1,0 +1,25 @@
+<div class="p-6" x-data="coursesPage()" x-init="init()">
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+      <h2 class="text-sm font-semibold dark:text-white">Todos los cursos</h2>
+      <label class="flex items-center gap-2 text-xs text-gray-500 cursor-pointer"><input type="checkbox" x-model="activeOnly" @change="init()"> Solo activos</label>
+    </div>
+    <div x-show="loading" class="px-5 py-4 text-xs text-gray-400">Cargando...</div>
+    <table class="w-full" x-show="!loading && courses.length>0">
+      <thead><tr class="border-b border-gray-100 dark:border-gray-800"><th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Nombre</th><th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Código</th><th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Estado</th></tr></thead>
+      <tbody>
+        <template x-for="c in courses" :key="c.id">
+          <tr class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 last:border-0">
+            <td class="px-5 py-3 text-sm dark:text-gray-200" x-text="c.name"></td>
+            <td class="px-5 py-3 text-xs text-gray-500 font-mono" x-text="c.code"></td>
+            <td class="px-5 py-3"><span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="c.active?'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400':'bg-gray-100 dark:bg-gray-800 text-gray-500'" x-text="c.active?'Activo':'Inactivo'"></span></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+    <div x-show="!loading && courses.length===0" class="px-5 py-4 text-xs text-gray-400">Sin cursos.</div>
+  </div>
+</div>
+<script>
+function coursesPage(){return{courses:[],loading:true,activeOnly:true,async init(){this.loading=true;const r=await fetch('/api/courses');const d=await r.json();this.courses=this.activeOnly?(d.courses||[]).filter(c=>c.active):(d.courses||[]);this.loading=false}}}
+</script>

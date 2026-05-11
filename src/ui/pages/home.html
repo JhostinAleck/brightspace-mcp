@@ -1,0 +1,91 @@
+<div class="p-6 space-y-5" x-data="homePage()" x-init="init()">
+  <div class="grid grid-cols-4 gap-4">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide" data-tooltip="Estado de la sesión con Brightspace. Verde = activa, rojo = expirada.">Sesión</span>
+        <span class="w-2 h-2 rounded-full pulse" :class="authValid?'bg-emerald-400':'bg-red-400'"></span>
+      </div>
+      <div class="text-sm font-semibold dark:text-white" x-text="authValid?'Activa':'Expirada'"></div>
+      <div class="text-xs text-gray-400 mt-1" x-text="tz"></div>
+    </div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide" data-tooltip="% de solicitudes servidas desde caché sin llamar a la API de Brightspace.">Caché</span>
+        <span class="text-yellow-500 text-sm">⚡</span>
+      </div>
+      <div class="text-sm font-semibold dark:text-white" x-text="`${hitRate}% hit`"></div>
+      <div class="mt-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1">
+        <div class="bg-yellow-400 h-1 rounded-full" :style="`width:${hitRate}%`"></div>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide" data-tooltip="Tareas sin entregar con vencimiento en los próximos 7 días.">Entregas</span>
+        <span class="text-orange-500 text-sm">⏰</span>
+      </div>
+      <div class="text-sm font-semibold dark:text-white" x-text="`${pending} próximas`"></div>
+      <div class="text-xs text-gray-400 mt-1">próximos 7 días</div>
+    </div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide" data-tooltip="Número de tool calls registrados desde que inició el server.">Tool calls</span>
+        <span class="text-indigo-400 text-sm">📡</span>
+      </div>
+      <div class="text-sm font-semibold dark:text-white" x-text="`${totalCalls} total`"></div>
+      <div class="text-xs text-gray-400 mt-1" x-text="avgMs?`~${avgMs}ms avg`:'—'"></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-5 gap-4">
+    <div class="col-span-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+      <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold dark:text-white">📋 Próximas entregas</h2>
+        <span class="text-xs text-gray-400">7 días</span>
+      </div>
+      <div x-show="upcoming.length===0" class="px-5 py-4 text-xs text-gray-400">Sin entregas pendientes esta semana 🎉</div>
+      <template x-for="item in upcoming" :key="item.assignmentId">
+        <div class="px-5 py-3 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800 last:border-0">
+          <div class="w-2 h-2 rounded-full flex-shrink-0 bg-orange-400"></div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium dark:text-gray-200 truncate" x-text="item.name"></div>
+            <div class="text-xs text-gray-400" x-text="item.courseName"></div>
+          </div>
+          <div class="text-xs font-semibold text-orange-500 flex-shrink-0" x-text="item.dueDate"></div>
+        </div>
+      </template>
+    </div>
+    <div class="col-span-2 space-y-4">
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800"><h2 class="text-sm font-semibold dark:text-white">📢 Anuncios</h2></div>
+        <div x-show="anns.length===0" class="px-4 py-3 text-xs text-gray-400">Sin anuncios recientes.</div>
+        <template x-for="a in anns.slice(0,3)" :key="a.id">
+          <div class="px-4 py-3 border-b border-gray-50 dark:border-gray-800 last:border-0">
+            <div class="text-xs font-semibold dark:text-gray-300 truncate" x-text="a.title"></div>
+            <div class="text-xs text-gray-400 mt-0.5" x-text="a.authorName||'Sin autor'"></div>
+          </div>
+        </template>
+      </div>
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800"><h2 class="text-sm font-semibold dark:text-white">📊 Notas</h2></div>
+        <div x-show="grades.length===0" class="px-4 py-3 text-xs text-gray-400">Sin calificaciones.</div>
+        <template x-for="g in grades" :key="g.courseId">
+          <div class="px-4 py-2.5 flex items-center gap-2">
+            <div class="flex-1 text-xs text-gray-600 dark:text-gray-400 truncate" x-text="g.name"></div>
+            <div class="w-16 bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
+              <div class="h-1.5 rounded-full" :class="g.avg>70?'bg-emerald-400':g.avg>50?'bg-yellow-400':'bg-red-400'" :style="`width:${g.avg}%`"></div>
+            </div>
+            <div class="text-xs font-semibold dark:text-gray-300 w-10 text-right" x-text="`${g.avg.toFixed(1)}%`"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-2">
+    <span class="text-xs font-medium px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 cursor-default" data-tooltip="Usa el prompt 'weekly_briefing' en tu cliente MCP para este resumen automático.">⚡ weekly briefing (en MCP)</span>
+    <span class="text-xs font-medium px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 cursor-default" data-tooltip="Usa el prompt 'grade_audit' en tu cliente MCP para análisis de notas.">📊 grade_audit (en MCP)</span>
+  </div>
+</div>
+<script>
+function homePage(){return{upcoming:[],anns:[],grades:[],authValid:false,hitRate:0,pending:0,totalCalls:0,avgMs:0,tz:'',async init(){const[s,u,an,gr,cs]=await Promise.allSettled([fetch('/api/status').then(r=>r.json()),fetch('/api/upcoming?days=7').then(r=>r.json()),fetch('/api/announcements').then(r=>r.json()),fetch('/api/grades').then(r=>r.json()),fetch('/api/cache/stats').then(r=>r.json())]);if(s.status==='fulfilled'){this.authValid=s.value.auth?.valid??false;this.tz=s.value.tz||''}if(u.status==='fulfilled'){this.upcoming=(u.value.upcoming||[]).filter(x=>!x.hasSubmission);this.pending=this.upcoming.length}if(an.status==='fulfilled'){this.anns=(an.value.announcements||[]).flatMap(c=>c.items||[]).slice(0,5)}if(gr.status==='fulfilled'){this.grades=(gr.value.grades||[]).map(c=>{const items=c.items||[];const graded=items.filter(g=>g.percent!==null);const avg=graded.length?graded.reduce((s,g)=>s+g.percent,0)/graded.length:0;return{courseId:c.courseId,name:items[0]?.courseName||`Curso ${c.courseId}`,avg}}).filter(g=>g.avg>0).slice(0,5)}if(cs.status==='fulfilled'){const cnt=cs.value.stats?.counters||{};const h=cnt.cache_hit||0,m=cnt.cache_miss||0,t=h+m;this.hitRate=t>0?Math.round(h/t*100):0;this.totalCalls=t}}}}
+</script>
