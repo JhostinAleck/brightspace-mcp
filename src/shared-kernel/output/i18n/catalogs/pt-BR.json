@@ -1,0 +1,74 @@
+{
+  "courses": {
+    "header": "Cursos",
+    "empty": "Você não tem cursos.",
+    "count": { "one": "Você tem {count} curso:", "other": "Você tem {count} cursos:" },
+    "inactive": "inativo",
+    "table_headers": { "name": "Curso", "code": "Código", "status": "Status" }
+  },
+  "assignments": {
+    "header": "Tarefas",
+    "empty": "Sem tarefas.",
+    "due": "entrega {when}",
+    "no_due": "sem data de entrega",
+    "submitted": "entregue",
+    "not_submitted": "não entregue",
+    "instructions": "Instruções",
+    "submissions_none": "Entregas: nenhuma",
+    "submissions_count": {
+      "one": "Entregas: {count}, última em {when}",
+      "other": "Entregas: {count}, última em {when}"
+    },
+    "table_headers": { "name": "Tarefa", "course": "Curso", "due": "Entrega", "status": "Status" }
+  },
+  "grades": {
+    "header": "Notas",
+    "empty": "Ainda não há notas.",
+    "ungraded": "sem nota",
+    "table_headers": { "item": "Item", "score": "Pontuação", "percent": "%", "letter": "Letra" }
+  },
+  "feedback": {
+    "header": "Feedback",
+    "none": "Ainda não há feedback.",
+    "released_at": "Publicado: {when}"
+  },
+  "roster": {
+    "header": "Lista de alunos",
+    "empty": "Nenhum colega encontrado.",
+    "count": { "one": "{count} colega", "other": "{count} colegas" }
+  },
+  "emails": {
+    "header": "E-mails",
+    "empty": "Nenhum e-mail encontrado."
+  },
+  "syllabus": {
+    "header": "Plano de ensino",
+    "empty": "Plano de ensino não publicado.",
+    "updated_at": "Atualizado: {when}"
+  },
+  "content": {
+    "header": "Conteúdo do curso",
+    "empty": "Conteúdo do curso não publicado."
+  },
+  "announcements": {
+    "header": "Avisos",
+    "empty": "Sem avisos.",
+    "table_headers": { "date": "Data", "title": "Título", "author": "Autor" }
+  },
+  "discussions": {
+    "header": "Fóruns de discussão",
+    "empty": "Sem fóruns de discussão.",
+    "no_topics": "(sem tópicos)",
+    "post_count": { "one": "{count} publicação", "other": "{count} publicações" },
+    "last_post": "última em {when}"
+  },
+  "calendar": {
+    "header": "Próximos eventos",
+    "empty_window": "Sem eventos nos próximos {days} dias.",
+    "title_window": "Eventos nos próximos {days} dias:"
+  },
+  "common": {
+    "no_data": "—",
+    "footer_meta": "_Dados em {timestamp} · Fuso horário: {tz}_"
+  }
+}

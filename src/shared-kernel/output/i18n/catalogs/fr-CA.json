@@ -1,0 +1,74 @@
+{
+  "courses": {
+    "header": "Cours",
+    "empty": "Vous n'avez aucun cours.",
+    "count": { "one": "Vous avez {count} cours :", "other": "Vous avez {count} cours :" },
+    "inactive": "inactif",
+    "table_headers": { "name": "Cours", "code": "Code", "status": "Statut" }
+  },
+  "assignments": {
+    "header": "Travaux",
+    "empty": "Aucun travail.",
+    "due": "à remettre {when}",
+    "no_due": "sans date de remise",
+    "submitted": "remis",
+    "not_submitted": "non remis",
+    "instructions": "Instructions",
+    "submissions_none": "Remises : aucune",
+    "submissions_count": {
+      "one": "Remises : {count}, dernière le {when}",
+      "other": "Remises : {count}, dernière le {when}"
+    },
+    "table_headers": { "name": "Travail", "course": "Cours", "due": "Remise", "status": "Statut" }
+  },
+  "grades": {
+    "header": "Notes",
+    "empty": "Aucune note publiée pour l'instant.",
+    "ungraded": "non noté",
+    "table_headers": { "item": "Élément", "score": "Score", "percent": "%", "letter": "Lettre" }
+  },
+  "feedback": {
+    "header": "Rétroaction",
+    "none": "Aucune rétroaction pour l'instant.",
+    "released_at": "Publiée : {when}"
+  },
+  "roster": {
+    "header": "Liste de classe",
+    "empty": "Aucun camarade trouvé.",
+    "count": { "one": "{count} camarade", "other": "{count} camarades" }
+  },
+  "emails": {
+    "header": "Courriels",
+    "empty": "Aucun courriel trouvé."
+  },
+  "syllabus": {
+    "header": "Plan de cours",
+    "empty": "Plan de cours non publié.",
+    "updated_at": "Mis à jour : {when}"
+  },
+  "content": {
+    "header": "Contenu du cours",
+    "empty": "Contenu du cours non publié."
+  },
+  "announcements": {
+    "header": "Annonces",
+    "empty": "Aucune annonce.",
+    "table_headers": { "date": "Date", "title": "Titre", "author": "Auteur" }
+  },
+  "discussions": {
+    "header": "Forums de discussion",
+    "empty": "Aucun forum de discussion.",
+    "no_topics": "(aucun sujet)",
+    "post_count": { "one": "{count} message", "other": "{count} messages" },
+    "last_post": "dernier le {when}"
+  },
+  "calendar": {
+    "header": "Événements à venir",
+    "empty_window": "Aucun événement au cours des {days} prochains jours.",
+    "title_window": "Événements au cours des {days} prochains jours :"
+  },
+  "common": {
+    "no_data": "—",
+    "footer_meta": "_Données au {timestamp} · Fuseau horaire : {tz}_"
+  }
+}

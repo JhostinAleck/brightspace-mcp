@@ -1,0 +1,4 @@
+{
+  "description": "Keys allowed to fall back to en-US in other locales. Add here ONLY if the term should remain in English by design.",
+  "allowed_keys": []
+}

@@ -1,0 +1,74 @@
+{
+  "courses": {
+    "header": "Cursos",
+    "empty": "No tienes cursos.",
+    "count": { "one": "Tienes {count} curso:", "other": "Tienes {count} cursos:" },
+    "inactive": "inactivo",
+    "table_headers": { "name": "Curso", "code": "Código", "status": "Estado" }
+  },
+  "assignments": {
+    "header": "Tareas",
+    "empty": "No hay tareas.",
+    "due": "vence {when}",
+    "no_due": "sin fecha de entrega",
+    "submitted": "entregada",
+    "not_submitted": "sin entregar",
+    "instructions": "Instrucciones",
+    "submissions_none": "Entregas: ninguna",
+    "submissions_count": {
+      "one": "Entregas: {count}, última el {when}",
+      "other": "Entregas: {count}, última el {when}"
+    },
+    "table_headers": { "name": "Tarea", "course": "Curso", "due": "Vence", "status": "Estado" }
+  },
+  "grades": {
+    "header": "Calificaciones",
+    "empty": "Aún no hay calificaciones.",
+    "ungraded": "sin calificar",
+    "table_headers": { "item": "Elemento", "score": "Puntaje", "percent": "%", "letter": "Letra" }
+  },
+  "feedback": {
+    "header": "Retroalimentación",
+    "none": "Aún no hay retroalimentación.",
+    "released_at": "Publicada: {when}"
+  },
+  "roster": {
+    "header": "Lista del curso",
+    "empty": "No se encontraron compañeros.",
+    "count": { "one": "{count} compañero", "other": "{count} compañeros" }
+  },
+  "emails": {
+    "header": "Correos",
+    "empty": "No se encontraron correos."
+  },
+  "syllabus": {
+    "header": "Programa del curso",
+    "empty": "Aún no se publica el programa.",
+    "updated_at": "Actualizado: {when}"
+  },
+  "content": {
+    "header": "Contenido del curso",
+    "empty": "Aún no se publica contenido."
+  },
+  "announcements": {
+    "header": "Anuncios",
+    "empty": "No hay anuncios.",
+    "table_headers": { "date": "Fecha", "title": "Título", "author": "Autor" }
+  },
+  "discussions": {
+    "header": "Foros de discusión",
+    "empty": "No hay foros de discusión.",
+    "no_topics": "(sin temas)",
+    "post_count": { "one": "{count} publicación", "other": "{count} publicaciones" },
+    "last_post": "última el {when}"
+  },
+  "calendar": {
+    "header": "Próximos eventos",
+    "empty_window": "No hay eventos en los próximos {days} días.",
+    "title_window": "Eventos en los próximos {days} días:"
+  },
+  "common": {
+    "no_data": "—",
+    "footer_meta": "_Datos al {timestamp} · Zona horaria: {tz}_"
+  }
+}
