@@ -34,6 +34,20 @@ module.exports = {
       from: { path: '^src/mcp/tools/' },
       to: { path: '^src/contexts/[^/]+/infrastructure/' },
     },
+    {
+      name: 'resources-no-infra',
+      comment: 'MCP resources import only from application layer, never infrastructure',
+      severity: 'error',
+      from: { path: '^src/mcp/resources/' },
+      to: { path: '^src/contexts/[^/]+/infrastructure/' },
+    },
+    {
+      name: 'prompts-no-infra',
+      comment: 'MCP prompts import only from application layer, never infrastructure',
+      severity: 'error',
+      from: { path: '^src/mcp/prompts/' },
+      to: { path: '^src/contexts/[^/]+/infrastructure/' },
+    },
     { name: 'no-circular', severity: 'error', from: {}, to: { circular: true } },
   ],
   options: {
