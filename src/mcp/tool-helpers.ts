@@ -1,3 +1,4 @@
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 import type { Course } from '@/contexts/courses/domain/Course.js';
 import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import type { Grade } from '@/contexts/grades/domain/Grade.js';
@@ -12,147 +13,227 @@ import type { Announcement } from '@/contexts/communications/domain/Announcement
 import type { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import type { CalendarEvent } from '@/contexts/calendar/domain/CalendarEvent.js';
 
-export function coursesToCompact(courses: Course[]): string {
-  if (courses.length === 0) return 'You have no courses.';
-  const lines = courses.map(
-    (c) =>
-      ` • ${c.name} — ${c.code} (id=${CourseId.toNumber(c.id)})${c.active ? '' : ' [inactive]'}`,
-  );
-  return `You have ${courses.length} course${courses.length === 1 ? '' : 's'}:\n${lines.join('\n')}`;
+export function coursesToCompact(courses: Course[], ctx: OutputContext): string {
+  if (courses.length === 0) return ctx.t('courses.empty');
+  const items = courses.map((c) => {
+    const tag = c.active ? '' : ` ${ctx.md.italic(`[${ctx.t('courses.inactive')}]`)}`;
+    return `${ctx.md.bold(c.name)} — ${c.code}${tag}`;
+  });
+  return [
+    ctx.md.h3(ctx.t('courses.count', { count: courses.length })),
+    ctx.md.bulletList(items),
+  ].join('\n\n');
 }
 
-export function coursesToDetailed(courses: Course[]): string {
-  return courses
-    .map((c) => {
-      const dates =
-        c.startDate && c.endDate
-          ? ` | ${c.startDate.toISOString().slice(0, 10)} → ${c.endDate.toISOString().slice(0, 10)}`
-          : '';
-      return `• ${c.name} (${c.code}, id=${CourseId.toNumber(c.id)}) [${c.active ? 'active' : 'inactive'}]${dates}`;
-    })
-    .join('\n');
+export function coursesToDetailed(courses: Course[], ctx: OutputContext): string {
+  if (courses.length === 0) return ctx.t('courses.empty');
+  const headers = [
+    ctx.t('courses.table_headers.name'),
+    ctx.t('courses.table_headers.code'),
+    ctx.t('courses.table_headers.status'),
+  ];
+  const rows = courses.map((c) => [
+    `${c.name} (id=${CourseId.toNumber(c.id)})`,
+    c.code,
+    c.active ? '' : ctx.t('courses.inactive'),
+  ]);
+  return [ctx.md.h3(ctx.t('courses.header')), ctx.md.table(headers, rows)].join('\n\n');
 }
 
-export function gradesToCompact(grades: Grade[]): string {
-  if (grades.length === 0) return 'No grades posted yet.';
-  const lines = grades.map((g) => {
-    const percent = g.percent === null ? 'ungraded' : `${g.percent.toFixed(1)}%`;
+export function gradesToCompact(grades: Grade[], ctx: OutputContext): string {
+  if (grades.length === 0) return ctx.t('grades.empty');
+  const items = grades.map((g) => {
+    const pct = g.percent === null ? ctx.t('grades.ungraded') : ctx.formatPercent(g.percent);
     const letter = g.percent === null ? '' : ` (${LetterGrade.fromPercent(g.percent).letter})`;
-    return ` • ${g.itemName}: ${percent}${letter}`;
+    return `${ctx.md.bold(g.itemName)}: ${pct}${letter}`;
   });
-  return `Grades:\n${lines.join('\n')}`;
+  return [ctx.md.h3(ctx.t('grades.header')), ctx.md.bulletList(items)].join('\n\n');
 }
 
-export function gradesToDetailed(grades: Grade[]): string {
-  if (grades.length === 0) return 'No grades posted yet.';
-  return grades.map((g) => {
-    const pct = g.percent === null ? 'ungraded' : `${g.percent.toFixed(1)}%`;
-    const pts = g.pointsEarned === null ? 'n/a' : `${g.pointsEarned}/${g.pointsMax}`;
-    const letter = g.percent === null ? '' : ` [${LetterGrade.fromPercent(g.percent).letter}]`;
-    const displayed = g.displayedGrade ?? '';
-    return `• ${g.itemName} — ${pts} = ${pct}${letter}${displayed ? ` (display: ${displayed})` : ''}`;
-  }).join('\n');
-}
-
-export function feedbackToText(fb: Feedback | null): string {
-  if (!fb) return 'No feedback posted yet.';
-  const score = fb.score !== null && fb.outOf !== null ? `${fb.score}/${fb.outOf}` : 'ungraded';
-  const pct = fb.percent !== null ? ` (${fb.percent.toFixed(1)}%)` : '';
-  const text = fb.text ? `\n\n"${fb.text}"` : '';
-  const released = fb.releasedAt ? `\nReleased: ${fb.releasedAt.toISOString().slice(0, 10)}` : '';
-  return `Feedback: ${score}${pct}${released}${text}`;
-}
-
-export const UTC_WARNING = '⚠️ All times are UTC — convert to local timezone before presenting to the user.';
-
-export function assignmentsToCompact(assignments: Assignment[]): string {
-  if (assignments.length === 0) return 'No assignments.';
-  const lines = assignments.map((a) => {
-    const due = a.dueDate.toDate()?.toISOString().slice(0, 10) ?? 'no due date';
-    const submitted = a.hasSubmission ? ' [submitted]' : '';
-    return ` • ${a.name} — due ${due}${submitted} (id=${AssignmentId.toNumber(a.id)})`;
+export function gradesToDetailed(grades: Grade[], ctx: OutputContext): string {
+  if (grades.length === 0) return ctx.t('grades.empty');
+  const headers = [
+    ctx.t('grades.table_headers.item'),
+    ctx.t('grades.table_headers.score'),
+    ctx.t('grades.table_headers.percent'),
+    ctx.t('grades.table_headers.letter'),
+  ];
+  const rows = grades.map((g) => {
+    const pts = g.pointsEarned === null ? '—' : ctx.formatPoints(g.pointsEarned, g.pointsMax ?? 0);
+    const pct = g.percent === null ? ctx.t('grades.ungraded') : ctx.formatPercent(g.percent);
+    const letter = g.percent === null ? '' : LetterGrade.fromPercent(g.percent).letter;
+    return [g.itemName, pts, pct, letter];
   });
-  return `Assignments:\n${lines.join('\n')}\n\n${UTC_WARNING}`;
+  return [ctx.md.h3(ctx.t('grades.header')), ctx.md.table(headers, rows)].join('\n\n');
 }
 
-export function assignmentsToDetailed(assignments: Assignment[]): string {
-  if (assignments.length === 0) return 'No assignments.';
-  const items = assignments.map((a) => {
-    const due = a.dueDate.toDate()?.toISOString() ?? 'no due date';
-    const instructions = a.instructions ? `\n  Instructions: ${a.instructions.replace(/\s+/g, ' ').slice(0, 200)}` : '';
-    const subs = a.submissions.length
-      ? `\n  Submissions: ${a.submissions.length}, last at ${a.submissions[a.submissions.length - 1]!.submittedAt.toISOString()}`
-      : '\n  Submissions: none';
-    return `• ${a.name} (id=${AssignmentId.toNumber(a.id)})\n  Due: ${due}${instructions}${subs}`;
-  }).join('\n');
-  return `${items}\n\n${UTC_WARNING}`;
+export function feedbackToText(fb: Feedback | null, ctx: OutputContext): string {
+  if (!fb) return ctx.t('feedback.none');
+  const score =
+    fb.score !== null && fb.outOf !== null
+      ? ctx.formatPoints(fb.score, fb.outOf)
+      : ctx.t('grades.ungraded');
+  const pct = fb.percent !== null ? ` (${ctx.formatPercent(fb.percent)})` : '';
+  const released = fb.releasedAt
+    ? `\n${ctx.t('feedback.released_at', { when: ctx.formatDate(fb.releasedAt) })}`
+    : '';
+  const text = fb.text ? `\n\n${ctx.md.blockquote(fb.text)}` : '';
+  return [ctx.md.h4(ctx.t('feedback.header')), `${score}${pct}${released}${text}`].join('\n\n');
 }
 
-export function rosterToText(classmates: Classmate[]): string {
-  if (classmates.length === 0) return 'No classmates found.';
-  const lines = classmates.map((c) => {
+export function assignmentsToCompact(assignments: Assignment[], ctx: OutputContext): string {
+  if (assignments.length === 0) return ctx.t('assignments.empty');
+  const headers = [
+    ctx.t('assignments.table_headers.name'),
+    ctx.t('assignments.table_headers.due'),
+    ctx.t('assignments.table_headers.status'),
+  ];
+  const rows = assignments.map((a) => {
+    const dueDate = a.dueDate.toDate();
+    const due = dueDate ? ctx.formatDate(dueDate, 'datetime') : ctx.t('assignments.no_due');
+    const status = a.hasSubmission
+      ? ctx.t('assignments.submitted')
+      : ctx.t('assignments.not_submitted');
+    return [`${a.name} (id=${AssignmentId.toNumber(a.id)})`, due, status];
+  });
+  return [ctx.md.h3(ctx.t('assignments.header')), ctx.md.table(headers, rows)].join('\n\n');
+}
+
+export function assignmentsToDetailed(assignments: Assignment[], ctx: OutputContext): string {
+  if (assignments.length === 0) return ctx.t('assignments.empty');
+  const blocks = assignments.map((a) => {
+    const dueDate = a.dueDate.toDate();
+    const due = dueDate ? ctx.formatDate(dueDate, 'datetime') : ctx.t('assignments.no_due');
+    const instructions = a.instructions
+      ? `\n${ctx.md.bold(ctx.t('assignments.instructions'))}: ${a.instructions.replace(/\s+/g, ' ').slice(0, 200)}`
+      : '';
+    const lastSub =
+      a.submissions.length > 0 ? a.submissions[a.submissions.length - 1]!.submittedAt : null;
+    const subs =
+      a.submissions.length === 0
+        ? ctx.t('assignments.submissions_none')
+        : ctx.t('assignments.submissions_count', {
+            count: a.submissions.length,
+            when: ctx.formatDate(lastSub, 'datetime'),
+          });
+    return [
+      ctx.md.h4(`${a.name} (id=${AssignmentId.toNumber(a.id)})`),
+      `${ctx.md.bold(ctx.t('assignments.table_headers.due'))}: ${due}`,
+      instructions.trim(),
+      subs,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  });
+  return [ctx.md.h3(ctx.t('assignments.header')), blocks.join('\n\n')].join('\n\n');
+}
+
+export function rosterToText(classmates: Classmate[], ctx: OutputContext): string {
+  if (classmates.length === 0) return ctx.t('roster.empty');
+  const items = classmates.map((c) => {
     const email = c.email ? ` · ${c.email}` : '';
-    return ` • ${c.displayName} [${c.role}]${email}`;
+    return `${ctx.md.bold(c.displayName)} ${ctx.md.italic(`[${c.role}]`)}${email}`;
   });
-  return `Roster (${classmates.length}):\n${lines.join('\n')}`;
+  return [
+    ctx.md.h3(ctx.t('roster.count', { count: classmates.length })),
+    ctx.md.bulletList(items),
+  ].join('\n\n');
 }
 
-export function emailsToText(emails: string[]): string {
-  if (emails.length === 0) return 'No emails found.';
+export function emailsToText(emails: string[], ctx: OutputContext): string {
+  if (emails.length === 0) return ctx.t('emails.empty');
   return emails.join(', ');
 }
 
-export function syllabusToText(s: Syllabus | null): string {
-  if (!s) return 'No syllabus posted yet.';
-  const stripped = (s.html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const updated = s.updatedAt ? `\nUpdated: ${s.updatedAt.toISOString().slice(0, 10)}` : '';
-  return `${s.title}:${updated}\n\n${stripped.slice(0, 2000)}${stripped.length > 2000 ? '…' : ''}`;
+export function syllabusToText(s: Syllabus | null, ctx: OutputContext): string {
+  if (!s) return ctx.t('syllabus.empty');
+  const stripped = (s.html ?? '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const updated = s.updatedAt
+    ? `_${ctx.t('syllabus.updated_at', { when: ctx.formatDate(s.updatedAt) })}_`
+    : '';
+  const body = stripped.slice(0, 2000) + (stripped.length > 2000 ? '…' : '');
+  return [ctx.md.h3(s.title), updated, body].filter(Boolean).join('\n\n');
 }
 
-export function courseContentToText(modules: readonly Module[], depth: number): string {
-  if (modules.length === 0) return 'No course content posted yet.';
-  const render = (mods: readonly Module[], level: number): string[] => {
-    const out: string[] = [];
+export function courseContentToText(
+  modules: readonly Module[],
+  depth: number,
+  ctx: OutputContext,
+): string {
+  if (modules.length === 0) return ctx.t('content.empty');
+  const lines: string[] = [];
+  const walk = (mods: readonly Module[], level: number): void => {
     for (const m of mods) {
-      out.push(`${'  '.repeat(level)}📁 ${m.title}`);
-      for (const t of m.topics) out.push(`${'  '.repeat(level + 1)}· ${t.title} [${t.kind}] (id=${t.id})`);
-      if (level < depth) out.push(...render(m.submodules, level + 1));
+      lines.push(`${'  '.repeat(level)}- ${ctx.md.bold(m.title)}`);
+      for (const topic of m.topics) {
+        lines.push(
+          `${'  '.repeat(level + 1)}- ${topic.title} ${ctx.md.italic(`[${topic.kind}]`)} (id=${topic.id})`,
+        );
+      }
+      if (level < depth) walk(m.submodules, level + 1);
     }
-    return out;
   };
-  return `Course content:\n${render(modules, 0).join('\n')}`;
+  walk(modules, 0);
+  return [ctx.md.h3(ctx.t('content.header')), lines.join('\n')].join('\n\n');
 }
 
-export function announcementsToText(items: Announcement[]): string {
-  if (items.length === 0) return 'No announcements.';
-  const lines = items.map((a) => {
-    const author = a.authorName ? ` — ${a.authorName}` : '';
-    const body = (a.html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
-    return ` • ${a.postedAt.toISOString().slice(0, 10)}: ${a.title}${author}\n    ${body}`;
+export function announcementsToText(items: Announcement[], ctx: OutputContext): string {
+  if (items.length === 0) return ctx.t('announcements.empty');
+  const headers = [
+    ctx.t('announcements.table_headers.date'),
+    ctx.t('announcements.table_headers.title'),
+    ctx.t('announcements.table_headers.author'),
+  ];
+  const rows = items.map((a) => {
+    const body = (a.html ?? '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 100);
+    return [
+      ctx.formatDate(a.postedAt),
+      `${a.title}${body ? ` — ${ctx.md.italic(body)}` : ''}`,
+      a.authorName ?? '',
+    ];
   });
-  return `Announcements:\n${lines.join('\n')}`;
+  return [ctx.md.h3(ctx.t('announcements.header')), ctx.md.table(headers, rows)].join('\n\n');
 }
 
-export function discussionsToText(forums: DiscussionForum[]): string {
-  if (forums.length === 0) return 'No discussion forums.';
-  const out: string[] = [];
-  for (const f of forums) {
-    out.push(`📋 ${f.name}`);
-    if (f.topics.length === 0) out.push('  (no topics)');
-    for (const t of f.topics) {
-      const last = t.lastPostAt ? `, last ${t.lastPostAt.toISOString().slice(0, 10)}` : '';
-      out.push(`  · ${t.name} (${t.postCount} posts${last})`);
-    }
-  }
-  return out.join('\n');
+export function discussionsToText(forums: DiscussionForum[], ctx: OutputContext): string {
+  if (forums.length === 0) return ctx.t('discussions.empty');
+  const blocks = forums.map((f) => {
+    const head = ctx.md.h4(f.name);
+    if (f.topics.length === 0) return `${head}\n_${ctx.t('discussions.no_topics')}_`;
+    const items = f.topics.map((topic) => {
+      const post = ctx.t('discussions.post_count', { count: topic.postCount });
+      const last = topic.lastPostAt
+        ? `, ${ctx.t('discussions.last_post', { when: ctx.formatDate(topic.lastPostAt) })}`
+        : '';
+      return `${topic.name} (${post}${last})`;
+    });
+    return `${head}\n${ctx.md.bulletList(items)}`;
+  });
+  return [ctx.md.h3(ctx.t('discussions.header')), blocks.join('\n\n')].join('\n\n');
 }
 
-export function calendarEventsToText(events: CalendarEvent[], days: number): string {
-  if (events.length === 0) return `No events in the next ${days} days.`;
-  const lines = events.map((e) => {
+export function calendarEventsToText(
+  events: CalendarEvent[],
+  days: number,
+  ctx: OutputContext,
+): string {
+  if (events.length === 0) return ctx.t('calendar.empty_window', { days });
+  const items = events.map((e) => {
+    const start = ctx.formatDate(e.startAt, 'datetime');
+    const end = e.endAt
+      ? ` → ${ctx.formatDate(e.endAt, 'datetime').split(',').slice(-1)[0]?.trim() ?? ''}`
+      : '';
     const loc = e.location ? ` @ ${e.location}` : '';
-    const end = e.endAt ? ` → ${e.endAt.toISOString().slice(11, 16)}` : '';
-    return ` • ${e.startAt.toISOString().slice(0, 16).replace('T', ' ')}${end} — ${e.title}${loc}`;
+    return `${start}${end} — ${ctx.md.bold(e.title)}${loc}`;
   });
-  return `Events in next ${days} days:\n${lines.join('\n')}`;
+  return [ctx.md.h3(ctx.t('calendar.title_window', { days })), ctx.md.bulletList(items)].join(
+    '\n\n',
+  );
 }
