@@ -70,5 +70,24 @@
   "common": {
     "no_data": "—",
     "footer_meta": "_Données au {timestamp} · Fuseau horaire : {tz}_"
+  },
+  "prompts": {
+    "weekly_briefing": {
+      "description": "Résumé hebdomadaire : dates de remise, annonces et notes récentes",
+      "message": "En utilisant les outils disponibles, donnez-moi un résumé hebdomadaire : travaux à remettre dans les 7 prochains jours, annonces récentes des 7 derniers jours et notes publiées cette semaine. Format : une section par cours, en ordre d'urgence."
+    },
+    "grade_audit": {
+      "description": "Audit des notes : situation actuelle et ce qu'il faut pour réussir",
+      "message_all": "Analysez mes notes dans tous les cours. Pour chacun : pourcentage actuel, note projetée et quel score je dois obtenir sur les travaux en attente pour réussir avec la note minimale. Utilisez get_my_grades et get_assignments.",
+      "message_course": "Analysez mes notes dans {courseName} (id={courseId}). Montrez : pourcentage actuel, note projetée et quel score je dois obtenir sur les travaux en attente pour réussir. Utilisez get_my_grades et get_assignments."
+    },
+    "study_planner": {
+      "description": "Plan d'étude pour les {days} prochains jours selon les dates de remise et le calendrier",
+      "message": "Créez un plan d'étude pour les {days} prochains jours basé sur mes dates de remise et mes événements de calendrier. Priorisez par échéance et par poids du travail si disponible. Utilisez get_upcoming_due_dates et get_calendar_events."
+    },
+    "course_summary": {
+      "description": "Résumé complet d'un cours spécifique",
+      "message": "Donnez-moi un résumé complet de {courseName} (id={courseId}) : plan de cours, modules de contenu, travaux en attente et dernières notes. Utilisez get_syllabus, get_course_content, get_assignments et get_my_grades."
+    }
   }
 }

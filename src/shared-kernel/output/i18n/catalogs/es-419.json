@@ -70,5 +70,24 @@
   "common": {
     "no_data": "—",
     "footer_meta": "_Datos al {timestamp} · Zona horaria: {tz}_"
+  },
+  "prompts": {
+    "weekly_briefing": {
+      "description": "Resumen semanal: fechas de entrega, anuncios y calificaciones recientes",
+      "message": "Usando las herramientas disponibles, dame un resumen semanal: tareas que vencen en los próximos 7 días, anuncios recientes de los últimos 7 días y calificaciones publicadas esta semana. Formato: una sección por curso, ordenado por urgencia."
+    },
+    "grade_audit": {
+      "description": "Auditoría de calificaciones: situación actual y qué se necesita para aprobar",
+      "message_all": "Analiza mis calificaciones en todos los cursos. Por cada curso: porcentaje actual, nota proyectada y qué puntaje necesito en las entregas pendientes para aprobar con nota mínima. Usa get_my_grades y get_assignments.",
+      "message_course": "Analiza mis calificaciones en {courseName} (id={courseId}). Muestra: porcentaje actual, nota proyectada y qué puntaje necesito en las entregas pendientes para aprobar. Usa get_my_grades y get_assignments."
+    },
+    "study_planner": {
+      "description": "Plan de estudio para los próximos {days} días según fechas de entrega y calendario",
+      "message": "Armá un plan de estudio para los próximos {days} días basado en mis fechas de entrega y eventos del calendario. Priorizá por fecha límite y peso de la tarea cuando esté disponible. Usa get_upcoming_due_dates y get_calendar_events."
+    },
+    "course_summary": {
+      "description": "Resumen completo de un curso específico",
+      "message": "Dame el resumen completo de {courseName} (id={courseId}): programa del curso, módulos de contenido, tareas pendientes y últimas calificaciones. Usa get_syllabus, get_course_content, get_assignments y get_my_grades."
+    }
   }
 }

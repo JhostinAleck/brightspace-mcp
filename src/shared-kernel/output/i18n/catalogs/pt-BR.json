@@ -70,5 +70,24 @@
   "common": {
     "no_data": "—",
     "footer_meta": "_Dados em {timestamp} · Fuso horário: {tz}_"
+  },
+  "prompts": {
+    "weekly_briefing": {
+      "description": "Resumo semanal: datas de entrega, avisos e notas recentes",
+      "message": "Usando as ferramentas disponíveis, me dê um resumo semanal: tarefas com entrega nos próximos 7 dias, avisos recentes dos últimos 7 dias e notas publicadas esta semana. Formato: uma seção por disciplina, em ordem de urgência."
+    },
+    "grade_audit": {
+      "description": "Auditoria de notas: situação atual e o que é necessário para passar",
+      "message_all": "Analise minhas notas em todas as disciplinas. Para cada uma: percentual atual, nota projetada e que pontuação preciso nas tarefas pendentes para passar com nota mínima. Use get_my_grades e get_assignments.",
+      "message_course": "Analise minhas notas em {courseName} (id={courseId}). Mostre: percentual atual, nota projetada e que pontuação preciso nas tarefas pendentes para passar. Use get_my_grades e get_assignments."
+    },
+    "study_planner": {
+      "description": "Plano de estudos para os próximos {days} dias com base em datas de entrega e calendário",
+      "message": "Monte um plano de estudos para os próximos {days} dias com base nas minhas datas de entrega e eventos do calendário. Priorize por prazo e peso da tarefa quando disponível. Use get_upcoming_due_dates e get_calendar_events."
+    },
+    "course_summary": {
+      "description": "Resumo completo de uma disciplina específica",
+      "message": "Me dê um resumo completo de {courseName} (id={courseId}): plano de ensino, módulos de conteúdo, tarefas pendentes e últimas notas. Use get_syllabus, get_course_content, get_assignments e get_my_grades."
+    }
   }
 }

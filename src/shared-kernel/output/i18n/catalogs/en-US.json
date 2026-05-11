@@ -70,5 +70,24 @@
   "common": {
     "no_data": "—",
     "footer_meta": "_Data as of {timestamp} · Time zone: {tz}_"
+  },
+  "prompts": {
+    "weekly_briefing": {
+      "description": "Weekly overview: due dates, announcements, and recent grades",
+      "message": "Using the available tools, give me a weekly briefing: tasks due in the next 7 days, recent announcements from the past 7 days, and grades published this week. Format: one section per course, ordered by urgency."
+    },
+    "grade_audit": {
+      "description": "Grade audit: current standing and what is needed to pass",
+      "message_all": "Analyse my grades across all courses. For each course: current percentage, projected grade, and what score I need on upcoming assignments to pass with a minimum passing grade. Use get_my_grades and get_assignments.",
+      "message_course": "Analyse my grades in {courseName} (id={courseId}). Show: current percentage, projected grade, and what score I need on upcoming assignments to pass. Use get_my_grades and get_assignments."
+    },
+    "study_planner": {
+      "description": "Study plan for the next {days} days based on due dates and calendar",
+      "message": "Build a study plan for the next {days} days based on my due dates and calendar events. Prioritise by deadline and assignment weight when available. Use get_upcoming_due_dates and get_calendar_events."
+    },
+    "course_summary": {
+      "description": "Full summary of a specific course",
+      "message": "Give me a complete summary of {courseName} (id={courseId}): syllabus, content modules, pending assignments, and latest grades. Use get_syllabus, get_course_content, get_assignments, and get_my_grades."
+    }
   }
 }
