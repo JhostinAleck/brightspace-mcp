@@ -62,6 +62,7 @@ import {
 import type { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import type { IdempotencyStore } from '@/shared-kernel/idempotency/IdempotencyStore.js';
 import type { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
+import type { OutputContext } from '@/shared-kernel/output/index.js';
 
 export interface ToolDeps
   extends CheckAuthDeps,
@@ -90,6 +91,7 @@ export interface ToolDeps
   writesGate: WritesGate;
   idempotencyStore: IdempotencyStore;
   auditLogger: AuditLogger;
+  output: OutputContext;
 }
 
 export function registerAllTools(server: McpServer, deps: ToolDeps): void {

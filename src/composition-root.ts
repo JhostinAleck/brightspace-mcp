@@ -62,6 +62,7 @@ import { WritesGate } from '@/shared-kernel/writes/WritesGate.js';
 import { CachedIdempotencyStore } from '@/shared-kernel/idempotency/CachedIdempotencyStore.js';
 import { AuditLogger } from '@/shared-kernel/audit/AuditLogger.js';
 import type { ToolDeps } from '@/mcp/registry.js';
+import { buildOutputContext } from '@/shared-kernel/output/index.js';
 import type { AuthStrategyKind } from '@/contexts/authentication/domain/Session.js';
 import type { Prompter } from '@/contexts/authentication/infrastructure/mfa/ManualPromptMfaStrategy.js';
 
@@ -499,6 +500,13 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const auditLogPath = `${Paths.rootDir()}/audit.log`;
   const auditLogger = new AuditLogger({ logger, filePath: auditLogPath });
 
+  const output = buildOutputContext({
+    ...(config.output?.tz !== undefined ? { tz: config.output.tz } : {}),
+    ...(config.output?.locale !== undefined ? { locale: config.output.locale } : {}),
+    format: config.output?.format ?? 'markdown',
+    includeMetaFooter: config.output?.include_meta_footer ?? true,
+  });
+
   return {
     ensureAuth,
     profile: profileName,
@@ -527,6 +535,7 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     idempotencyStore,
     auditLogger,
     auditLogPath,
+    output,
     disposables,
   };
 }
