@@ -68,6 +68,33 @@ Expected output:
 
 If this fails, see [troubleshooting.md](./troubleshooting.md).
 
+## Output: timezone and language
+
+The server formats every response in your chosen timezone and language.
+
+```yaml
+output:
+  tz: America/Bogota       # IANA name; default: detected from system
+  locale: es-419           # en-US | es-419 | pt-BR | fr-CA; default: detected
+  format: markdown         # markdown (default) | plain
+  include_meta_footer: true
+```
+
+The setup wizard prompts for both. To change later, edit
+`~/.brightspace-mcp/config.yaml` directly.
+
+### Locales
+
+| Locale | Language |
+|---|---|
+| `en-US` | English (US) |
+| `es-419` | Español (Latinoamérica) |
+| `pt-BR` | Português (Brasil) |
+| `fr-CA` | Français (Canada) |
+
+To add a new locale, PR a `<locale>.json` to
+`src/shared-kernel/output/i18n/catalogs/`. The parity test will show missing keys.
+
 ## Step 5 — Wire it into your MCP client
 
 See [clients.md](./clients.md) for Claude Desktop, Cursor, Windsurf, and Claude Code.

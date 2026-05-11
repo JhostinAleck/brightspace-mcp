@@ -194,3 +194,28 @@ Increase verbosity:
 logging:
   level: debug   # error | warn | info | debug
 ```
+
+### "Why do I see `{{some.key}}` in tool output?"
+
+That marker means the translator couldn't find a key in the active locale
+**or** in the `en-US` fallback. Likely causes:
+1. A key was added to `en-US.json` but not to the active locale's catalog
+   and is not in `docs/i18n-fallback-allowed.json`.
+2. A typo in the key passed to `t(...)` inside a handler.
+
+Run `npx vitest run tests/shared-kernel/output/i18n/catalog-parity.test.ts` to find
+missing keys.
+
+### Invalid timezone error at startup
+
+```
+invalid tz: "..." — Use an IANA name like "America/Bogota"
+```
+
+Find your system timezone:
+
+```bash
+node -e "console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)"
+```
+
+Set it in `~/.brightspace-mcp/config.yaml` under `output.tz`.

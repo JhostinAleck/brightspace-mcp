@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-05-11
+
+### BREAKING
+- Tool output is now Markdown by default (headers, tables, lists). Set
+  `output.format: plain` to keep the legacy plain-text format.
+- Timestamps are formatted in the configured timezone, not raw UTC.
+  The `UTC_WARNING` footer is removed; an optional meta footer
+  (`_Data as of ... · Time zone: ..._`) is appended to list tools unless
+  `output.include_meta_footer: false`.
+- When `output.locale` is explicitly set, it must be one of
+  `en-US`, `es-419`, `pt-BR`, `fr-CA`. Omit for system detection.
+
+### Added — Localization
+- i18n catalogs for `en-US`, `es-419` (Latin America), `pt-BR` (Brazil),
+  `fr-CA` (Canada) under `src/shared-kernel/output/i18n/catalogs/`.
+- New config block `output:` with `tz`, `locale`, `format`,
+  `include_meta_footer` — all optional, system-detected when omitted.
+- Setup wizard now prompts for timezone (IANA) and display language;
+  defaults prefilled from `Intl.DateTimeFormat()` and `$LANG`.
+- `OutputContext` injected into every tool handler via `ToolDeps`.
+  Provides `t(key, vars)`, `formatDate`, `formatRelative`,
+  `formatPercent`, `formatPoints`, `md.*`, and `metaFooter()`.
+- Catalog parity test ensures non-base catalogs cover every `en-US` key.
+- 14 × 4 locale snapshot matrix in `tests/mcp/tool-helpers.locales.test.ts`.
+
+### Changed
+- All 14 helpers in `tool-helpers.ts` now take a second `ctx: OutputContext`
+  parameter and emit Markdown with headers and tables.
+- All 26 tool handlers pass `deps.output` to their helpers.
+- Plurals are correct in `es-419`, `pt-BR`, `fr-CA` via `Intl.PluralRules`
+  (e.g., "1 curso" vs. "5 cursos").
+
 ## [0.17.2] - 2026-05-11
 
 ### Fixed
