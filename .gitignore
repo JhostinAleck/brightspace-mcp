@@ -53,6 +53,7 @@ docs/_brainstorms/
 secrets/
 .brightspace-mcp/
 
-# Local AI assistant session files
-.claude/
+# Local AI assistant session files (track CLAUDE.md but ignore runtime files)
+.claude/*
+!.claude/CLAUDE.md
 .superpowers/
