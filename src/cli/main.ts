@@ -131,6 +131,32 @@ program
   });
 
 program
+  .command('tui')
+  .description('Start interactive terminal dashboard')
+  .option('--profile <name>', 'Profile to load')
+  .option('--config <path>', 'Config file path')
+  .action(async (opts) => {
+    try {
+      const { existsSync } = await import('node:fs');
+      const { loadConfig } = await import('@/shared-kernel/config/loader.js');
+      const { buildDependencies } = await import('@/composition-root.js');
+      const { Paths } = await import('@/shared-kernel/config/paths.js');
+      const path = opts.config ?? Paths.configYaml();
+      const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
+      const cliOverrides: Record<string, unknown> = {};
+      if (opts.profile) cliOverrides['default_profile'] = opts.profile;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const config = loadConfig({ fileContent, env: process.env, cliOverrides: cliOverrides as any });
+      const deps = await buildDependencies({ config, enableWrites: false });
+      const { runTui } = await import('./commands/tui.js');
+      await runTui({ ...deps, configPath: path });
+    } catch (err) {
+      process.stderr.write(`tui failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('upgrade')
   .description('Upgrade brightspace-mcp to the latest version')
   .action(async () => {
