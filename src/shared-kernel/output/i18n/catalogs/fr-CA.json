@@ -213,7 +213,8 @@
       "overdue": "en retard",
       "tomorrow": "demain",
       "no_date": "sans date",
-      "cleared": "✓ Cache vidé"
+      "cleared": "✓ Cache vidé",
+      "group_note": "ⓘ Les remises de groupe peuvent ne pas refléter le statut réel (limitation API D2L)"
     },
     "notas": {
       "average": "Moyenne:",

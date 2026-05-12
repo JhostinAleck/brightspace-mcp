@@ -213,7 +213,8 @@
       "overdue": "vencida",
       "tomorrow": "amanhã",
       "no_date": "sem data",
-      "cleared": "✓ Cache limpo"
+      "cleared": "✓ Cache limpo",
+      "group_note": "ⓘ Entregas em grupo podem não refletir o estado real (limitação API D2L)"
     },
     "notas": {
       "average": "Média:",

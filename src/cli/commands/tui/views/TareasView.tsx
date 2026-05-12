@@ -79,6 +79,7 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
       })}
 
       <Text color="gray" dimColor>{t('tui.tareas.hint')}</Text>
+      <Text color="gray" dimColor>{t('tui.tareas.group_note')}</Text>
     </Box>
   );
 }

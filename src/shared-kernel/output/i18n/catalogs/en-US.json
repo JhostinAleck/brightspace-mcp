@@ -213,7 +213,8 @@
       "overdue": "overdue",
       "tomorrow": "tomorrow",
       "no_date": "no date",
-      "cleared": "✓ Cache cleared"
+      "cleared": "✓ Cache cleared",
+      "group_note": "ⓘ Group assignments may not show submission status (D2L API limitation)"
     },
     "notas": {
       "average": "Average:",
