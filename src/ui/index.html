@@ -533,6 +533,7 @@ tailwind.config = {
             <input type="text" placeholder="Filtrar por tool…" x-model="filter" class="ml-auto text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-gray-600 dark:text-gray-300 w-40 focus:outline-none focus:border-indigo-400">
           </div>
           <div x-show="entries.length===0" class="px-5 py-4 text-xs text-gray-400">Sin entradas en el audit log.</div>
+          <div x-show="entries.length>0 && filtered.length===0" class="px-5 py-4 text-xs text-gray-400">Sin entradas para «<span x-text="filter"></span>».</div>
           <table class="w-full" x-show="filtered.length>0">
             <thead><tr class="border-b border-gray-100 dark:border-gray-800">
               <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Timestamp</th>

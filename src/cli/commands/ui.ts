@@ -99,7 +99,13 @@ export function createApp(deps: UiDeps): Hono {
     const cutoff = new Date(Date.now() + days * 86_400_000);
     const results: Array<{ courseId: number; courseName: string; assignmentId: number; name: string; dueDate: string; hasSubmission: boolean }> = [];
     for (const course of courses) {
-      const assignments = await deps.assignmentRepo.findByCourse(OrgUnitId.of(Number(course.id)));
+      let assignments;
+      try {
+        assignments = await deps.assignmentRepo.findByCourse(OrgUnitId.of(Number(course.id)));
+      } catch {
+        // Circuit open, 403, or network error for this course — skip it.
+        continue;
+      }
       for (const a of assignments) {
         const due = a.dueDate.toDate();
         if (due && due <= cutoff) {
@@ -119,7 +125,13 @@ export function createApp(deps: UiDeps): Hono {
       : (await deps.courseRepo.findMyCourses({ activeOnly: true })).map((co) => OrgUnitId.of(Number(co.id)));
     const result: Array<{ courseId: number; items: unknown[] }> = [];
     for (const id of ids) {
-      const grades = await deps.gradeRepo.findByCourse(id);
+      let grades;
+      try {
+        grades = await deps.gradeRepo.findByCourse(id);
+      } catch {
+        // Circuit open, 403, or network error for this course — skip it.
+        continue;
+      }
       result.push({
         courseId: Number(id),
         items: grades.map((g) => ({
@@ -143,7 +155,13 @@ export function createApp(deps: UiDeps): Hono {
       : (await deps.courseRepo.findMyCourses({ activeOnly: true })).map((co) => OrgUnitId.of(Number(co.id)));
     const result: Array<{ courseId: number; items: unknown[] }> = [];
     for (const id of ids) {
-      const items = await deps.assignmentRepo.findByCourse(id);
+      let items;
+      try {
+        items = await deps.assignmentRepo.findByCourse(id);
+      } catch {
+        // Circuit open, 403, or network error for this course — skip it.
+        continue;
+      }
       result.push({
         courseId: Number(id),
         items: items.map((a) => ({
@@ -167,7 +185,13 @@ export function createApp(deps: UiDeps): Hono {
       : (await deps.courseRepo.findMyCourses({ activeOnly: true })).map((co) => OrgUnitId.of(Number(co.id)));
     const result: Array<{ courseId: number; items: unknown[] }> = [];
     for (const id of ids) {
-      const items = await deps.communicationsRepo.findAnnouncements(id);
+      let items;
+      try {
+        items = await deps.communicationsRepo.findAnnouncements(id);
+      } catch {
+        // Circuit open, 403, or network error for this course — skip it.
+        continue;
+      }
       result.push({
         courseId: Number(id),
         items: items.map((ann) => ({
@@ -254,33 +278,50 @@ export function createApp(deps: UiDeps): Hono {
   // ── GET /api/events (SSE) ───────────────────────────────────────────────
   app.get('/api/events', (_c) => {
     const encoder = new TextEncoder();
+    let hb: ReturnType<typeof setInterval> | null = null;
+
     const stream = new ReadableStream({
       start(controller) {
-        const send = (type: string, payload: unknown): void => {
+        let closed = false;
+
+        const send = (type: string, payload: unknown): boolean => {
+          if (closed) return false;
           try {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type, payload })}\n\n`));
-          } catch { /* connection closed */ }
+            return true;
+          } catch {
+            closed = true;
+            return false;
+          }
         };
 
-        // Initial push
+        // Initial push — auth status
         void deps.courseRepo.findMyCourses()
           .then(() => send('auth_status', { valid: true }))
           .catch(() => send('auth_status', { valid: false }));
+
+        // Initial push — cache stats
         send('cache_stats', deps.metrics.snapshot());
 
-        // Heartbeat every 30s
-        const hb = setInterval(() => {
-          try { controller.enqueue(encoder.encode(':heartbeat\n\n')); }
-          catch { clearInterval(hb); }
-        }, 30_000);
+        // Heartbeat every 25s (keep-alive before browser/proxy 30s timeout)
+        hb = setInterval(() => {
+          if (closed) { if (hb) clearInterval(hb); return; }
+          const ok = send('heartbeat', { ts: Date.now() });
+          if (!ok && hb) clearInterval(hb);
+        }, 25_000);
+      },
+      cancel() {
+        // Browser disconnected — clean up
+        if (hb) clearInterval(hb);
       },
     });
 
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',  // disable nginx buffering if behind proxy
       },
     });
   });

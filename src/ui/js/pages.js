@@ -49,10 +49,10 @@ function homePage() {
       if (diag.status === 'fulfilled') {
         const cnt = diag.value.metrics?.counters || {};
         const dur = diag.value.metrics?.durations?.['http.duration_ms'];
+        // totalCalls = cache misses (actual HTTP calls to D2L) + cache hits
         const h = cnt['http.cache.hit'] || 0;
         const m = cnt['http.cache.miss'] || 0;
-        const statusOk = cnt['http.status.200'] || 0;
-        this.totalCalls = h + m + statusOk;
+        this.totalCalls = h + m;
         this.avgMs = dur ? Math.round(dur.avg) : 0;
       }
       this.loading = false;
@@ -188,8 +188,8 @@ function gradesPage() {
           const items = c.items || [];
           const graded = items.filter(g => g.percent !== null && g.percent !== undefined);
           const avg = graded.length ? graded.reduce((s, g) => s + g.percent, 0) / graded.length : 0;
-          // Grade items have 'itemName', not 'courseName'
-          const courseName = `Curso ${c.courseId}`;
+          // Grade items have 'itemName'; use the first item's top-level prefix as a course label.
+          const courseName = items[0]?.itemName?.split(' — ')[0] || `Curso ${c.courseId}`;
           return { courseId: c.courseId, name: courseName, items, avg, open: false };
         });
       } catch (e) { this.error = e.message; this.courses = []; }
