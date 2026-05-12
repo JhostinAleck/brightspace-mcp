@@ -33,20 +33,23 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
   return (
     <Box flexDirection="column">
       {sorted.length === 0 && <Text color="gray">  Sin anuncios</Text>}
-      {sorted.map((a) => (
-        <Box key={a.id} flexDirection="column" marginBottom={1}>
-          <Text bold>{a.title}</Text>
-          <Text color="gray">
-            {'  '}{a.postedAt.toLocaleDateString('es-419')}
-            {a.authorName ? ` · ${a.authorName}` : ''}
-          </Text>
-          {a.html && (
-            <Text color="white" dimColor>
-              {'  '}{stripHtml(a.html).slice(0, 120)}{stripHtml(a.html).length > 120 ? '…' : ''}
+      {sorted.map((a) => {
+        const body = a.html ? stripHtml(a.html) : null;
+        return (
+          <Box key={a.id} flexDirection="column" marginBottom={1}>
+            <Text bold>{a.title}</Text>
+            <Text color="gray">
+              {'  '}{a.postedAt.toLocaleDateString('es-419')}
+              {a.authorName ? ` · ${a.authorName}` : ''}
             </Text>
-          )}
-        </Box>
-      ))}
+            {body && (
+              <Text color="white" dimColor>
+                {'  '}{body.slice(0, 120)}{body.length > 120 ? '…' : ''}
+              </Text>
+            )}
+          </Box>
+        );
+      })}
       <Text color="gray" dimColor>r: refrescar</Text>
     </Box>
   );
