@@ -24,8 +24,6 @@ export interface TuiDeps {
 export async function runTui(deps: TuiDeps): Promise<void> {
   const { render } = await import('ink');
   const React = await import('react');
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error — tui/App is added in a later task
   const { App } = await import('./tui/App.js');
   const instance = render(React.createElement(App, { deps }));
   await instance.waitUntilExit();
