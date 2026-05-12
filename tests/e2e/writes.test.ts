@@ -36,6 +36,7 @@ writes:
         ...process.env,
         W_TOK: 'tok',
         BRIGHTSPACE_ALLOW_HTTP_LOCALHOST: '1',
+        BRIGHTSPACE_AUDIT_LOG: join(configDir, 'audit.log'),
       } as Record<string, string>,
     });
     client = new Client({ name: 'writes-smoke', version: '0' }, {});
@@ -118,6 +119,7 @@ writes:
         ...process.env,
         W_TOK: 'tok',
         BRIGHTSPACE_ALLOW_HTTP_LOCALHOST: '1',
+        BRIGHTSPACE_AUDIT_LOG: join(configDir, 'audit.log'),
       } as Record<string, string>,
     });
     client = new Client({ name: 'writes-off', version: '0' }, {});

@@ -33,6 +33,7 @@ profiles:
         ...process.env,
         SMOKE_TOK: 'tok_test',
         BRIGHTSPACE_ALLOW_HTTP_LOCALHOST: '1',
+        BRIGHTSPACE_AUDIT_LOG: join(configDir, 'audit.log'),
       } as Record<string, string>,
     });
     client = new Client({ name: 'smoke', version: '0' }, {});

@@ -72,6 +72,9 @@ export interface BuildDependenciesInput {
   prompter?: Prompter;
   transportPolicy?: TransportPolicy;
   enableWrites?: boolean;
+  /** Override the audit log path. Defaults to ~/.brightspace-mcp/audit.log.
+   *  Pass a path inside a temp dir when running tests to avoid polluting the user's real log. */
+  auditLogPathOverride?: string;
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -497,7 +500,9 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
   const idempotencyStore = new CachedIdempotencyStore(idempotencyBacking);
   // Persist audit log to disk so the get_audit_log tool can surface history.
   // Path lives next to the rest of the app's state (~/.brightspace-mcp/).
-  const auditLogPath = `${Paths.rootDir()}/audit.log`;
+  const auditLogPath = input.auditLogPathOverride
+    ?? process.env['BRIGHTSPACE_AUDIT_LOG']
+    ?? `${Paths.rootDir()}/audit.log`;
   const auditLogger = new AuditLogger({ logger, filePath: auditLogPath });
 
   const output = buildOutputContext({
