@@ -132,5 +132,20 @@
     "locale_prompt": "Idioma de visualización:",
     "done": "Configuración escrita en {path}",
     "next_step": "Configuración completa. Probá con: npx brightspace-mcp serve (o abrí tu cliente MCP)"
+  },
+  "tui": {
+    "tabs": { "inicio": "Inicio", "cursos": "Cursos", "calendario": "Calendario", "config": "Config", "cache": "Caché", "logs": "Logs" },
+    "subtabs": { "tareas": "Tareas", "notas": "Notas", "anuncios": "Anuncios" },
+    "status": { "profile": "perfil:", "hint": "Tab/→← navegar  Ctrl+R refrescar  Ctrl+C salir" },
+    "common": { "retry": "(Ctrl+R para reintentar)", "inactive": "(inactivo)", "more": "… y {count} más", "back": "Backspace/b: volver", "no_data": "—" },
+    "inicio": { "upcoming_header": "PRÓXIMAS ENTREGAS", "agenda_header": "PRÓXIMOS 7 DÍAS", "ann_header": "ANUNCIOS RECIENTES", "empty_upcoming": "nada en 7 días", "empty_events": "sin eventos", "empty_ann": "sin anuncios", "loading": "Cargando dashboard…" },
+    "cursos": { "loading": "Cargando cursos…", "hint": "↑↓ navegar · Enter abrir · Esc limpiar · Ctrl+R refrescar" },
+    "tareas": { "pending": "Pendientes", "submitted": "Enviadas", "all": "Todas", "empty": "Sin tareas en esta categoría", "loading": "Cargando tareas…", "hint": "1/2/3: filtrar · Ctrl+R: refrescar" },
+    "notas": { "average": "Promedio:", "empty": "Sin calificaciones registradas", "loading": "Cargando notas…", "hint": "Ctrl+R: refrescar" },
+    "ann_curso": { "empty": "Sin anuncios", "loading": "Cargando anuncios…", "hint": "Ctrl+R: refrescar" },
+    "calendario": { "title": "Próximos 30 días", "empty": "Sin eventos próximos", "loading": "Cargando calendario…", "hint": "Ctrl+R: refrescar" },
+    "config": { "edit_form": "Editar con formulario (e)", "edit_editor": "Editar en $EDITOR (E)", "saved": "✓ Config guardado — reinicia el TUI para aplicar los cambios.", "editor_saved": "✓ Config válido — reinicia el TUI para aplicar los cambios.", "back": "Enter para volver", "form_hint": "Tab: siguiente campo · Ctrl+S: guardar · Esc: cancelar" },
+    "cache": { "title": "Estadísticas de caché", "hit_rate": "Hit rate:", "hits": "Hits:", "misses": "Misses:", "total": "Total:", "hint": "c: limpiar caché · Ctrl+R: refrescar", "loading": "Cargando estadísticas…" },
+    "logs": { "title": "Audit Log", "subtitle": "(últimas 50 entradas)", "empty": "Sin entradas todavía", "no_results": "Sin resultados para el filtro", "hint": "/: filtrar · Ctrl+R: refrescar", "loading": "Cargando logs…" }
   }
 }

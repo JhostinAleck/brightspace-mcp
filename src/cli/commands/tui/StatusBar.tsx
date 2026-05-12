@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import type { TuiDeps } from './types.js';
 
 export function StatusBar({ deps }: { deps: TuiDeps }) {
+  const t = deps.output.t;
   return (
     <Box
       borderStyle="single"
@@ -12,10 +13,10 @@ export function StatusBar({ deps }: { deps: TuiDeps }) {
       justifyContent="space-between"
     >
       <Text color="gray">
-        perfil: <Text color="white">{deps.profile}</Text>
+        {t('tui.status.profile')} <Text color="white">{deps.profile}</Text>
       </Text>
       <Text color="gray">
-        Tab/→← navegar  Ctrl+R refrescar  Ctrl+C salir
+        {t('tui.status.hint')}
       </Text>
     </Box>
   );

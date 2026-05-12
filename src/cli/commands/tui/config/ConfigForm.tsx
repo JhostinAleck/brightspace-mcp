@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import { AuthStrategyKindSchema, MfaStrategyKindSchema } from '@/shared-kernel/config/schema.js';
 import { SUPPORTED_LOCALES } from '@/shared-kernel/output/i18n/catalog-loader.js';
 import { useSubNavLevel } from '../NavContext.js';
+import type { Translator } from '@/shared-kernel/output/i18n/translator.js';
 
 export interface FormField {
   key: string;
@@ -45,9 +46,10 @@ interface Props {
   currentValues: Record<string, string>;
   onSave: (values: Record<string, string>) => void;
   onCancel: () => void;
+  t: Translator;
 }
 
-export function ConfigForm({ currentValues, onSave, onCancel }: Props) {
+export function ConfigForm({ currentValues, onSave, onCancel, t }: Props) {
   const fields = Object.values(getConfigFormFields());
   const [fieldIndex, setFieldIndex] = useState(0);
   const [values, setValues] = useState<Record<string, string>>({ ...currentValues });
@@ -136,7 +138,7 @@ export function ConfigForm({ currentValues, onSave, onCancel }: Props) {
           </Box>
         );
       })}
-      <Text color="gray" dimColor>Tab: siguiente campo · Ctrl+S: guardar · Esc: cancelar</Text>
+      <Text color="gray" dimColor>{t('tui.config.form_hint')}</Text>
     </Box>
   );
 }

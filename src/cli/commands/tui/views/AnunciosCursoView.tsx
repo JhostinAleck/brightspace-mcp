@@ -16,6 +16,7 @@ function stripHtml(html: string): string {
 }
 
 export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: TuiDeps }) {
+  const t = deps.output.t;
   const fetcher = useCallback(
     () => deps.communicationsRepo.findAnnouncements(orgUnitId),
     [deps, orgUnitId],
@@ -24,7 +25,7 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
 
   useInput((input, key) => { if (key.ctrl && input === 'r') reload(); });
 
-  if (loading) return <Box><Spinner label="Cargando anuncios…" /></Box>;
+  if (loading) return <Box><Spinner label={t('tui.ann_curso.loading')} /></Box>;
   if (error) return <Box><Text color="red">✗ {error}</Text></Box>;
   if (!data) return null;
 
@@ -32,7 +33,7 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
 
   return (
     <Box flexDirection="column">
-      {sorted.length === 0 && <Text color="gray">  Sin anuncios</Text>}
+      {sorted.length === 0 && <Text color="gray">  {t('tui.ann_curso.empty')}</Text>}
       {sorted.map((a) => {
         const body = a.html ? stripHtml(a.html) : null;
         return (
@@ -50,7 +51,7 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
           </Box>
         );
       })}
-      <Text color="gray" dimColor>Ctrl+R: refrescar</Text>
+      <Text color="gray" dimColor>{t('tui.ann_curso.hint')}</Text>
     </Box>
   );
 }

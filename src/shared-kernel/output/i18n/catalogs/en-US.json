@@ -132,5 +132,20 @@
     "locale_prompt": "Display language:",
     "done": "Config written to {path}",
     "next_step": "Setup complete. Test with: npx brightspace-mcp serve (or launch your MCP client)"
+  },
+  "tui": {
+    "tabs": { "inicio": "Home", "cursos": "Courses", "calendario": "Calendar", "config": "Config", "cache": "Cache", "logs": "Logs" },
+    "subtabs": { "tareas": "Assignments", "notas": "Grades", "anuncios": "Announcements" },
+    "status": { "profile": "profile:", "hint": "Tab/→← navigate  Ctrl+R refresh  Ctrl+C quit" },
+    "common": { "retry": "(Ctrl+R to retry)", "inactive": "(inactive)", "more": "… and {count} more", "back": "Backspace/b: back", "no_data": "—" },
+    "inicio": { "upcoming_header": "UPCOMING", "agenda_header": "NEXT 7 DAYS", "ann_header": "RECENT ANNOUNCEMENTS", "empty_upcoming": "nothing due in 7 days", "empty_events": "no events", "empty_ann": "no announcements", "loading": "Loading dashboard…" },
+    "cursos": { "loading": "Loading courses…", "hint": "↑↓ navigate · Enter open · Esc clear · Ctrl+R refresh" },
+    "tareas": { "pending": "Pending", "submitted": "Submitted", "all": "All", "empty": "No assignments in this category", "loading": "Loading assignments…", "hint": "1/2/3: filter · Ctrl+R: refresh" },
+    "notas": { "average": "Average:", "empty": "No grades recorded", "loading": "Loading grades…", "hint": "Ctrl+R: refresh" },
+    "ann_curso": { "empty": "No announcements", "loading": "Loading announcements…", "hint": "Ctrl+R: refresh" },
+    "calendario": { "title": "Next 30 days", "empty": "No upcoming events", "loading": "Loading calendar…", "hint": "Ctrl+R: refresh" },
+    "config": { "edit_form": "Edit with form (e)", "edit_editor": "Edit in $EDITOR (E)", "saved": "✓ Config saved — restart TUI to apply changes.", "editor_saved": "✓ Valid config — restart TUI to apply changes.", "back": "Press Enter to go back", "form_hint": "Tab: next field · Ctrl+S: save · Esc: cancel" },
+    "cache": { "title": "Cache Statistics", "hit_rate": "Hit rate:", "hits": "Hits:", "misses": "Misses:", "total": "Total:", "hint": "c: clear cache · Ctrl+R: refresh", "loading": "Loading stats…" },
+    "logs": { "title": "Audit Log", "subtitle": "(last 50 entries)", "empty": "No entries yet", "no_results": "No results for filter", "hint": "/: filter · Ctrl+R: refresh", "loading": "Loading logs…" }
   }
 }

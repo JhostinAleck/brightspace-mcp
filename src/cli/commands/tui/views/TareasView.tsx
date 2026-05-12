@@ -16,6 +16,7 @@ function formatDueDate(d: Date | null): string {
 }
 
 export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: TuiDeps }) {
+  const t = deps.output.t;
   const [filter, setFilter] = useState<Filter>('pendientes');
 
   const fetcher = useCallback(
@@ -31,7 +32,7 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
     if (input === '3') setFilter('todas');
   });
 
-  if (loading) return <Box><Spinner label="Cargando tareas…" /></Box>;
+  if (loading) return <Box><Spinner label={t('tui.tareas.loading')} /></Box>;
   if (error) return <Box><Text color="red">✗ {error}</Text></Box>;
   if (!data) return null;
 
@@ -41,20 +42,26 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
     return true;
   });
 
+  const filterLabels: Record<Filter, string> = {
+    pendientes: t('tui.tareas.pending'),
+    enviadas: t('tui.tareas.submitted'),
+    todas: t('tui.tareas.all'),
+  };
+
   return (
     <Box flexDirection="column">
       {/* Filter bar */}
       <Box marginBottom={1} gap={2}>
         {(['pendientes', 'enviadas', 'todas'] as Filter[]).map((f, i) => (
           <Text key={f} color={filter === f ? 'greenBright' : 'gray'} bold={filter === f}>
-            {i + 1} {f.charAt(0).toUpperCase() + f.slice(1)}
+            {i + 1} {filterLabels[f]}
           </Text>
         ))}
         <Text color="gray">({filtered.length})</Text>
       </Box>
 
       {filtered.length === 0 && (
-        <Text color="gray">  Sin tareas en esta categoría</Text>
+        <Text color="gray">  {t('tui.tareas.empty')}</Text>
       )}
 
       {filtered.map((a) => {
@@ -70,7 +77,7 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
         );
       })}
 
-      <Text color="gray" dimColor>1/2/3: filtrar · Ctrl+R: refrescar</Text>
+      <Text color="gray" dimColor>{t('tui.tareas.hint')}</Text>
     </Box>
   );
 }

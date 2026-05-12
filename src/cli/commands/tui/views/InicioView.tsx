@@ -32,6 +32,8 @@ function assignmentColor(a: Assignment): string {
 }
 
 export function InicioView({ deps }: { deps: TuiDeps }) {
+  const t = deps.output.t;
+
   const fetcher = useCallback(async (): Promise<InicioData> => {
     const allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
     // Cap at 15 most recent — avoids fan-out overload with 65+ courses
@@ -77,8 +79,8 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
     if (key.ctrl && input === 'r') reload();
   });
 
-  if (loading) return <Box padding={1}><Spinner label="Cargando dashboard…" /></Box>;
-  if (error) return <Box padding={1}><Text color="red">✗ {error}</Text><Text color="gray"> (r para reintentar)</Text></Box>;
+  if (loading) return <Box padding={1}><Spinner label={t('tui.inicio.loading')} /></Box>;
+  if (error) return <Box padding={1}><Text color="red">✗ {error}</Text><Text color="gray"> {t('tui.common.retry')}</Text></Box>;
   if (!data) return null;
 
   const { upcoming, events, announcements } = data;
@@ -89,8 +91,8 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
 
         {/* Column 1: Upcoming assignments */}
         <Box flexDirection="column" flexBasis="33%">
-          <Text bold color="blueBright">PRÓXIMAS ENTREGAS</Text>
-          {upcoming.length === 0 && <Text color="gray">  nada en 7 días</Text>}
+          <Text bold color="blueBright">{t('tui.inicio.upcoming_header')}</Text>
+          {upcoming.length === 0 && <Text color="gray">  {t('tui.inicio.empty_upcoming')}</Text>}
           {upcoming.slice(0, 8).map((a) => {
             const due = a.dueDate.toDate();
             const color = assignmentColor(a);
@@ -105,8 +107,8 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
 
         {/* Column 2: Calendar agenda next 7 days */}
         <Box flexDirection="column" flexBasis="33%">
-          <Text bold color="blueBright">PRÓXIMOS 7 DÍAS</Text>
-          {events.length === 0 && <Text color="gray">  sin eventos</Text>}
+          <Text bold color="blueBright">{t('tui.inicio.agenda_header')}</Text>
+          {events.length === 0 && <Text color="gray">  {t('tui.inicio.empty_events')}</Text>}
           {events.slice(0, 8).map((e) => (
             <Text key={e.id}>
               <Text color="gray">{formatDate(e.startAt)} </Text>
@@ -117,8 +119,8 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
 
         {/* Column 3: Recent announcements */}
         <Box flexDirection="column" flexBasis="33%">
-          <Text bold color="blueBright">ANUNCIOS RECIENTES</Text>
-          {announcements.length === 0 && <Text color="gray">  sin anuncios</Text>}
+          <Text bold color="blueBright">{t('tui.inicio.ann_header')}</Text>
+          {announcements.length === 0 && <Text color="gray">  {t('tui.inicio.empty_ann')}</Text>}
           {announcements.map((a) => (
             <Box key={a.id} flexDirection="column" marginBottom={1}>
               <Text>{a.title.slice(0, 32)}</Text>
@@ -128,7 +130,7 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
         </Box>
 
       </Box>
-      <Text color="gray" dimColor>Ctrl+R: refrescar</Text>
+      <Text color="gray" dimColor>{t('tui.notas.hint')}</Text>
     </Box>
   );
 }

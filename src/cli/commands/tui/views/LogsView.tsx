@@ -8,6 +8,7 @@ import { Spinner } from '../shared/Spinner.js';
 interface AuditEntry { audit_ts?: string; tool?: string; cid?: string; }
 
 export function LogsView({ deps }: { deps: TuiDeps }) {
+  const t = deps.output.t;
   const [toolFilter, setToolFilter] = useState('');
   const [typing, setTyping] = useState(false);
 
@@ -40,13 +41,13 @@ export function LogsView({ deps }: { deps: TuiDeps }) {
     !toolFilter || (e.tool ?? '').toLowerCase().includes(toolFilter.toLowerCase()),
   );
 
-  if (loading) return <Box padding={1}><Spinner label="Cargando logs…" /></Box>;
+  if (loading) return <Box padding={1}><Spinner label={t('tui.logs.loading')} /></Box>;
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
-        <Text bold color="blueBright">Audit Log </Text>
-        <Text color="gray">(últimas 50 entradas)</Text>
+        <Text bold color="blueBright">{t('tui.logs.title')} </Text>
+        <Text color="gray">{t('tui.logs.subtitle')}</Text>
         {typing && (
           <Box>
             <Text color="gray"> · filtro: </Text>
@@ -58,7 +59,7 @@ export function LogsView({ deps }: { deps: TuiDeps }) {
 
       {filtered.length === 0 && (
         <Text color="gray">
-          {data?.length === 0 ? 'Sin entradas todavía' : 'Sin resultados para el filtro'}
+          {data?.length === 0 ? t('tui.logs.empty') : t('tui.logs.no_results')}
         </Text>
       )}
 
@@ -71,7 +72,7 @@ export function LogsView({ deps }: { deps: TuiDeps }) {
       ))}
 
       <Box marginTop={1}>
-        <Text color="gray" dimColor>/: filtrar · Ctrl+R: refrescar</Text>
+        <Text color="gray" dimColor>{t('tui.logs.hint')}</Text>
       </Box>
     </Box>
   );

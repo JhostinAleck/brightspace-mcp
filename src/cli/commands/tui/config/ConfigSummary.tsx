@@ -2,20 +2,22 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { existsSync, readFileSync } from 'node:fs';
 import { parse as parseYaml } from 'yaml';
+import type { Translator } from '@/shared-kernel/output/i18n/translator.js';
 
 interface Props {
   configPath: string;
   profile: string;
   onEditForm: () => void;
   onEditExternal: () => void;
+  t: Translator;
 }
 
-export function ConfigSummary({ configPath, profile, onEditForm, onEditExternal }: Props) {
+export function ConfigSummary({ configPath, profile, onEditForm, onEditExternal, t }: Props) {
   type Action = 'form' | 'editor';
   const actions: Action[] = ['form', 'editor'];
   const actionLabels: Record<Action, string> = {
-    form: 'Editar con formulario (e)',
-    editor: 'Editar en $EDITOR (E)',
+    form: t('tui.config.edit_form'),
+    editor: t('tui.config.edit_editor'),
   };
   const [cursor, setCursor] = useState(0);
 

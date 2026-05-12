@@ -12,6 +12,7 @@ function gradeColor(pct: number): string {
 }
 
 export function NotasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: TuiDeps }) {
+  const t = deps.output.t;
   const fetcher = useCallback(
     () => deps.gradeRepo.findByCourse(orgUnitId),
     [deps, orgUnitId],
@@ -20,7 +21,7 @@ export function NotasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tui
 
   useInput((input, key) => { if (key.ctrl && input === 'r') reload(); });
 
-  if (loading) return <Box><Spinner label="Cargando notas…" /></Box>;
+  if (loading) return <Box><Spinner label={t('tui.notas.loading')} /></Box>;
   if (error) return <Box><Text color="red">✗ {error}</Text></Box>;
   if (!data) return null;
 
@@ -34,12 +35,12 @@ export function NotasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tui
     <Box flexDirection="column">
       {avg !== null && (
         <Box marginBottom={1}>
-          <Text bold>Promedio: </Text>
+          <Text bold>{t('tui.notas.average')} </Text>
           <Text color={gradeColor(avg)} bold>{avg.toFixed(1)}%</Text>
         </Box>
       )}
 
-      {data.length === 0 && <Text color="gray">  Sin calificaciones registradas</Text>}
+      {data.length === 0 && <Text color="gray">  {t('tui.notas.empty')}</Text>}
 
       {data.map((g) => (
         <Box key={g.itemId} justifyContent="space-between">
@@ -51,7 +52,7 @@ export function NotasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tui
         </Box>
       ))}
 
-      <Text color="gray" dimColor>Ctrl+R: refrescar</Text>
+      <Text color="gray" dimColor>{t('tui.notas.hint')}</Text>
     </Box>
   );
 }

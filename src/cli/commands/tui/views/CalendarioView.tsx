@@ -13,6 +13,8 @@ interface EventWithCourse {
 }
 
 export function CalendarioView({ deps }: { deps: TuiDeps }) {
+  const t = deps.output.t;
+
   const fetcher = useCallback(async (): Promise<EventWithCourse[]> => {
     const allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
     const courses = allCourses
@@ -38,15 +40,15 @@ export function CalendarioView({ deps }: { deps: TuiDeps }) {
 
   useInput((input, key) => { if (key.ctrl && input === 'r') reload(); });
 
-  if (loading) return <Box padding={1}><Spinner label="Cargando calendario…" /></Box>;
+  if (loading) return <Box padding={1}><Spinner label={t('tui.calendario.loading')} /></Box>;
   if (error) return <Box padding={1}><Text color="red">✗ {error}</Text></Box>;
   if (!data) return null;
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Box marginBottom={1}><Text bold color="blueBright">Próximos 30 días</Text></Box>
+      <Box marginBottom={1}><Text bold color="blueBright">{t('tui.calendario.title')}</Text></Box>
 
-      {data.length === 0 && <Text color="gray">  Sin eventos próximos</Text>}
+      {data.length === 0 && <Text color="gray">  {t('tui.calendario.empty')}</Text>}
 
       {data.map(({ event, courseName }) => (
         <Box key={event.id} marginBottom={1}>
@@ -59,7 +61,7 @@ export function CalendarioView({ deps }: { deps: TuiDeps }) {
         </Box>
       ))}
 
-      <Text color="gray" dimColor>Ctrl+R: refrescar</Text>
+      <Text color="gray" dimColor>{t('tui.calendario.hint')}</Text>
     </Box>
   );
 }

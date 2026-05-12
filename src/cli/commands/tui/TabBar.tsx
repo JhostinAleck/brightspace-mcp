@@ -1,20 +1,12 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import type { Translator } from '@/shared-kernel/output/i18n/translator.js';
 
 export type Tab = 'inicio' | 'cursos' | 'calendario' | 'config' | 'cache' | 'logs';
 
 export const TABS: Tab[] = ['inicio', 'cursos', 'calendario', 'config', 'cache', 'logs'];
 
-export const TAB_LABELS: Record<Tab, string> = {
-  inicio: 'Inicio',
-  cursos: 'Cursos',
-  calendario: 'Calendario',
-  config: 'Config',
-  cache: 'Caché',
-  logs: 'Logs',
-};
-
-export function TabBar({ active }: { active: Tab }) {
+export function TabBar({ active, t }: { active: Tab; t: Translator }) {
   return (
     <Box borderStyle="single" borderBottom paddingX={1} flexShrink={0}>
       {TABS.map((tab, i) => (
@@ -24,7 +16,7 @@ export function TabBar({ active }: { active: Tab }) {
             bold={active === tab}
             underline={active === tab}
           >
-            {TAB_LABELS[tab]}
+            {t(`tui.tabs.${tab}`)}
           </Text>
         </Box>
       ))}

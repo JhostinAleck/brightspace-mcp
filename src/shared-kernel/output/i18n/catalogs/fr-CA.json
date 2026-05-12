@@ -132,5 +132,20 @@
     "locale_prompt": "Langue d'affichage :",
     "done": "Configuration écrite dans {path}",
     "next_step": "Configuration terminée. Testez avec : npx brightspace-mcp serve (ou lancez votre client MCP)"
+  },
+  "tui": {
+    "tabs": { "inicio": "Accueil", "cursos": "Cours", "calendario": "Calendrier", "config": "Config", "cache": "Cache", "logs": "Journaux" },
+    "subtabs": { "tareas": "Travaux", "notas": "Notes", "anuncios": "Annonces" },
+    "status": { "profile": "profil:", "hint": "Tab/→← naviguer  Ctrl+R actualiser  Ctrl+C quitter" },
+    "common": { "retry": "(Ctrl+R pour réessayer)", "inactive": "(inactif)", "more": "… et {count} de plus", "back": "Retour arrière/b: retour", "no_data": "—" },
+    "inicio": { "upcoming_header": "À REMETTRE", "agenda_header": "7 PROCHAINS JOURS", "ann_header": "ANNONCES RÉCENTES", "empty_upcoming": "rien dans 7 jours", "empty_events": "aucun événement", "empty_ann": "aucune annonce", "loading": "Chargement du tableau de bord…" },
+    "cursos": { "loading": "Chargement des cours…", "hint": "↑↓ naviguer · Entrée ouvrir · Échap effacer · Ctrl+R actualiser" },
+    "tareas": { "pending": "En attente", "submitted": "Remis", "all": "Tous", "empty": "Aucun travail dans cette catégorie", "loading": "Chargement des travaux…", "hint": "1/2/3: filtrer · Ctrl+R: actualiser" },
+    "notas": { "average": "Moyenne:", "empty": "Aucune note enregistrée", "loading": "Chargement des notes…", "hint": "Ctrl+R: actualiser" },
+    "ann_curso": { "empty": "Aucune annonce", "loading": "Chargement des annonces…", "hint": "Ctrl+R: actualiser" },
+    "calendario": { "title": "30 prochains jours", "empty": "Aucun événement à venir", "loading": "Chargement du calendrier…", "hint": "Ctrl+R: actualiser" },
+    "config": { "edit_form": "Modifier avec le formulaire (e)", "edit_editor": "Modifier dans $EDITOR (E)", "saved": "✓ Config sauvegardé — redémarrez le TUI pour appliquer.", "editor_saved": "✓ Config valide — redémarrez le TUI pour appliquer.", "back": "Appuyez sur Entrée pour revenir", "form_hint": "Tab: champ suivant · Ctrl+S: sauvegarder · Échap: annuler" },
+    "cache": { "title": "Statistiques du cache", "hit_rate": "Taux de succès:", "hits": "Succès:", "misses": "Échecs:", "total": "Total:", "hint": "c: vider le cache · Ctrl+R: actualiser", "loading": "Chargement des statistiques…" },
+    "logs": { "title": "Journal d'audit", "subtitle": "(50 dernières entrées)", "empty": "Aucune entrée pour l'instant", "no_results": "Aucun résultat pour le filtre", "hint": "/: filtrer · Ctrl+R: actualiser", "loading": "Chargement des journaux…" }
   }
 }

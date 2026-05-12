@@ -50,7 +50,7 @@ function AppInner({ deps }: { deps: TuiDeps }) {
 
   return (
     <Box flexDirection="column" height="100%">
-      <TabBar active={activeTab} />
+      <TabBar active={activeTab} t={deps.output.t} />
       <Box flexGrow={1} overflow="hidden">
         {/* Keep visited views mounted with display:none to preserve state & avoid refetch */}
         {TABS.map((tab) => (

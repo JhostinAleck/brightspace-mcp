@@ -7,6 +7,7 @@ import type { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import { CourseDetail } from './CourseDetail.js';
 
 export function CursosView({ deps }: { deps: TuiDeps }) {
+  const t = deps.output.t;
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
   const [selected, setSelected] = useState<CourseId | null>(null);
@@ -57,8 +58,8 @@ export function CursosView({ deps }: { deps: TuiDeps }) {
     );
   }
 
-  if (loading) return <Box padding={1}><Spinner label="Cargando cursos…" /></Box>;
-  if (error) return <Box padding={1}><Text color="red">✗ {error}</Text><Text color="gray"> (r para reintentar)</Text></Box>;
+  if (loading) return <Box padding={1}><Spinner label={t('tui.cursos.loading')} /></Box>;
+  if (error) return <Box padding={1}><Text color="red">✗ {error}</Text><Text color="gray"> {t('tui.common.retry')}</Text></Box>;
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -67,7 +68,7 @@ export function CursosView({ deps }: { deps: TuiDeps }) {
         <Text color="gray">🔍 </Text>
         <Text>{query || ' '}</Text>
         <Text backgroundColor="blue"> </Text>
-        <Text color="gray"> ({filtered.length} cursos)</Text>
+        <Text color="gray"> ({filtered.length} {t('tui.tabs.cursos').toLowerCase()})</Text>
       </Box>
 
       {/* Course list */}
@@ -80,16 +81,16 @@ export function CursosView({ deps }: { deps: TuiDeps }) {
               {course.name}
             </Text>
             <Text color="gray"> {course.code}</Text>
-            {!course.active && <Text color="gray"> (inactivo)</Text>}
+            {!course.active && <Text color="gray"> {t('tui.common.inactive')}</Text>}
           </Box>
         );
       })}
       {filtered.length > 20 && (
-        <Text color="gray">  … y {filtered.length - 20} más</Text>
+        <Text color="gray">  {t('tui.common.more', { count: filtered.length - 20 })}</Text>
       )}
 
       <Box marginTop={1}>
-        <Text color="gray" dimColor>↑↓ navegar · Enter abrir · Esc limpiar · Ctrl+R refrescar</Text>
+        <Text color="gray" dimColor>{t('tui.cursos.hint')}</Text>
       </Box>
     </Box>
   );

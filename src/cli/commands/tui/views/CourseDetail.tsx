@@ -11,7 +11,6 @@ import { AnunciosCursoView } from './AnunciosCursoView.js';
 
 type SubTab = 'tareas' | 'notas' | 'anuncios';
 const SUB_TABS: SubTab[] = ['tareas', 'notas', 'anuncios'];
-const SUB_LABELS: Record<SubTab, string> = { tareas: 'Tareas', notas: 'Notas', anuncios: 'Anuncios' };
 
 interface Props {
   courseId: CourseId;
@@ -21,6 +20,7 @@ interface Props {
 }
 
 export function CourseDetail({ courseId, courseName, deps, onBack }: Props) {
+  const t = deps.output.t;
   const [subTab, setSubTab] = useState<SubTab>('tareas');
   const orgUnitId = OrgUnitId.of(CourseIdUtil.toNumber(courseId));
   useSubNavLevel(); // disables top-level Tab navigation while this is mounted
@@ -28,11 +28,11 @@ export function CourseDetail({ courseId, courseName, deps, onBack }: Props) {
   useInput((input, key) => {
     if (key.backspace || key.escape || input === 'b') { onBack(); return; }
     if (key.tab || key.rightArrow) {
-      setSubTab((t) => SUB_TABS[(SUB_TABS.indexOf(t) + 1) % SUB_TABS.length] as SubTab);
+      setSubTab((tab) => SUB_TABS[(SUB_TABS.indexOf(tab) + 1) % SUB_TABS.length] as SubTab);
       return;
     }
     if (key.leftArrow) {
-      setSubTab((t) => SUB_TABS[(SUB_TABS.indexOf(t) - 1 + SUB_TABS.length) % SUB_TABS.length] as SubTab);
+      setSubTab((tab) => SUB_TABS[(SUB_TABS.indexOf(tab) - 1 + SUB_TABS.length) % SUB_TABS.length] as SubTab);
       return;
     }
   });
@@ -42,19 +42,19 @@ export function CourseDetail({ courseId, courseName, deps, onBack }: Props) {
       {/* Course header */}
       <Box marginBottom={1}>
         <Text color="blueBright" bold>📚 {courseName}</Text>
-        <Text color="gray"> · Backspace/b: volver</Text>
+        <Text color="gray"> · {t('tui.common.back')}</Text>
       </Box>
 
       {/* Sub-tab bar */}
       <Box marginBottom={1} borderStyle="single" borderBottom paddingX={1}>
-        {SUB_TABS.map((t, i) => (
-          <Box key={t} marginRight={i < SUB_TABS.length - 1 ? 2 : 0}>
+        {SUB_TABS.map((tab, i) => (
+          <Box key={tab} marginRight={i < SUB_TABS.length - 1 ? 2 : 0}>
             <Text
-              color={subTab === t ? 'greenBright' : 'gray'}
-              bold={subTab === t}
-              underline={subTab === t}
+              color={subTab === tab ? 'greenBright' : 'gray'}
+              bold={subTab === tab}
+              underline={subTab === tab}
             >
-              {SUB_LABELS[t]}
+              {t(`tui.subtabs.${tab}`)}
             </Text>
           </Box>
         ))}

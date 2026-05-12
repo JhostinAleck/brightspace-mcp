@@ -30,6 +30,7 @@ function writeConfigValues(configPath: string, profile: string, values: Record<s
 type Mode = 'summary' | 'form' | 'message';
 
 export function ConfigView({ deps }: { deps: TuiDeps }) {
+  const t = deps.output.t;
   const [mode, setMode] = useState<Mode>('summary');
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -54,7 +55,7 @@ export function ConfigView({ deps }: { deps: TuiDeps }) {
   function handleExternalEdit() {
     const result = openInEditor(deps.configPath);
     if (result.ok) {
-      setMessage({ text: '✓ Config válido — reinicia el TUI para aplicar los cambios.', ok: true });
+      setMessage({ text: t('tui.config.editor_saved'), ok: true });
     } else {
       setMessage({ text: `✗ YAML inválido: ${result.error}`, ok: false });
     }
@@ -75,13 +76,14 @@ export function ConfigView({ deps }: { deps: TuiDeps }) {
           onSave={(values) => {
             try {
               writeConfigValues(deps.configPath, deps.profile, values);
-              setMessage({ text: '✓ Config guardado — reinicia el TUI para aplicar los cambios.', ok: true });
+              setMessage({ text: t('tui.config.saved'), ok: true });
             } catch (e) {
               setMessage({ text: `✗ Error al guardar: ${e instanceof Error ? e.message : String(e)}`, ok: false });
             }
             setMode('message');
           }}
           onCancel={() => setMode('summary')}
+          t={t}
         />
       </Box>
     );
@@ -91,7 +93,7 @@ export function ConfigView({ deps }: { deps: TuiDeps }) {
     return (
       <Box padding={1} flexDirection="column">
         <Text color={message.ok ? 'green' : 'red'}>{message.text}</Text>
-        <Text color="gray">Enter para volver</Text>
+        <Text color="gray">{t('tui.config.back')}</Text>
       </Box>
     );
   }
@@ -103,6 +105,7 @@ export function ConfigView({ deps }: { deps: TuiDeps }) {
         profile={deps.profile}
         onEditForm={() => setMode('form')}
         onEditExternal={handleExternalEdit}
+        t={t}
       />
     </Box>
   );
