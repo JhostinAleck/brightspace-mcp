@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-12
+
+### Added
+- `CLAUDE.md` release process guide (in `.claude/`) — checklist for consistent releases
+- `server.json` MCP registry descriptor with official schema (`$schema` from modelcontextprotocol.io)
+- `mcpName: io.github.jhostinaleck/brightspace` in `package.json` for MCP registry verification
+- `STABILITY.md` — SemVer public API contract starting from v1.0.0
+- `brightspace-mcp upgrade` command — checks npm for newer version and installs if global
+- Version notification on `serve` startup — prints upgrade hint to stderr when newer version available
+- `BRIGHTSPACE_NO_UPDATE_CHECK=1` env var to suppress the version check
+
+### Changed
+- All client snippets updated to use `brightspace-mcp@latest` for automatic updates on each run
+- `docs/index.md` — updated features, test count (743), coverage (89%), v1.0.0 launch details
+- VitePress nav badge updated to current version
+
+### Fixed
+- Snapshot tests now use `toContain()` instead of `toMatchSnapshot()` for Intl-formatted dates — prevents CI failures due to ICU version differences across platforms (macOS vs Ubuntu)
+- VitePress docs build — escaped Vue template syntax (`{{}}` and `{}`) in `troubleshooting.md`
+
+### Dependencies
+- `@inquirer/prompts` → 8.4.3
+- `yaml` → latest
+- `playwright` → latest
+- Dev: `@types/node`, `@typescript-eslint/*`, `@vitest/coverage-v8`, `mermaid`, `nock`, `vitest` → latest
+- GitHub Actions: `docker/login-action` 3→4, `docker/setup-qemu-action` 3→4, `github/codeql-action` 3→4, `softprops/action-gh-release` 2→3
+
 ## [1.0.0] - 2026-05-11
 
 ### 🎉 First stable release

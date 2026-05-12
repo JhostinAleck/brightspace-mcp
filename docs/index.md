@@ -79,7 +79,7 @@ It's a portable, self-updating alternative to scripting against Valence by hand 
 
 | | |
 |---|---|
-| Latest version | [v1.0.0](https://github.com/JhostinAleck/brightspace-mcp/releases/tag/v1.0.0) |
+| Latest version | [v1.1.0](https://github.com/JhostinAleck/brightspace-mcp/releases/tag/v1.1.0) |
 | Tests | 743/743 passing |
 | Coverage | 89% lines / 88% functions |
 | Node | ≥ 20 (tested 20, 22) |
