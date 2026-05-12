@@ -59,7 +59,7 @@ function AppInner({ deps }: { deps: TuiDeps }) {
           </Box>
         ))}
       </Box>
-      <StatusBar deps={deps} />
+      <StatusBar deps={deps} activeTab={activeTab} />
     </Box>
   );
 }
