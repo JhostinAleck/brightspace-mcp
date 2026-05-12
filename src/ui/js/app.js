@@ -28,13 +28,31 @@ function app() {
     async loadPendingCount() {
       try {
         const r = await fetch('/api/upcoming?days=7');
+        if (!r.ok) return;
         const d = await r.json();
         this.pendingCount = (d.upcoming || []).filter((u) => !u.hasSubmission).length;
       } catch { /* ignore */ }
     },
 
     navigate(name) {
+      const prev = this.page;
       this.page = name;
+      // Re-initialize the page component when navigating to it (even if same page).
+      // We dispatch a custom event that each page's x-init can listen to,
+      // OR we use Alpine's $dispatch. The simplest approach: after setting page,
+      // find the page's Alpine component and call init() on it.
+      if (prev !== name) {
+        // Use nextTick so Alpine has rendered the new page before we call init
+        this.$nextTick(() => {
+          const pageEl = document.querySelector(`[data-page="${name}"]`);
+          if (pageEl && pageEl._x_dataStack) {
+            const data = pageEl._x_dataStack[0];
+            if (data && typeof data.init === 'function') {
+              data.init();
+            }
+          }
+        });
+      }
     },
 
     async reauth() {

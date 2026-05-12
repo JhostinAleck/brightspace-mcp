@@ -5,13 +5,17 @@ function homePage() {
   return {
     upcoming: [], anns: [], grades: [], authValid: false,
     hitRate: 0, pending: 0, totalCalls: 0, avgMs: 0, tz: '',
+    loading: true, error: null,
     async init() {
-      const [s, u, an, gr, cs] = await Promise.allSettled([
+      this.loading = true;
+      this.error = null;
+      const [s, u, an, gr, cs, diag] = await Promise.allSettled([
         fetch('/api/status').then(r => r.json()),
-        fetch('/api/upcoming?days=7').then(r => r.json()),
-        fetch('/api/announcements').then(r => r.json()),
-        fetch('/api/grades').then(r => r.json()),
+        fetch('/api/upcoming?days=7').then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
+        fetch('/api/announcements').then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
+        fetch('/api/grades').then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
         fetch('/api/cache/stats').then(r => r.json()),
+        fetch('/api/diagnostics').then(r => r.json()),
       ]);
       if (s.status === 'fulfilled') {
         this.authValid = s.value.auth?.valid ?? false;
@@ -27,17 +31,31 @@ function homePage() {
       if (gr.status === 'fulfilled') {
         this.grades = (gr.value.grades || []).map(c => {
           const items = c.items || [];
-          const graded = items.filter(g => g.percent !== null);
+          const graded = items.filter(g => g.percent !== null && g.percent !== undefined);
           const avg = graded.length ? graded.reduce((s, g) => s + g.percent, 0) / graded.length : 0;
-          return { courseId: c.courseId, name: items[0]?.courseName || `Curso ${c.courseId}`, avg };
+          // Use itemName from grade items (not courseName — grades have no courseName field)
+          const label = items[0]?.itemName?.split(' — ')[0] || `Curso ${c.courseId}`;
+          return { courseId: c.courseId, name: label, avg };
         }).filter(g => g.avg > 0).slice(0, 5);
       }
       if (cs.status === 'fulfilled') {
         const cnt = cs.value.stats?.counters || {};
-        const h = cnt.cache_hit || 0, m = cnt.cache_miss || 0, t = h + m;
+        // Real counter keys: 'http.cache.hit' and 'http.cache.miss'
+        const h = cnt['http.cache.hit'] || 0;
+        const m = cnt['http.cache.miss'] || 0;
+        const t = h + m;
         this.hitRate = t > 0 ? Math.round(h / t * 100) : 0;
-        this.totalCalls = t;
       }
+      if (diag.status === 'fulfilled') {
+        const cnt = diag.value.metrics?.counters || {};
+        const dur = diag.value.metrics?.durations?.['http.duration_ms'];
+        const h = cnt['http.cache.hit'] || 0;
+        const m = cnt['http.cache.miss'] || 0;
+        const statusOk = cnt['http.status.200'] || 0;
+        this.totalCalls = h + m + statusOk;
+        this.avgMs = dur ? Math.round(dur.avg) : 0;
+      }
+      this.loading = false;
     },
   };
 }
@@ -73,11 +91,13 @@ function coursesPage() {
     courses: [], loading: true, activeOnly: true,
     async init() {
       this.loading = true;
-      const r = await fetch('/api/courses');
-      const d = await r.json();
-      this.courses = this.activeOnly
-        ? (d.courses || []).filter(c => c.active)
-        : (d.courses || []);
+      try {
+        const r = await fetch('/api/courses');
+        const d = await r.json();
+        this.courses = this.activeOnly
+          ? (d.courses || []).filter(c => c.active)
+          : (d.courses || []);
+      } catch { this.courses = []; }
       this.loading = false;
     },
   };
@@ -85,7 +105,7 @@ function coursesPage() {
 
 function assignmentsPage() {
   return {
-    all: [], filter: 'pending', loading: true,
+    all: [], filter: 'pending', loading: true, error: null,
     get filtered() {
       if (this.filter === 'pending') return this.all.filter(a => !a.hasSubmission);
       if (this.filter === 'submitted') return this.all.filter(a => a.hasSubmission);
@@ -93,11 +113,16 @@ function assignmentsPage() {
     },
     async init() {
       this.loading = true;
-      const r = await fetch('/api/assignments');
-      const d = await r.json();
-      this.all = (d.assignments || []).flatMap(c =>
-        (c.items || []).map(a => ({ ...a, dueDateStr: a.dueDate?.iso || '—' }))
-      );
+      this.error = null;
+      try {
+        const r = await fetch('/api/assignments');
+        if (!r.ok) throw new Error(`Error ${r.status}: ${r.statusText}`);
+        const d = await r.json();
+        // Server now returns plain objects: { id, name, dueDate (formatted string|null), hasSubmission }
+        this.all = (d.assignments || []).flatMap(c =>
+          (c.items || []).map(a => ({ ...a, dueDateStr: a.dueDate || '—' }))
+        );
+      } catch (e) { this.error = e.message; this.all = []; }
       this.loading = false;
     },
   };
@@ -105,17 +130,23 @@ function assignmentsPage() {
 
 function gradesPage() {
   return {
-    courses: [], loading: true,
+    courses: [], loading: true, error: null,
     async init() {
       this.loading = true;
-      const r = await fetch('/api/grades');
-      const d = await r.json();
-      this.courses = (d.grades || []).map(c => {
-        const items = c.items || [];
-        const graded = items.filter(g => g.percent !== null);
-        const avg = graded.length ? graded.reduce((s, g) => s + g.percent, 0) / graded.length : 0;
-        return { courseId: c.courseId, name: items[0]?.courseName || `Curso ${c.courseId}`, items, avg, open: false };
-      });
+      this.error = null;
+      try {
+        const r = await fetch('/api/grades');
+        if (!r.ok) throw new Error(`Error ${r.status}: ${r.statusText}`);
+        const d = await r.json();
+        this.courses = (d.grades || []).map(c => {
+          const items = c.items || [];
+          const graded = items.filter(g => g.percent !== null && g.percent !== undefined);
+          const avg = graded.length ? graded.reduce((s, g) => s + g.percent, 0) / graded.length : 0;
+          // Grade items have 'itemName', not 'courseName'
+          const courseName = `Curso ${c.courseId}`;
+          return { courseId: c.courseId, name: courseName, items, avg, open: false };
+        });
+      } catch (e) { this.error = e.message; this.courses = []; }
       this.loading = false;
     },
   };
@@ -123,13 +154,17 @@ function gradesPage() {
 
 function annPage() {
   return {
-    items: [], loading: true,
+    items: [], loading: true, error: null,
     async init() {
       this.loading = true;
-      const r = await fetch('/api/announcements');
-      const d = await r.json();
-      this.items = (d.announcements || []).flatMap(c => c.items || [])
-        .sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+      this.error = null;
+      try {
+        const r = await fetch('/api/announcements');
+        if (!r.ok) throw new Error(`Error ${r.status}: ${r.statusText}`);
+        const d = await r.json();
+        this.items = (d.announcements || []).flatMap(c => c.items || [])
+          .sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+      } catch (e) { this.error = e.message; this.items = []; }
       this.loading = false;
     },
   };
@@ -140,19 +175,36 @@ function configPage() {
     yaml: '', showYaml: false, saving: false, saveMsg: null, saveErr: false,
     form: { base_url: '', strategy: 'browser', preset: 'microsoft', tz: '', locale: 'es-419', format: 'markdown', writes: false },
     async init() {
-      const r = await fetch('/api/config');
-      const d = await r.json();
-      this.yaml = d.yaml || '';
       try {
+        const r = await fetch('/api/config');
+        const d = await r.json();
+        this.yaml = d.yaml || '';
         const m = this.yaml.match(/base_url:\s*(.+)/); if (m) this.form.base_url = m[1].trim();
         const t = this.yaml.match(/tz:\s*(.+)/); if (t) this.form.tz = t[1].trim();
         const l = this.yaml.match(/locale:\s*(.+)/); if (l) this.form.locale = l[1].trim();
         const f = this.yaml.match(/format:\s*(.+)/); if (f) this.form.format = f[1].trim();
-      } catch {}
+        const s = this.yaml.match(/strategy:\s*(.+)/); if (s) this.form.strategy = s[1].trim();
+      } catch { /* ignore */ }
+    },
+    buildYamlFromForm() {
+      // Sync form values back into the YAML string by replacing matching keys
+      let y = this.yaml;
+      const replace = (key, val) => {
+        const re = new RegExp(`(^${key}:\\s*)(.+)`, 'm');
+        if (re.test(y)) { y = y.replace(re, `$1${val}`); }
+        else { y += `\n${key}: ${val}`; }
+      };
+      replace('base_url', this.form.base_url);
+      replace('tz', this.form.tz);
+      replace('locale', this.form.locale);
+      replace('format', this.form.format);
+      replace('strategy', this.form.strategy);
+      return y;
     },
     async save() {
       this.saving = true; this.saveMsg = null;
-      const y = this.showYaml ? this.yaml : this.yaml;
+      // If in form view, sync form fields back to YAML before saving
+      const y = this.showYaml ? this.yaml : this.buildYamlFromForm();
       try {
         const r = await fetch('/api/config', {
           method: 'PUT',
@@ -161,7 +213,7 @@ function configPage() {
         });
         const d = await r.json();
         if (d.error) { this.saveErr = true; this.saveMsg = d.error; }
-        else { this.saveErr = false; this.saveMsg = 'Guardado correctamente.'; }
+        else { this.saveErr = false; this.saveMsg = 'Guardado correctamente.'; this.yaml = y; }
       } catch (e) { this.saveErr = true; this.saveMsg = e.message; }
       this.saving = false;
     },
@@ -172,13 +224,17 @@ function cachePage() {
   return {
     hitRate: 0, totalOps: 0, misses: 0, clearMsg: null,
     async init() {
-      const r = await fetch('/api/cache/stats');
-      const d = await r.json();
-      const c = d.stats?.counters || {};
-      const h = c.cache_hit || 0, m = c.cache_miss || 0;
-      this.totalOps = h + m;
-      this.misses = m;
-      this.hitRate = this.totalOps > 0 ? Math.round(h / this.totalOps * 100) : 0;
+      try {
+        const r = await fetch('/api/cache/stats');
+        const d = await r.json();
+        const c = d.stats?.counters || {};
+        // Real counter keys: 'http.cache.hit' and 'http.cache.miss'
+        const h = c['http.cache.hit'] || 0;
+        const m = c['http.cache.miss'] || 0;
+        this.totalOps = h + m;
+        this.misses = m;
+        this.hitRate = this.totalOps > 0 ? Math.round(h / this.totalOps * 100) : 0;
+      } catch { /* ignore */ }
     },
     async clearAll() {
       await fetch('/api/cache/clear', { method: 'POST' });
@@ -197,9 +253,11 @@ function logsPage() {
       return this.entries.filter(e => e.tool?.toLowerCase().includes(f));
     },
     async init() {
-      const r = await fetch('/api/audit?limit=50');
-      const d = await r.json();
-      this.entries = d.entries || [];
+      try {
+        const r = await fetch('/api/audit?limit=50');
+        const d = await r.json();
+        this.entries = d.entries || [];
+      } catch { this.entries = []; }
     },
   };
 }

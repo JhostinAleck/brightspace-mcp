@@ -14,7 +14,7 @@ import type { ContentRepository } from '@/contexts/content/domain/ContentReposit
 import type { OutputContext } from '@/shared-kernel/output/index.js';
 import type { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
-import { Paths } from '@/shared-kernel/config/paths.js';
+
 
 export interface UiDeps {
   courseRepo: CourseRepository;
@@ -110,7 +110,17 @@ export function createApp(deps: UiDeps): Hono {
     const result: Array<{ courseId: number; items: unknown[] }> = [];
     for (const id of ids) {
       const grades = await deps.gradeRepo.findByCourse(id);
-      result.push({ courseId: Number(id), items: grades });
+      result.push({
+        courseId: Number(id),
+        items: grades.map((g) => ({
+          itemId: g.itemId,
+          itemName: g.itemName,
+          pointsEarned: g.pointsEarned,
+          pointsMax: g.pointsMax,
+          percent: g.percent,
+          displayedGrade: g.displayedGrade,
+        })),
+      });
     }
     return c.json({ grades: result });
   });
@@ -124,7 +134,17 @@ export function createApp(deps: UiDeps): Hono {
     const result: Array<{ courseId: number; items: unknown[] }> = [];
     for (const id of ids) {
       const items = await deps.assignmentRepo.findByCourse(id);
-      result.push({ courseId: Number(id), items });
+      result.push({
+        courseId: Number(id),
+        items: items.map((a) => ({
+          id: Number(a.id),
+          name: a.name,
+          instructions: a.instructions,
+          dueDate: a.dueDate.toDate() ? deps.output.formatDate(a.dueDate.toDate()!, 'datetime') : null,
+          hasSubmission: a.hasSubmission,
+          submissionMode: a.submissionMode,
+        })),
+      });
     }
     return c.json({ assignments: result });
   });
@@ -138,7 +158,16 @@ export function createApp(deps: UiDeps): Hono {
     const result: Array<{ courseId: number; items: unknown[] }> = [];
     for (const id of ids) {
       const items = await deps.communicationsRepo.findAnnouncements(id);
-      result.push({ courseId: Number(id), items });
+      result.push({
+        courseId: Number(id),
+        items: items.map((ann) => ({
+          id: ann.id,
+          title: ann.title,
+          html: ann.html,
+          authorName: ann.authorName,
+          postedAt: ann.postedAt,
+        })),
+      });
     }
     return c.json({ announcements: result });
   });
