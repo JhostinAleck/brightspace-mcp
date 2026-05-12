@@ -52,3 +52,7 @@ docs/_brainstorms/
 *.key
 secrets/
 .brightspace-mcp/
+
+# Local AI assistant session files
+.claude/
+.superpowers/
