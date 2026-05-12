@@ -34,7 +34,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "tsc && tsc-alias && node -e \"const {cpSync}=require('fs');cpSync('src/shared-kernel/output/i18n/catalogs','build/shared-kernel/output/i18n/catalogs',{recursive:true}); cpSync('src/ui','build/ui',{recursive:true})\"",
+    "build": "tsc && tsc-alias && node -e \"const {cpSync}=require('fs');cpSync('src/shared-kernel/output/i18n/catalogs','build/shared-kernel/output/i18n/catalogs',{recursive:true})\"",
     "build:clean": "rm -rf build && npm run build",
     "dev": "tsc --watch",
     "start": "node build/cli/main.js serve",
@@ -56,14 +56,17 @@
     "@inquirer/prompts": "^8.4.2",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "commander": "^14.0.3",
+    "ink": "^7.0.2",
     "pdf-parse": "^2.4.5",
     "proper-lockfile": "^4.1.2",
+    "react": "^19.2.6",
     "yaml": "^2.8.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.6.0",
+    "@types/react": "^19.0.0",
     "@types/proper-lockfile": "^4.1.4",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
