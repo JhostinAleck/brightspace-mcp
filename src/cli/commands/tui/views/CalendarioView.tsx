@@ -14,7 +14,10 @@ interface EventWithCourse {
 
 export function CalendarioView({ deps }: { deps: TuiDeps }) {
   const fetcher = useCallback(async (): Promise<EventWithCourse[]> => {
-    const courses = await deps.courseRepo.findMyCourses({ activeOnly: true });
+    const allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
+    const courses = allCourses
+      .sort((a, b) => (b.startDate?.getTime() ?? 0) - (a.startDate?.getTime() ?? 0))
+      .slice(0, 15);
     const now = new Date();
     const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 

@@ -33,7 +33,11 @@ function assignmentColor(a: Assignment): string {
 
 export function InicioView({ deps }: { deps: TuiDeps }) {
   const fetcher = useCallback(async (): Promise<InicioData> => {
-    const courses = await deps.courseRepo.findMyCourses({ activeOnly: true });
+    const allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
+    // Cap at 15 most recent — avoids fan-out overload with 65+ courses
+    const courses = allCourses
+      .sort((a, b) => (b.startDate?.getTime() ?? 0) - (a.startDate?.getTime() ?? 0))
+      .slice(0, 15);
     const courseIds = courses.map((c) => OrgUnitId.of(CourseId.toNumber(c.id)));
     const now = new Date();
     const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);

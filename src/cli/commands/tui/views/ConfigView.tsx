@@ -5,31 +5,26 @@ import { ConfigSummary } from '../config/ConfigSummary.js';
 import { ConfigForm } from '../config/ConfigForm.js';
 import { openInEditor } from '../config/openInEditor.js';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { parseDocument } from 'yaml';
 
+// Uses parseDocument to preserve comments, indentation and complex structures
+// (CSS selectors, nested arrays, special chars) that parse→stringify would corrupt.
 function writeConfigValues(configPath: string, profile: string, values: Record<string, string>): void {
   const raw = existsSync(configPath) ? readFileSync(configPath, 'utf8') : '';
-  const doc = (parseYaml(raw) ?? {}) as Record<string, unknown>;
+  const doc = parseDocument(raw);
 
-  if (!doc['profiles']) doc['profiles'] = {};
-  const profiles = doc['profiles'] as Record<string, unknown>;
-  if (!profiles[profile]) profiles[profile] = {};
-  const prof = profiles[profile] as Record<string, unknown>;
-  if (!prof['auth']) prof['auth'] = {};
-  const auth = prof['auth'] as Record<string, unknown>;
-  if (!doc['output']) doc['output'] = {};
-  const output = doc['output'] as Record<string, unknown>;
+  if (values['base_url'] !== undefined)
+    doc.setIn(['profiles', profile, 'base_url'], values['base_url']);
+  if (values['strategy'] !== undefined)
+    doc.setIn(['profiles', profile, 'auth', 'strategy'], values['strategy']);
+  if (values['mfa_strategy'] !== undefined)
+    doc.setIn(['profiles', profile, 'auth', 'mfa', 'strategy'], values['mfa_strategy']);
+  if (values['locale'] !== undefined)
+    doc.setIn(['output', 'locale'], values['locale']);
+  if (values['format'] !== undefined)
+    doc.setIn(['output', 'format'], values['format']);
 
-  if (values['base_url'] !== undefined) prof['base_url'] = values['base_url'];
-  if (values['strategy'] !== undefined) auth['strategy'] = values['strategy'];
-  if (values['mfa_strategy'] !== undefined) {
-    if (!auth['mfa']) auth['mfa'] = {};
-    (auth['mfa'] as Record<string, unknown>)['strategy'] = values['mfa_strategy'];
-  }
-  if (values['locale'] !== undefined) output['locale'] = values['locale'];
-  if (values['format'] !== undefined) output['format'] = values['format'];
-
-  writeFileSync(configPath, stringifyYaml(doc), 'utf8');
+  writeFileSync(configPath, doc.toString(), 'utf8');
 }
 
 type Mode = 'summary' | 'form' | 'message';
@@ -41,7 +36,7 @@ export function ConfigView({ deps }: { deps: TuiDeps }) {
   function readCurrentValues(): Record<string, string> {
     try {
       if (!existsSync(deps.configPath)) return {};
-      const yaml = parseYaml(readFileSync(deps.configPath, 'utf8')) as Record<string, unknown>;
+      const yaml = parseDocument(readFileSync(deps.configPath, 'utf8')).toJS() as Record<string, unknown>;
       const profiles = yaml['profiles'] as Record<string, unknown> | undefined;
       const prof = profiles?.[deps.profile] as Record<string, unknown> | undefined;
       const auth = prof?.['auth'] as Record<string, unknown> | undefined;
