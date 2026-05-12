@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, useInput, useApp } from 'ink';
-import type { TuiDeps } from '../tui.js';
+import type { TuiDeps } from './types.js';
 import { TabBar, TABS, type Tab } from './TabBar.js';
 import { StatusBar } from './StatusBar.js';
 import { InicioView } from './views/InicioView.js';
