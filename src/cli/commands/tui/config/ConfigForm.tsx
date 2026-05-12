@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { AuthStrategyKindSchema, MfaStrategyKindSchema } from '@/shared-kernel/config/schema.js';
 import { SUPPORTED_LOCALES } from '@/shared-kernel/output/i18n/catalog-loader.js';
+import { useSubNavLevel } from '../NavContext.js';
 
 export interface FormField {
   key: string;
@@ -51,6 +52,7 @@ export function ConfigForm({ currentValues, onSave, onCancel }: Props) {
   const [fieldIndex, setFieldIndex] = useState(0);
   const [values, setValues] = useState<Record<string, string>>({ ...currentValues });
   const [optionCursor, setOptionCursor] = useState(0);
+  useSubNavLevel(); // disables top-level Tab navigation while the form is open
 
   const currentField = fields[fieldIndex];
 

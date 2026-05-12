@@ -14,10 +14,16 @@ export function CursosView({ deps }: { deps: TuiDeps }) {
   const fetcher = useCallback(() => deps.courseRepo.findMyCourses(), [deps]);
   const { data: courses, loading, error, reload } = useAsyncData(fetcher);
 
-  const filtered = (courses ?? []).filter((c) => {
-    const q = query.toLowerCase();
-    return !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
-  });
+  const filtered = [...(courses ?? [])]
+    .sort((a, b) => {
+      const ta = a.startDate?.getTime() ?? 0;
+      const tb = b.startDate?.getTime() ?? 0;
+      return tb - ta; // más reciente primero
+    })
+    .filter((c) => {
+      const q = query.toLowerCase();
+      return !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
+    });
 
   useInput((input, key) => {
     if (selected !== null) return; // delegate to CourseDetail

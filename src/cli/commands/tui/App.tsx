@@ -3,6 +3,7 @@ import { Box, useInput, useApp } from 'ink';
 import type { TuiDeps } from './types.js';
 import { TabBar, TABS, type Tab } from './TabBar.js';
 import { StatusBar } from './StatusBar.js';
+import { NavigationProvider, useNavDepth } from './NavContext.js';
 import { InicioView } from './views/InicioView.js';
 import { CursosView } from './views/CursosView.js';
 import { CalendarioView } from './views/CalendarioView.js';
@@ -10,12 +11,15 @@ import { ConfigView } from './views/ConfigView.js';
 import { CacheView } from './views/CacheView.js';
 import { LogsView } from './views/LogsView.js';
 
-export function App({ deps }: { deps: TuiDeps }) {
+function AppInner({ deps }: { deps: TuiDeps }) {
   const [activeTab, setActiveTab] = useState<Tab>('inicio');
   const { exit } = useApp();
+  const navDepth = useNavDepth();
 
+  // Only handle Tab/arrow navigation at the top level when no sub-nav is active
   useInput((input, key) => {
     if (key.ctrl && input === 'c') { exit(); return; }
+    if (navDepth > 0) return;
     if (key.tab || key.rightArrow) {
       setActiveTab((t) => TABS[(TABS.indexOf(t) + 1) % TABS.length] as Tab);
       return;
@@ -39,5 +43,13 @@ export function App({ deps }: { deps: TuiDeps }) {
       </Box>
       <StatusBar deps={deps} />
     </Box>
+  );
+}
+
+export function App({ deps }: { deps: TuiDeps }) {
+  return (
+    <NavigationProvider>
+      <AppInner deps={deps} />
+    </NavigationProvider>
   );
 }

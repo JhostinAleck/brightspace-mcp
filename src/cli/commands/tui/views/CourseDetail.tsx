@@ -4,6 +4,7 @@ import type { TuiDeps } from '../types.js';
 import type { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import { CourseId as CourseIdUtil } from '@/contexts/courses/domain/CourseId.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
+import { useSubNavLevel } from '../NavContext.js';
 import { TareasView } from './TareasView.js';
 import { NotasView } from './NotasView.js';
 import { AnunciosCursoView } from './AnunciosCursoView.js';
@@ -22,6 +23,7 @@ interface Props {
 export function CourseDetail({ courseId, courseName, deps, onBack }: Props) {
   const [subTab, setSubTab] = useState<SubTab>('tareas');
   const orgUnitId = OrgUnitId.of(CourseIdUtil.toNumber(courseId));
+  useSubNavLevel(); // disables top-level Tab navigation while this is mounted
 
   useInput((input, key) => {
     if (key.backspace || key.escape || input === 'b') { onBack(); return; }
