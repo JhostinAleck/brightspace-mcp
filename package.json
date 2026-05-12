@@ -1,7 +1,7 @@
 {
   "name": "brightspace-mcp",
-  "version": "1.1.0",
-  "mcpName": "io.github.jhostinaleck/brightspace",
+  "version": "1.1.1",
+  "mcpName": "io.github.JhostinAleck/brightspace",
   "description": "MCP server for D2L Brightspace (multi-auth, opt-in writes, session cache)",
   "keywords": [
     "mcp",

@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.jhostinaleck/brightspace",
-  "description": "MCP server for D2L Brightspace. Access courses, grades, assignments, syllabus, announcements, calendar, and more — with multi-strategy auth, MCP Resources, MCP Prompts, and a local web dashboard.",
+  "name": "io.github.JhostinAleck/brightspace",
+  "description": "MCP server for D2L Brightspace. Multi-auth, 26+ tools, MCP Resources, Prompts, and web dashboard.",
   "repository": {
     "url": "https://github.com/JhostinAleck/brightspace-mcp",
     "source": "github"
   },
-  "version": "1.1.0",
+  "version": "1.1.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "brightspace-mcp",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "transport": {
         "type": "stdio"
       },
