@@ -11,12 +11,10 @@ function app() {
     status: {},
     pendingCount: 0,
     toast: null,
-    pages: { home:'', auth:'', courses:'', assignments:'', grades:'', announcements:'', config:'', cache:'', logs:'', diagnostics:'' },
 
     async init() {
       await this.loadStatus();
       await this.loadPendingCount();
-      await this.loadPage('home');
       this.connectSSE();
     },
 
@@ -35,20 +33,8 @@ function app() {
       } catch { /* ignore */ }
     },
 
-    async loadPage(name) {
-      if (this.pages[name]) return;
-      try {
-        const r = await fetch(`/pages/${name}.html`);
-        if (!r.ok) throw new Error(`${r.status}`);
-        this.pages[name] = await r.text();
-      } catch (e) {
-        this.pages[name] = `<div class="p-6 text-red-400 text-sm">Error cargando página ${name}: ${e.message}</div>`;
-      }
-    },
-
-    async navigate(name) {
+    navigate(name) {
       this.page = name;
-      await this.loadPage(name);
     },
 
     async reauth() {
