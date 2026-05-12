@@ -17,6 +17,16 @@ afterEach(() => nock.cleanAll());
 describe('D2lAssignmentRepository', () => {
   it('findByCourse parses dropbox folders into Assignment entities', async () => {
     nock(BASE).get('/d2l/api/le/1.91/101/dropbox/folders/').reply(200, foldersFixture);
+    // Submissions come from the per-folder mysubmissions endpoint (not the folder list)
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/5001/submissions/mysubmissions/')
+      .reply(200, [{
+        Entity: { EntityId: 99, EntityType: 'User' },
+        Submissions: [{ Id: 1, SubmittedBy: { Identifier: '99' }, SubmissionDate: '2026-04-20T10:00:00Z', Comment: { Text: 'Final version' } }],
+      }]);
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/5002/submissions/mysubmissions/')
+      .reply(404, '');
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
     const repo = new D2lAssignmentRepository(client, { le: '1.91' });
     const out = await repo.findByCourse(OrgUnitId.of(101));
@@ -166,6 +176,10 @@ describe('D2lAssignmentRepository', () => {
           { Submitter: { Identifier: '99' }, SubmissionDate: '2026-05-10T22:36:38.470Z', Comments: { Text: 'good one' } },
         ],
       }]);
+    // 404 → falls back to folder.Submissions (bad-date filtering still exercised)
+    nock(BASE)
+      .get('/d2l/api/le/1.91/101/dropbox/folders/5003/submissions/mysubmissions/')
+      .reply(404, '');
 
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
     const repo = new D2lAssignmentRepository(client, { le: '1.91' });

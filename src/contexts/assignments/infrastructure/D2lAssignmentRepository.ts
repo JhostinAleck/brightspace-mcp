@@ -101,20 +101,41 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     // The folders list endpoint omits `Submissions` for student users (admins
     // see them inline). Fetch each folder's submissions in parallel from the
     // dedicated endpoint so `assignment.hasSubmission` reflects reality.
-    const enriched = await Promise.all(
+    // Use allSettled so one failing folder doesn't discard all others.
+    const results = await Promise.allSettled(
       folders.map(async (folder) => {
         try {
           const subs = await this.client.get<SubmissionsByEntityDto[]>(
             `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folder.Id}/submissions/mysubmissions/`,
           );
           return this.toAssignment(folder, orgUnit, subs);
-        } catch {
-          // 403/404 on locked or future folders — fall back to bare folder.
-          return this.toAssignment(folder, orgUnit);
+        } catch (err) {
+          // Only swallow 403 (tenant-restricted) and 404 (locked/future folder
+          // or group assignments — D2L returns "not found" for mysubmissions on
+          // group folders; there is no student-accessible API for group status).
+          if (err instanceof D2lApiError && (err.status === 403 || err.status === 404)) {
+            return this.toAssignment(folder, orgUnit);
+          }
+          // Circuit breaker, network errors, etc. — re-throw so the caller
+          // surfaces the real error instead of silently showing 0 submissions.
+          throw err;
         }
       }),
     );
-    return enriched;
+
+    // Collect fulfilled assignments; re-throw the first infrastructure error
+    // if ALL folders failed (keeps partial results when only some folders fail).
+    const assignments: Assignment[] = [];
+    let firstError: unknown = null;
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        assignments.push(r.value);
+      } else {
+        firstError ??= r.reason;
+      }
+    }
+    if (assignments.length === 0 && firstError) throw firstError;
+    return assignments;
   }
 
   async submit(input: SubmitInput): Promise<SubmitResult> {
