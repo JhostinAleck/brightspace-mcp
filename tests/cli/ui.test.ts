@@ -16,6 +16,7 @@ function mockDeps(): UiDeps {
     calendarRepo: { findEvents: vi.fn().mockResolvedValue([]) } as any,
     contentRepo: {} as any,
     auditLogPath: '/tmp/test-audit.log',
+    configPath: '/tmp/test-ui-config.yaml',
     output: {
       tz: 'UTC',
       locale: 'en-US',

@@ -123,7 +123,7 @@ program
       const config = loadConfig({ fileContent, env: process.env, cliOverrides: cliOverrides as any });
       const deps = await buildDependencies({ config, enableWrites: false });
       const { runUi } = await import('./commands/ui.js');
-      await runUi({ port, open: opts.open ?? false, deps });
+      await runUi({ port, open: opts.open ?? false, deps: { ...deps, configPath: path } });
     } catch (err) {
       process.stderr.write(`ui failed: ${err instanceof Error ? err.message : String(err)}\n`);
       process.exit(1);

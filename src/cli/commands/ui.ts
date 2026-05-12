@@ -24,6 +24,7 @@ export interface UiDeps {
   calendarRepo: CalendarRepository;
   contentRepo: ContentRepository;
   auditLogPath: string;
+  configPath: string;
   output: OutputContext;
   metrics: MetricsRegistry;
 }
@@ -168,9 +169,8 @@ export function createApp(deps: UiDeps): Hono {
 
   // ── GET /api/config ─────────────────────────────────────────────────────
   app.get('/api/config', (c) => {
-    const configPath = Paths.configYaml();
-    if (!existsSync(configPath)) return c.json({ yaml: '', error: 'Config file not found' });
-    return c.json({ yaml: readFileSync(configPath, 'utf8') });
+    if (!existsSync(deps.configPath)) return c.json({ yaml: '', error: 'Config file not found' });
+    return c.json({ yaml: readFileSync(deps.configPath, 'utf8') });
   });
 
   // ── POST /api/auth/refresh ───────────────────────────────────────────────
@@ -205,8 +205,7 @@ export function createApp(deps: UiDeps): Hono {
       return c.json({ error: `Invalid YAML: ${e instanceof Error ? e.message : String(e)}` }, 400);
     }
     try {
-      const configPath = Paths.configYaml();
-      writeFileSync(configPath, body.yaml, { encoding: 'utf8', mode: 0o600 });
+      writeFileSync(deps.configPath, body.yaml, { encoding: 'utf8', mode: 0o600 });
       return c.json({ ok: true });
     } catch (e) {
       return c.json({ error: `Write failed: ${e instanceof Error ? e.message : String(e)}` }, 500);
