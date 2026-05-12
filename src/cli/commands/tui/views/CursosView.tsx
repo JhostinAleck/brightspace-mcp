@@ -27,7 +27,7 @@ export function CursosView({ deps }: { deps: TuiDeps }) {
 
   useInput((input, key) => {
     if (selected !== null) return; // delegate to CourseDetail
-    if (input === 'r') { reload(); return; }
+    if (input === 'r' && query.length === 0) { reload(); return; }
     if (key.upArrow) { setCursor((c) => Math.max(0, c - 1)); return; }
     if (key.downArrow) { setCursor((c) => Math.min(filtered.length - 1, c + 1)); return; }
     if (key.return) {
