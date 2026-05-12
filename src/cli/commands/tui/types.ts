@@ -6,6 +6,7 @@ import type { CalendarRepository } from '@/contexts/calendar/domain/CalendarRepo
 import type { OutputContext } from '@/shared-kernel/output/index.js';
 import type { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
 import type { HttpResponseCache } from '@/contexts/http-api/cache/HttpResponseCache.js';
+import type { Disposables } from '@/shared-kernel/lifecycle/Disposables.js';
 
 export interface TuiDeps {
   courseRepo: CourseRepository;
@@ -19,4 +20,5 @@ export interface TuiDeps {
   profile: string;
   output: OutputContext;
   metrics: MetricsRegistry;
+  disposables?: Disposables;
 }

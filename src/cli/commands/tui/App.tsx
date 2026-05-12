@@ -15,13 +15,12 @@ export function App({ deps }: { deps: TuiDeps }) {
   const { exit } = useApp();
 
   useInput((input, key) => {
-    if (input === 'q') { exit(); return; }
     if (key.ctrl && input === 'c') { exit(); return; }
     if (key.tab || key.rightArrow) {
       setActiveTab((t) => TABS[(TABS.indexOf(t) + 1) % TABS.length] as Tab);
       return;
     }
-    if (key.leftArrow || (key.shift && key.tab)) {
+    if (key.leftArrow) {
       setActiveTab((t) => TABS[(TABS.indexOf(t) - 1 + TABS.length) % TABS.length] as Tab);
       return;
     }

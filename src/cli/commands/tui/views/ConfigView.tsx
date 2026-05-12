@@ -4,8 +4,33 @@ import type { TuiDeps } from '../types.js';
 import { ConfigSummary } from '../config/ConfigSummary.js';
 import { ConfigForm } from '../config/ConfigForm.js';
 import { openInEditor } from '../config/openInEditor.js';
-import { existsSync, readFileSync } from 'node:fs';
-import { parse as parseYaml } from 'yaml';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+
+function writeConfigValues(configPath: string, profile: string, values: Record<string, string>): void {
+  const raw = existsSync(configPath) ? readFileSync(configPath, 'utf8') : '';
+  const doc = (parseYaml(raw) ?? {}) as Record<string, unknown>;
+
+  if (!doc['profiles']) doc['profiles'] = {};
+  const profiles = doc['profiles'] as Record<string, unknown>;
+  if (!profiles[profile]) profiles[profile] = {};
+  const prof = profiles[profile] as Record<string, unknown>;
+  if (!prof['auth']) prof['auth'] = {};
+  const auth = prof['auth'] as Record<string, unknown>;
+  if (!doc['output']) doc['output'] = {};
+  const output = doc['output'] as Record<string, unknown>;
+
+  if (values['base_url'] !== undefined) prof['base_url'] = values['base_url'];
+  if (values['strategy'] !== undefined) auth['strategy'] = values['strategy'];
+  if (values['mfa_strategy'] !== undefined) {
+    if (!auth['mfa']) auth['mfa'] = {};
+    (auth['mfa'] as Record<string, unknown>)['strategy'] = values['mfa_strategy'];
+  }
+  if (values['locale'] !== undefined) output['locale'] = values['locale'];
+  if (values['format'] !== undefined) output['format'] = values['format'];
+
+  writeFileSync(configPath, stringifyYaml(doc), 'utf8');
+}
 
 type Mode = 'summary' | 'form' | 'message';
 
@@ -52,8 +77,13 @@ export function ConfigView({ deps }: { deps: TuiDeps }) {
       <Box padding={1}>
         <ConfigForm
           currentValues={readCurrentValues()}
-          onSave={() => {
-            setMessage({ text: '✓ Guardado — reinicia el TUI para aplicar los cambios.', ok: true });
+          onSave={(values) => {
+            try {
+              writeConfigValues(deps.configPath, deps.profile, values);
+              setMessage({ text: '✓ Config guardado — reinicia el TUI para aplicar los cambios.', ok: true });
+            } catch (e) {
+              setMessage({ text: `✗ Error al guardar: ${e instanceof Error ? e.message : String(e)}`, ok: false });
+            }
             setMode('message');
           }}
           onCancel={() => setMode('summary')}

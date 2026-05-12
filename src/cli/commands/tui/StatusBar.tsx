@@ -15,7 +15,7 @@ export function StatusBar({ deps }: { deps: TuiDeps }) {
         perfil: <Text color="white">{deps.profile}</Text>
       </Text>
       <Text color="gray">
-        Tab/→← navegar  r refrescar  ? ayuda  q salir
+        Tab/→← navegar  r refrescar  Ctrl+C salir
       </Text>
     </Box>
   );

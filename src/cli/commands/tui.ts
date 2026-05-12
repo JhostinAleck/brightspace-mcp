@@ -6,5 +6,9 @@ export async function runTui(deps: TuiDeps): Promise<void> {
   const React = await import('react');
   const { App } = await import('./tui/App.js');
   const instance = render(React.createElement(App, { deps }));
-  await instance.waitUntilExit();
+  try {
+    await instance.waitUntilExit();
+  } finally {
+    await deps.disposables?.disposeAll();
+  }
 }

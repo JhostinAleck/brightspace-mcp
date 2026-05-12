@@ -29,7 +29,7 @@ export function CourseDetail({ courseId, courseName, deps, onBack }: Props) {
       setSubTab((t) => SUB_TABS[(SUB_TABS.indexOf(t) + 1) % SUB_TABS.length] as SubTab);
       return;
     }
-    if (key.leftArrow || (key.shift && key.tab)) {
+    if (key.leftArrow) {
       setSubTab((t) => SUB_TABS[(SUB_TABS.indexOf(t) - 1 + SUB_TABS.length) % SUB_TABS.length] as SubTab);
       return;
     }
