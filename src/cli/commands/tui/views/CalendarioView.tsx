@@ -36,7 +36,7 @@ export function CalendarioView({ deps }: { deps: TuiDeps }) {
 
   const { data, loading, error, reload } = useAsyncData(fetcher);
 
-  useInput((input) => { if (input === 'r') reload(); });
+  useInput((input, key) => { if (key.ctrl && input === 'r') reload(); });
 
   if (loading) return <Box padding={1}><Spinner label="Cargando calendario…" /></Box>;
   if (error) return <Box padding={1}><Text color="red">✗ {error}</Text></Box>;
@@ -59,7 +59,7 @@ export function CalendarioView({ deps }: { deps: TuiDeps }) {
         </Box>
       ))}
 
-      <Text color="gray" dimColor>r: refrescar</Text>
+      <Text color="gray" dimColor>Ctrl+R: refrescar</Text>
     </Box>
   );
 }

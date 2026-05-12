@@ -1,10 +1,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { TuiDeps } from './types.js';
-import type { Tab } from './TabBar.js';
 
-export function StatusBar({ deps, activeTab }: { deps: TuiDeps; activeTab: Tab }) {
-  const reloadHint = activeTab === 'cursos' ? 'Ctrl+R refrescar' : 'r refrescar';
+export function StatusBar({ deps }: { deps: TuiDeps }) {
   return (
     <Box
       borderStyle="single"
@@ -17,7 +15,7 @@ export function StatusBar({ deps, activeTab }: { deps: TuiDeps; activeTab: Tab }
         perfil: <Text color="white">{deps.profile}</Text>
       </Text>
       <Text color="gray">
-        Tab/→← navegar  {reloadHint}  Ctrl+C salir
+        Tab/→← navegar  Ctrl+R refrescar  Ctrl+C salir
       </Text>
     </Box>
   );

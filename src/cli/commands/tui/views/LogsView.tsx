@@ -27,7 +27,7 @@ export function LogsView({ deps }: { deps: TuiDeps }) {
   const { data, loading, reload } = useAsyncData(fetcher);
 
   useInput((input, key) => {
-    if (input === 'r' && !typing) { reload(); return; }
+    if (key.ctrl && input === 'r' && !typing) { reload(); return; }
     if (input === '/' && !typing) { setTyping(true); return; }
     if (typing) {
       if (key.escape || key.return) { setTyping(false); return; }
@@ -71,7 +71,7 @@ export function LogsView({ deps }: { deps: TuiDeps }) {
       ))}
 
       <Box marginTop={1}>
-        <Text color="gray" dimColor>/: filtrar · r: refrescar</Text>
+        <Text color="gray" dimColor>/: filtrar · Ctrl+R: refrescar</Text>
       </Box>
     </Box>
   );

@@ -24,8 +24,8 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
   );
   const { data, loading, error, reload } = useAsyncData(fetcher);
 
-  useInput((input) => {
-    if (input === 'r') reload();
+  useInput((input, key) => {
+    if (key.ctrl && input === 'r') reload();
     if (input === '1') setFilter('pendientes');
     if (input === '2') setFilter('enviadas');
     if (input === '3') setFilter('todas');
@@ -70,7 +70,7 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
         );
       })}
 
-      <Text color="gray" dimColor>1/2/3: filtrar · r: refrescar</Text>
+      <Text color="gray" dimColor>1/2/3: filtrar · Ctrl+R: refrescar</Text>
     </Box>
   );
 }

@@ -73,8 +73,8 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
 
   const { data, loading, error, reload } = useAsyncData(fetcher);
 
-  useInput((input) => {
-    if (input === 'r') reload();
+  useInput((input, key) => {
+    if (key.ctrl && input === 'r') reload();
   });
 
   if (loading) return <Box padding={1}><Spinner label="Cargando dashboard…" /></Box>;
@@ -128,7 +128,7 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
         </Box>
 
       </Box>
-      <Text color="gray" dimColor>r: refrescar</Text>
+      <Text color="gray" dimColor>Ctrl+R: refrescar</Text>
     </Box>
   );
 }

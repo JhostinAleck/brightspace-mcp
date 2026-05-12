@@ -22,7 +22,7 @@ export function CacheView({ deps }: { deps: TuiDeps }) {
   const { data, loading, reload } = useAsyncData(fetcher);
 
   useInput(async (input) => {
-    if (input === 'r') { reload(); setClearMsg(null); return; }
+    if (key.ctrl && input === 'r') { reload(); setClearMsg(null); return; }
     if (input === 'c' && !clearing) {
       setClearing(true);
       try {
@@ -51,7 +51,7 @@ export function CacheView({ deps }: { deps: TuiDeps }) {
       {clearing && <Text color="yellow">Limpiando…</Text>}
 
       <Box marginTop={1}>
-        <Text color="gray" dimColor>c: limpiar caché · r: refrescar</Text>
+        <Text color="gray" dimColor>c: limpiar caché · Ctrl+R: refrescar</Text>
       </Box>
     </Box>
   );

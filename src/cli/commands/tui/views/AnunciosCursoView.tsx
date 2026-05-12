@@ -22,7 +22,7 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
   );
   const { data, loading, error, reload } = useAsyncData(fetcher);
 
-  useInput((input) => { if (input === 'r') reload(); });
+  useInput((input, key) => { if (key.ctrl && input === 'r') reload(); });
 
   if (loading) return <Box><Spinner label="Cargando anuncios…" /></Box>;
   if (error) return <Box><Text color="red">✗ {error}</Text></Box>;
@@ -50,7 +50,7 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
           </Box>
         );
       })}
-      <Text color="gray" dimColor>r: refrescar</Text>
+      <Text color="gray" dimColor>Ctrl+R: refrescar</Text>
     </Box>
   );
 }
