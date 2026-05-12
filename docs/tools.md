@@ -162,10 +162,13 @@ Upload a file to a Brightspace Dropbox folder.
 **Args:**
 - `course_id` *(string)*
 - `folder_id` *(string — assignment ID)*
-- `filename` *(string)*
-- `content_base64` *(string — base64 of file bytes, max ~50 MB)*
+- `file_path` *(string, optional — `~/...`, `%VAR%\...`, or absolute path; preferred for files > 1 MB — server reads from disk, avoids base64 token cost)*
+- `filename` *(string — required when using `content_base64`; optional with `file_path`, defaults to basename)*
+- `content_base64` *(string, optional — base64 of file bytes, max ~50 MB; use when file is not on disk)*
 - `mime_type` *(string, optional — e.g. `application/zip`)*
 - `idempotency_key` *(string, 8–128 chars)*
+
+Provide either `file_path` **or** `content_base64` — not both.
 
 **Returns:** `Submitted <filename> — submissionId <id> at <iso> (cid=<correlation>)`.
 

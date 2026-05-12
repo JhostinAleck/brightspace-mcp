@@ -6,6 +6,21 @@ Known-good configurations for common Brightspace setups. Use these as starting p
 
 Used by many universities that federate Brightspace login through Microsoft 365 / Office 365.
 
+**Non-interactive shortcut (`init`):** You can apply this entire preset in one command without touching YAML:
+
+```bash
+npx brightspace-mcp@latest init \
+  --base-url https://learn.school.edu \
+  --strategy browser \
+  --preset microsoft \
+  --username-ref env:BRIGHTSPACE_USERNAME \
+  --password-ref env:BRIGHTSPACE_PASSWORD \
+  --tz America/New_York \
+  --locale en-US
+```
+
+The `--preset microsoft` flag pre-fills all Microsoft AAD selectors shown below.
+
 **Login flow recognised:**
 
 ```mermaid

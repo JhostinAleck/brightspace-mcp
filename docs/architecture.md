@@ -101,10 +101,14 @@ Run `npm run check` before pushing. Coverage threshold is 85% statements.
 `src/cli/commands/`:
 
 - `serve` — start the MCP stdio server
-- `setup` — interactive YAML wizard
-- `init` — non-interactive config writer (CI/scripts, no TTY required)
-- `ui` — local web dashboard at `http://localhost:9876` (Hono HTTP server)
+- `setup` — interactive YAML wizard (displays in system language)
+- `init` — non-interactive config writer (CI/scripts, no TTY required); supports `--preset microsoft`
+- `ui` — local web dashboard at `http://localhost:9876` (Hono HTTP server, 10 pages, dark/light mode)
 - `auth` — manual re-auth, useful when sessions expire
+- `record-auth` — opens a real browser, you log in manually, cookies captured into `session_cookie` strategy
+- `doctor` — end-to-end smoke test: config → auth → API → `list_my_courses`
+- `upgrade` — upgrade brightspace-mcp to the latest version with a version notification on next serve
+- `profile list / use <name>` — list and switch profiles
 - `config show / validate / set` — inspect / edit YAML
 - `cache clear / status` — cache management
 

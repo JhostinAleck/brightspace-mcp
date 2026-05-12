@@ -49,6 +49,9 @@ tests/                     ← Vitest mirror of src/
 | Configure for Microsoft Azure AD / SAML SSO | [`docs/presets.md`](./docs/presets.md) |
 | Enable submit/post operations | [`docs/writes.md`](./docs/writes.md) |
 | Find what each MCP tool does | [`docs/tools.md`](./docs/tools.md) |
+| Use MCP Resources (`brightspace://` URIs) | [`docs/tools.md#mcp-resources`](./docs/tools.md#mcp-resources) |
+| Use MCP Prompts (weekly_briefing, grade_audit, …) | [`docs/tools.md#mcp-prompts`](./docs/tools.md#mcp-prompts) |
+| Open the web dashboard | [`docs/setup-guide.md#web-ui-dashboard`](./docs/setup-guide.md#web-ui-dashboard) |
 | Fix a stuck setup | [`docs/troubleshooting.md`](./docs/troubleshooting.md) |
 | Understand the codebase | [`docs/architecture.md`](./docs/architecture.md) |
 | Register with Claude Desktop / Cursor / Windsurf | [`docs/clients.md`](./docs/clients.md) |

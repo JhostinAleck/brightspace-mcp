@@ -102,7 +102,7 @@ sequenceDiagram
     participant A as Audit Logger
     participant D as Brightspace API
 
-    C->>T: course_id, folder_id, content_base64,<br/>filename, idempotency_key
+    C->>T: course_id, folder_id,<br/>file_path OR content_base64,<br/>filename, idempotency_key
     T->>I: Lookup idempotency_key
 
     alt Key already used

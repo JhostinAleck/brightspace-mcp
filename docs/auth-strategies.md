@@ -176,6 +176,41 @@ profiles:
 
 ---
 
+## `record-auth` — when scripted strategies can't work
+
+Some authentication flows are fundamentally impossible to automate: Yubikey USB taps, fingerprint readers, Microsoft Authenticator number-match (you must approve a number shown on screen), and FIDO2/passkeys. For all of these, use the recorder:
+
+```bash
+brightspace-mcp record-auth --save-to keychain
+# or: --save-to file | env | print
+```
+
+The recorder opens a **real visible browser** (not headless). You log in however your tenant requires — approve the push notification, tap the Yubikey, whatever — and once you reach `/d2l/home` the recorder captures `d2lSessionVal` and `d2lSecureSessionVal` and writes the config automatically under the `session_cookie` strategy.
+
+| `--save-to` value | Where cookies are stored |
+|---|---|
+| `keychain` *(recommended)* | OS keychain (macOS Keychain / GNOME Keyring / Windows Credential Manager) |
+| `file` | Encrypted credential file (`~/.brightspace-mcp/credentials.enc`) |
+| `env` | Prints `export BRIGHTSPACE_COOKIE="..."` — pipe into your shell rc |
+| `print` | Prints the raw cookie string — copy/paste as needed |
+
+**Limitations:**
+- D2L session cookies expire in ~1 hour. Re-run `record-auth` when auth tools start returning 401.
+- Cookies are tied to the IP/browser that created them on some tenants — VPN changes may invalidate them early.
+- There is no automated re-auth path for `session_cookie` — the MCP server cannot pop a browser without user interaction.
+
+**When to use `record-auth` vs. `browser` strategy:**
+
+| Situation | Recommended approach |
+|---|---|
+| TOTP authenticator app (scriptable) | `browser` strategy with `mfa.strategy: totp` |
+| Duo Push notifications | `browser` strategy with `mfa.strategy: duo_push` |
+| Microsoft Authenticator number-match | `record-auth` |
+| FIDO2 / Yubikey / biometric | `record-auth` |
+| Any MFA that requires physical interaction | `record-auth` |
+
+---
+
 ## MFA strategies
 
 Configured under `auth.<strategy>.mfa`:

@@ -123,6 +123,10 @@ Before tagging, verify these are all consistent:
 - [ ] All test snapshots are up to date (`npx vitest run --update` if any are stale)
 - [ ] No `Intl`-dependent snapshot tests (use `toContain` instead — they break cross-platform)
 - [ ] No hardcoded version strings in docs (should reference `package.json` dynamically or be updated here)
+- [ ] `docs/architecture.md` CLI commands section reflects any new CLI subcommands added this release
+- [ ] `docs/tools.md` reflects any new or modified tool args (especially write tools)
+- [ ] `README.md` CLI reference block lists all current subcommands (setup, init, serve, ui, auth, record-auth, doctor, upgrade, profile, config, cache)
+- [ ] `AGENTS.md` "Where to look for…" table updated if new top-level docs added
 
 ---
 

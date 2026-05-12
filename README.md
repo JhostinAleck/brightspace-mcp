@@ -471,6 +471,7 @@ npx brightspace-mcp@latest config validate            Validate config schema wit
 npx brightspace-mcp@latest config set <path> <value>  Edit a nested config value
 npx brightspace-mcp@latest cache clear                Clear memory + file/Redis cache
 npx brightspace-mcp@latest cache clear --context <n>  Clear a specific cache context
+npx brightspace-mcp@latest upgrade                    Upgrade brightspace-mcp to the latest version
 ```
 
 ---

@@ -39,7 +39,7 @@ Open Brightspace in a browser. The URL bar shows something like:
 
 ## Step 3 — Choose your auth strategy
 
-Three setup paths:
+Four setup paths (use `init` from Step 0 if you're in CI/scripts with no TTY):
 
 ### A. Interactive wizard (typed credentials)
 

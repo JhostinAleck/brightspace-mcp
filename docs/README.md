@@ -10,7 +10,7 @@ Detailed guides for `brightspace-mcp`. The top-level [`README.md`](../README.md)
 |---|---|
 | Get up and running | [setup-guide.md](./setup-guide.md) |
 | Set up non-interactively (CI / DevContainers) | [setup-guide.md §0](./setup-guide.md#step-0-optional-non-interactive-setup-for-ciscripts) |
-| Capture cookies from a manual login (FIDO2 / biometric / push) | [setup-guide.md §3 option B](./setup-guide.md#b-recorder-you-log-in-manually-we-steal-the-cookie) |
+| Capture cookies from a manual login (FIDO2 / biometric / push) | [auth-strategies.md §record-auth](./auth-strategies.md#record-auth--when-scripted-strategies-cant-work) |
 | Pick the right auth strategy | [auth-strategies.md](./auth-strategies.md) |
 | Use a known config for my school | [presets.md](./presets.md) |
 | Configure timezone and display language | [setup-guide.md §Output](./setup-guide.md#output-timezone-and-language) |
@@ -28,7 +28,7 @@ Detailed guides for `brightspace-mcp`. The top-level [`README.md`](../README.md)
 
 **Setup & operations:**
 - [setup-guide.md](./setup-guide.md) — first-time setup walkthrough
-- [auth-strategies.md](./auth-strategies.md) — choose api_token / browser / oauth / session_cookie
+- [auth-strategies.md](./auth-strategies.md) — choose api_token / browser / headless / oauth / session_cookie / record-auth
 - [presets.md](./presets.md) — known-good configurations for common tenants
 - [clients.md](./clients.md) — wire the server into MCP-capable clients
 
