@@ -222,9 +222,9 @@ node -e "console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)"
 
 Set it in `~/.brightspace-mcp/config.yaml` under `output.tz`.
 
-### Web UI fails to start (`ui failed: ...`)
+### TUI fails to start (`tui failed: ...`)
 
 Common causes:
-- Port 9876 already in use → add `--port 9877`
 - Config not found → run `brightspace-mcp setup` or `brightspace-mcp init` first
 - Auth expired → run `brightspace-mcp auth` to re-authenticate
+- Terminal too small → the TUI needs at least 80×24; resize your terminal window

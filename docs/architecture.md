@@ -94,7 +94,7 @@ Run `npm run check` before pushing. Coverage threshold is 85% statements.
 | ZIP/DOCX/XLSX text extraction | `src/shared-kernel/zip/extractZipEntry.ts` |
 | Path expansion (`~/`, `%VAR%`, absolute) | `src/mcp/tools/get-topic-file.tool.ts` (helper) |
 | Locale, timezone, markdown formatting | `src/shared-kernel/output/` |
-| Web dashboard (Hono HTTP server + Alpine.js SPA) | `src/cli/commands/ui.ts` + `src/ui/` |
+| TUI dashboard (Ink + React full-screen terminal app) | `src/cli/commands/tui.ts` + `src/cli/commands/tui/` |
 
 ## CLI commands
 
@@ -103,7 +103,7 @@ Run `npm run check` before pushing. Coverage threshold is 85% statements.
 - `serve` — start the MCP stdio server
 - `setup` — interactive YAML wizard (displays in system language)
 - `init` — non-interactive config writer (CI/scripts, no TTY required); supports `--preset microsoft`
-- `ui` — local web dashboard at `http://localhost:9876` (Hono HTTP server, 10 pages, dark/light mode)
+- `tui` — full-screen terminal dashboard (Ink + React; 6 tabs: Inicio, Cursos, Calendario, Config, Caché, Logs)
 - `auth` — manual re-auth, useful when sessions expire
 - `record-auth` — opens a real browser, you log in manually, cookies captured into `session_cookie` strategy
 - `doctor` — end-to-end smoke test: config → auth → API → `list_my_courses`

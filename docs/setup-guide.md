@@ -188,11 +188,10 @@ If `doctor` is green, you're done. Move on to [clients.md](./clients.md).
 
 ## Web UI dashboard
 
-Once configured, start the visual dashboard:
+Once configured, launch the terminal dashboard:
 
 ```bash
-npx brightspace-mcp@latest ui          # opens at http://localhost:9876
-npx brightspace-mcp@latest ui --open   # auto-opens your browser
+npx brightspace-mcp@latest tui         # full-screen terminal dashboard
 ```
 
-The dashboard shows auth status, upcoming due dates, grades, announcements, and lets you edit config without touching YAML. It also provides cache management, audit logs, and diagnostics — all in one place.
+The dashboard shows upcoming due dates, grades, announcements, and calendar events across all your active courses. Use the Config tab to edit your profile — either field-by-field with guided dropdowns or directly in your `$EDITOR`. Cache stats, audit logs, and diagnostics are also available.

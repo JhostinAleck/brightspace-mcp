@@ -63,7 +63,7 @@ For AI assistants and contributors, [`AGENTS.md`](./AGENTS.md) is a one-page map
 - [Available tools](#available-tools)
 - [MCP Resources](#mcp-resources)
 - [MCP Prompts](#mcp-prompts)
-- [Web UI dashboard](#web-ui-dashboard)
+- [TUI dashboard](#tui-dashboard)
 - [Register with an MCP client](#register-with-an-mcp-client)
 - [CLI reference](#cli-reference)
 - [Docker](#docker)
@@ -418,15 +418,25 @@ Four pre-built prompt templates visible in your MCP client's prompt picker:
 
 ---
 
-## Web UI dashboard
+## TUI dashboard
 
 ```bash
-brightspace-mcp ui             # open at http://localhost:9876
-brightspace-mcp ui --open      # open browser automatically
-brightspace-mcp ui --port 8080 # custom port
+brightspace-mcp tui            # launch full-screen terminal dashboard
+brightspace-mcp tui --profile work  # use a specific profile
 ```
 
-Provides: auth status, upcoming due dates, grades, announcements, config editor (form + YAML), cache stats, audit logs, diagnostics. Dark/light mode, tooltips on all fields.
+Full-screen interactive terminal UI (Ink + React). Six tabs navigated with `Tab` / `→` / `←`:
+
+| Tab | Contents |
+|-----|----------|
+| **Inicio** | 3-column dashboard: upcoming assignments, 7-day calendar agenda, recent announcements |
+| **Cursos** | Live-search course list → drill into a course → sub-tabs Tareas / Notas / Anuncios |
+| **Calendario** | 30-day event agenda across all active courses |
+| **Config** | Profile summary, field-by-field form editor (dropdowns from schema) or `$EDITOR` |
+| **Caché** | Hit rate, miss count, clear button |
+| **Logs** | Audit log (last 50 entries, `/` to filter by tool name) |
+
+Press `Ctrl+C` to exit.
 
 ---
 
@@ -459,7 +469,7 @@ npx brightspace-mcp@latest setup                      Interactive first-time set
 npx brightspace-mcp@latest init [flags]               Non-interactive config writer (CI/scripts, no TTY)
 npx brightspace-mcp@latest serve                      Start the MCP server (stdio transport)
 npx brightspace-mcp@latest serve --enable-writes      Start with write tools enabled
-npx brightspace-mcp@latest ui [--port 9876] [--open]  Local web dashboard at http://localhost:9876
+npx brightspace-mcp@latest tui                        Full-screen terminal dashboard (Ink TUI)
 npx brightspace-mcp@latest auth                       Re-authenticate and test the config
 npx brightspace-mcp@latest record-auth                Open browser for manual login, capture session cookies
 npx brightspace-mcp@latest doctor                     End-to-end smoke test: config → auth → API → list_my_courses

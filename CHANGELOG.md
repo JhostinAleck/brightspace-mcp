@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `brightspace-mcp tui` — full-screen terminal dashboard (Ink 7 + React 19) replacing the broken web UI. Six tabs: Inicio (upcoming assignments, 7-day calendar, recent announcements), Cursos (live search + drill-down with Tareas/Notas/Anuncios sub-tabs), Calendario (30-day agenda), Config (form editor with Zod-derived dropdowns + `$EDITOR` flow), Caché, Logs.
+
+### Changed
+- Config form dropdowns (`strategy`, `mfa_strategy`, `locale`, `format`) are derived at runtime from Zod schemas — no hardcoded option lists.
+
+### Removed
+- `brightspace-mcp ui` command and the Hono + Alpine.js web dashboard. Replaced by `brightspace-mcp tui`.
+
 ## [1.1.0] - 2026-05-12
 
 ### Added
