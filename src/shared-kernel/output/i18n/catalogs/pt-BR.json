@@ -192,7 +192,12 @@
       "empty_upcoming": "nada em 7 dias",
       "empty_events": "sem eventos",
       "empty_ann": "sem anúncios",
-      "loading": "Carregando painel…"
+      "loading": "Carregando painel…",
+      "status_header": "STATUS",
+      "connected": "✓ Conectado",
+      "disconnected": "✗ Sem autenticação",
+      "active_courses": "{count} cursos ativos",
+      "cal_assignment": "entrega"
     },
     "cursos": {
       "loading": "Carregando cursos…",

@@ -7,13 +7,13 @@ import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 import { getUpcomingDueDates } from '@/contexts/assignments/application/getUpcomingDueDates.js';
 import type { Assignment } from '@/contexts/assignments/domain/Assignment.js';
-import type { CalendarEvent } from '@/contexts/calendar/domain/CalendarEvent.js';
 import type { Announcement } from '@/contexts/communications/domain/Announcement.js';
 
 interface InicioData {
   upcoming: Assignment[];
-  events: CalendarEvent[];
   announcements: Announcement[];
+  activeCount: number;
+  authOk: boolean;
 }
 
 function formatDate(d: Date, locale: string): string {
@@ -23,8 +23,7 @@ function formatDate(d: Date, locale: string): string {
 function assignmentColor(a: Assignment): string {
   const due = a.dueDate.toDate();
   if (!due || a.hasSubmission) return 'green';
-  const now = Date.now();
-  const diff = due.getTime() - now;
+  const diff = due.getTime() - Date.now();
   if (diff < 0) return 'red';
   if (diff < 2 * 24 * 60 * 60 * 1000) return 'red';
   if (diff < 7 * 24 * 60 * 60 * 1000) return 'yellow';
@@ -36,8 +35,15 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
   const locale = deps.output.locale;
 
   const fetcher = useCallback(async (): Promise<InicioData> => {
-    const allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
-    // Cap at 15 most recent — avoids fan-out overload with 65+ courses
+    let authOk = true;
+    let allCourses: Awaited<ReturnType<typeof deps.courseRepo.findMyCourses>> = [];
+    try {
+      allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
+    } catch {
+      authOk = false;
+    }
+
+    const activeCount = allCourses.length;
     const courses = allCourses
       .sort((a, b) => (b.startDate?.getTime() ?? 0) - (a.startDate?.getTime() ?? 0))
       .slice(0, 15);
@@ -45,33 +51,26 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
     const now = new Date();
     const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    const [upcoming, eventArrays, annArrays] = await Promise.all([
-      getUpcomingDueDates({ repo: deps.assignmentRepo, courseIds, from: now, to: sevenDays }),
-      Promise.all(
-        courses.map((c) =>
-          deps.calendarRepo
-            .findEvents(OrgUnitId.of(CourseId.toNumber(c.id)), now, sevenDays)
-            .catch(() => []),
-        ),
-      ),
-      Promise.all(
-        courses.map((c) =>
-          deps.communicationsRepo
-            .findAnnouncements(OrgUnitId.of(CourseId.toNumber(c.id)))
-            .catch(() => []),
-        ),
-      ),
+    const [upcoming, annArrays] = await Promise.all([
+      authOk
+        ? getUpcomingDueDates({ repo: deps.assignmentRepo, courseIds, from: now, to: sevenDays })
+        : Promise.resolve([]),
+      authOk
+        ? Promise.all(
+            courses.map((c) =>
+              deps.communicationsRepo
+                .findAnnouncements(OrgUnitId.of(CourseId.toNumber(c.id)))
+                .catch(() => []),
+            ),
+          )
+        : Promise.resolve([]),
     ]);
 
-    const events = eventArrays
-      .flat()
-      .sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
-    const announcements = annArrays
-      .flat()
+    const announcements = (Array.isArray(annArrays[0]) ? annArrays.flat() : [])
       .sort((a, b) => b.postedAt.getTime() - a.postedAt.getTime())
       .slice(0, 5);
 
-    return { upcoming, events, announcements };
+    return { upcoming, announcements, activeCount, authOk };
   }, [deps]);
 
   const { data, loading, error, reload } = useAsyncData(fetcher);
@@ -84,7 +83,7 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
   if (error) return <Box padding={1}><Text color="red">✗ {error}</Text><Text color="gray"> {t('tui.common.retry')}</Text></Box>;
   if (!data) return null;
 
-  const { upcoming, events, announcements } = data;
+  const { upcoming, announcements, activeCount, authOk } = data;
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -106,16 +105,22 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
           })}
         </Box>
 
-        {/* Column 2: Calendar agenda next 7 days */}
+        {/* Column 2: Auth / connection status */}
         <Box flexDirection="column" flexBasis="33%">
-          <Text bold color="blueBright">{t('tui.inicio.agenda_header')}</Text>
-          {events.length === 0 && <Text color="gray">  {t('tui.inicio.empty_events')}</Text>}
-          {events.slice(0, 8).map((e) => (
-            <Text key={e.id}>
-              <Text color="gray">{formatDate(e.startAt, locale)} </Text>
-              {e.title.slice(0, 28)}
+          <Text bold color="blueBright">{t('tui.inicio.status_header')}</Text>
+          <Text color={authOk ? 'green' : 'red'}>
+            {authOk ? t('tui.inicio.connected') : t('tui.inicio.disconnected')}
+          </Text>
+          {authOk && (
+            <Text color="gray">
+              {t('tui.inicio.active_courses', { count: activeCount })}
             </Text>
-          ))}
+          )}
+          <Box marginTop={1} flexDirection="column">
+            <Text color="gray">perfil: <Text color="white">{deps.profile}</Text></Text>
+            <Text color="gray">locale: <Text color="white">{locale}</Text></Text>
+            <Text color="gray">tz:     <Text color="white">{deps.output.tz}</Text></Text>
+          </Box>
         </Box>
 
         {/* Column 3: Recent announcements */}

@@ -192,7 +192,12 @@
       "empty_upcoming": "nada en 7 días",
       "empty_events": "sin eventos",
       "empty_ann": "sin anuncios",
-      "loading": "Cargando dashboard…"
+      "loading": "Cargando dashboard…",
+      "status_header": "ESTADO",
+      "connected": "✓ Conectado",
+      "disconnected": "✗ Sin autenticación",
+      "active_courses": "{count} cursos activos",
+      "cal_assignment": "entrega"
     },
     "cursos": {
       "loading": "Cargando cursos…",

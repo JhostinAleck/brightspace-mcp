@@ -192,7 +192,12 @@
       "empty_upcoming": "rien dans 7 jours",
       "empty_events": "aucun événement",
       "empty_ann": "aucune annonce",
-      "loading": "Chargement du tableau de bord…"
+      "loading": "Chargement du tableau de bord…",
+      "status_header": "STATUT",
+      "connected": "✓ Connecté",
+      "disconnected": "✗ Non authentifié",
+      "active_courses": "{count} cours actifs",
+      "cal_assignment": "remise"
     },
     "cursos": {
       "loading": "Chargement des cours…",

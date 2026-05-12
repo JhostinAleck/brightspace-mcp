@@ -192,7 +192,12 @@
       "empty_upcoming": "nothing due in 7 days",
       "empty_events": "no events",
       "empty_ann": "no announcements",
-      "loading": "Loading dashboard…"
+      "loading": "Loading dashboard…",
+      "status_header": "STATUS",
+      "connected": "✓ Connected",
+      "disconnected": "✗ Not authenticated",
+      "active_courses": "{count} active courses",
+      "cal_assignment": "due"
     },
     "cursos": {
       "loading": "Loading courses…",
