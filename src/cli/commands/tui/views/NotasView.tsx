@@ -22,7 +22,7 @@ export function NotasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tui
   useInput((input, key) => { if (key.ctrl && input === 'r') reload(); });
 
   if (loading) return <Box><Spinner label={t('tui.notas.loading')} /></Box>;
-  if (error) return <Box><Text color="red">✗ {error}</Text></Box>;
+  if (error) return <Box flexDirection="column"><Text color="red">✗ {error}</Text><Text color="gray">{t('tui.common.retry')}</Text></Box>;
   if (!data) return null;
 
   const graded = data.filter((g) => g.percent !== null);

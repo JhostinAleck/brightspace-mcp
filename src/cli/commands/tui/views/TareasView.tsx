@@ -34,7 +34,7 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
   });
 
   if (loading) return <Box><Spinner label={t('tui.tareas.loading')} /></Box>;
-  if (error) return <Box><Text color="red">✗ {error}</Text></Box>;
+  if (error) return <Box flexDirection="column"><Text color="red">✗ {error}</Text><Text color="gray">{t('tui.common.retry')}</Text></Box>;
   if (!data) return null;
 
   const filtered = data.filter((a) => {
