@@ -1,6 +1,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { TuiDeps } from '../types.js';
-export function CalendarioView({ deps: _ }: { deps: TuiDeps }) {
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function CalendarioView(_: { deps: TuiDeps }) {
   return <Box><Text>Calendario — en construcción</Text></Box>;
 }

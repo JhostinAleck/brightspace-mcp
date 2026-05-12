@@ -1,6 +1,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { TuiDeps } from '../types.js';
-export function LogsView({ deps: _ }: { deps: TuiDeps }) {
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function LogsView(_: { deps: TuiDeps }) {
   return <Box><Text>Logs — en construcción</Text></Box>;
 }

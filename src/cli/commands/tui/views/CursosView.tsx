@@ -1,6 +1,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { TuiDeps } from '../types.js';
-export function CursosView({ deps: _ }: { deps: TuiDeps }) {
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function CursosView(_: { deps: TuiDeps }) {
   return <Box><Text>Cursos — en construcción</Text></Box>;
 }
