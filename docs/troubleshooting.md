@@ -109,7 +109,7 @@ Cache scopes: `all`, `http`, `courses`, `grades`, `assignments`, `content`, `com
 
 **Cause:** Your Brightspace tenant has disabled student-side dropbox submission via the Valence API. The endpoint exists and the GET works (returns the empty submission list), but POST is forbidden by tenant policy.
 
-**Diagnosis:** GET against `/d2l/api/le/{ver}/{ou}/dropbox/folders/{fid}/submissions/mysubmissions/` returns `200 []`, but POST returns `403 {"Errors":[{"Message":"Forbidden"}]}` even with the correct XSRF token. This holds inside an already-authenticated browser session, confirming it's tenant policy, not auth.
+**Diagnosis:** GET against `/d2l/api/le/...` returns `200 []`, but POST returns `403 Forbidden` even with the correct XSRF token. This holds inside an already-authenticated browser session, confirming it's tenant policy, not auth.
 
 **Fix:** Nothing extra to configure. When the API POST returns 403/404, `submit_assignment` **automatically retries via Playwright**, scripting the actual web upload form headlessly. The fallback verifies the submission landed by re-checking the Valence read API.
 
@@ -197,10 +197,10 @@ logging:
   level: debug   # error | warn | info | debug
 ```
 
-### "Why do I see `{{some.key}}` in tool output?"
+### Tool output shows raw translation keys (e.g. `courses.empty`)
 
-That marker means the translator couldn't find a key in the active locale
-**or** in the `en-US` fallback. Likely causes:
+That means the translator couldn't find a key in the active locale
+**or** in the `en-US` fallback. Keys appear as raw dotted names (e.g. `courses.empty`) when missing. Likely causes:
 1. A key was added to `en-US.json` but not to the active locale's catalog
    and is not in `docs/i18n-fallback-allowed.json`.
 2. A typo in the key passed to `t(...)` inside a handler.
