@@ -88,16 +88,62 @@ function authPage() {
 
 function coursesPage() {
   return {
-    courses: [], loading: true, activeOnly: true,
+    _all: [],
+    loading: true,
+    search: '',
+    activeOnly: false,
+    sortDesc: true,   // most recent first (by startDate)
+    page: 1,
+    perPage: 15,
+
+    get filtered() {
+      let list = this._all;
+      if (this.activeOnly) list = list.filter(c => c.active);
+      if (this.search.trim()) {
+        const q = this.search.toLowerCase();
+        list = list.filter(c =>
+          c.name.toLowerCase().includes(q) ||
+          c.code.toLowerCase().includes(q) ||
+          (c.startDate || '').toLowerCase().includes(q)
+        );
+      }
+      list = [...list].sort((a, b) => {
+        const ta = a.startDateIso ? new Date(a.startDateIso).getTime() : 0;
+        const tb = b.startDateIso ? new Date(b.startDateIso).getTime() : 0;
+        return this.sortDesc ? tb - ta : ta - tb;
+      });
+      return list;
+    },
+
+    get paginated() {
+      const start = (this.page - 1) * this.perPage;
+      return this.filtered.slice(start, start + this.perPage);
+    },
+
+    get totalPages() {
+      return Math.max(1, Math.ceil(this.filtered.length / this.perPage));
+    },
+
+    get pageNumbers() {
+      const total = this.totalPages;
+      const cur = this.page;
+      const pages = [];
+      for (let i = Math.max(1, cur - 2); i <= Math.min(total, cur + 2); i++) pages.push(i);
+      return pages;
+    },
+
+    prevPage() { if (this.page > 1) this.page--; },
+    nextPage() { if (this.page < this.totalPages) this.page++; },
+    goPage(n) { this.page = n; },
+
     async init() {
       this.loading = true;
+      this.page = 1;
       try {
         const r = await fetch('/api/courses');
         const d = await r.json();
-        this.courses = this.activeOnly
-          ? (d.courses || []).filter(c => c.active)
-          : (d.courses || []);
-      } catch { this.courses = []; }
+        this._all = d.courses || [];
+      } catch { this._all = []; }
       this.loading = false;
     },
   };

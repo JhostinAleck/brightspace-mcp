@@ -79,7 +79,17 @@ export function createApp(deps: UiDeps): Hono {
   // ── GET /api/courses ────────────────────────────────────────────────────
   app.get('/api/courses', async (c) => {
     const courses = await deps.courseRepo.findMyCourses();
-    return c.json({ courses: courses.map((co) => ({ id: co.id, name: co.name, code: co.code, active: co.active })) });
+    return c.json({
+      courses: courses.map((co) => ({
+        id: co.id,
+        name: co.name,
+        code: co.code,
+        active: co.active,
+        startDate: co.startDate ? deps.output.formatDate(co.startDate) : null,
+        endDate: co.endDate ? deps.output.formatDate(co.endDate) : null,
+        startDateIso: co.startDate?.toISOString() ?? null,
+      })),
+    });
   });
 
   // ── GET /api/upcoming ───────────────────────────────────────────────────

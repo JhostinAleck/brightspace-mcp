@@ -224,26 +224,111 @@ tailwind.config = {
 
     <!-- COURSES PAGE -->
     <div x-show="page==='courses'" x-data="coursesPage()" x-init="init()" data-page="courses">
-      <div class="p-6">
+      <div class="p-6 space-y-4">
+        <!-- Header + controls -->
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-          <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <h2 class="text-sm font-semibold dark:text-white">Todos los cursos</h2>
-            <label class="flex items-center gap-2 text-xs text-gray-500 cursor-pointer"><input type="checkbox" x-model="activeOnly" @change="init()"> Solo activos</label>
+          <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-3">
+            <h2 class="text-sm font-semibold dark:text-white flex-1">
+              Cursos
+              <span class="ml-2 text-xs font-normal text-gray-400" x-show="!loading" x-text="'(' + filtered.length + ' de ' + _all.length + ')'"></span>
+            </h2>
+            <!-- Search -->
+            <div class="relative">
+              <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <input type="text" x-model="search" @input="page=1" placeholder="Buscar curso o semestre..."
+                class="pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:border-indigo-400 w-52 transition-colors">
+            </div>
+            <!-- Solo activos toggle -->
+            <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+              <input type="checkbox" x-model="activeOnly" @change="page=1" class="rounded">
+              Solo activos
+            </label>
+            <!-- Sort -->
+            <button @click="sortDesc=!sortDesc; page=1"
+              class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:border-indigo-400 transition-colors"
+              :title="sortDesc ? 'Más recientes primero' : 'Más antiguos primero'">
+              <span x-text="sortDesc ? '↓ Recientes' : '↑ Antiguos'"></span>
+            </button>
           </div>
-          <div x-show="loading" class="px-5 py-4 text-xs text-gray-400">Cargando...</div>
-          <table class="w-full" x-show="!loading && courses.length>0">
-            <thead><tr class="border-b border-gray-100 dark:border-gray-800"><th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Nombre</th><th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Código</th><th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Estado</th></tr></thead>
+
+          <!-- Loading -->
+          <div x-show="loading" class="px-5 py-8 flex items-center gap-2 text-gray-400 text-xs">
+            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 20 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.961 3 8.027l3-2.736z"></path></svg>
+            Cargando cursos...
+          </div>
+
+          <!-- Empty state -->
+          <div x-show="!loading && filtered.length===0" class="px-5 py-8 text-center text-xs text-gray-400">
+            <div class="text-2xl mb-2">🔍</div>
+            <span x-text="search ? 'Sin resultados para «' + search + '»' : 'Sin cursos.'"></span>
+          </div>
+
+          <!-- Table -->
+          <table class="w-full" x-show="!loading && filtered.length>0">
+            <thead>
+              <tr class="border-b border-gray-100 dark:border-gray-800">
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Nombre</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 hidden sm:table-cell">Código</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 cursor-pointer hover:text-indigo-500 transition-colors"
+                    @click="sortDesc=!sortDesc; page=1">
+                  Inicio
+                  <span class="ml-0.5" x-text="sortDesc ? '↓' : '↑'"></span>
+                </th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 hidden md:table-cell">Fin</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400">Estado</th>
+              </tr>
+            </thead>
             <tbody>
-              <template x-for="c in courses" :key="c.id">
-                <tr class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 last:border-0">
-                  <td class="px-5 py-3 text-sm dark:text-gray-200" x-text="c.name"></td>
-                  <td class="px-5 py-3 text-xs text-gray-500 font-mono" x-text="c.code"></td>
-                  <td class="px-5 py-3"><span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="c.active?'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400':'bg-gray-100 dark:bg-gray-800 text-gray-500'" x-text="c.active?'Activo':'Inactivo'"></span></td>
+              <template x-for="c in paginated" :key="c.id">
+                <tr class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 last:border-0 transition-colors">
+                  <td class="px-5 py-3">
+                    <div class="text-sm font-medium dark:text-gray-200" x-text="c.name"></div>
+                    <div class="text-xs text-gray-400 font-mono mt-0.5 sm:hidden" x-text="c.code"></div>
+                  </td>
+                  <td class="px-5 py-3 text-xs text-gray-400 font-mono hidden sm:table-cell" x-text="c.code"></td>
+                  <td class="px-5 py-3">
+                    <span x-show="c.startDate" class="text-xs text-indigo-600 dark:text-indigo-400 font-medium" x-text="c.startDate"></span>
+                    <span x-show="!c.startDate" class="text-xs text-gray-300">—</span>
+                  </td>
+                  <td class="px-5 py-3 text-xs text-gray-400 hidden md:table-cell">
+                    <span x-text="c.endDate || '—'"></span>
+                  </td>
+                  <td class="px-5 py-3">
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                      :class="c.active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
+                      x-text="c.active ? 'Activo' : 'Inactivo'"></span>
+                  </td>
                 </tr>
               </template>
             </tbody>
           </table>
-          <div x-show="!loading && courses.length===0" class="px-5 py-4 text-xs text-gray-400">Sin cursos.</div>
+
+          <!-- Pagination -->
+          <div x-show="!loading && totalPages > 1" class="px-5 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <span class="text-xs text-gray-400">
+              Página <span x-text="page"></span> de <span x-text="totalPages"></span>
+              · <span x-text="filtered.length"></span> cursos
+            </span>
+            <div class="flex items-center gap-1">
+              <button @click="prevPage()" :disabled="page===1"
+                class="px-2 py-1 text-xs rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                ‹
+              </button>
+              <template x-for="n in pageNumbers" :key="n">
+                <button @click="goPage(n)"
+                  class="px-2.5 py-1 text-xs rounded border transition-colors"
+                  :class="n===page
+                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-indigo-400'"
+                  x-text="n">
+                </button>
+              </template>
+              <button @click="nextPage()" :disabled="page===totalPages"
+                class="px-2 py-1 text-xs rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                ›
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
