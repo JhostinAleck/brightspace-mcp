@@ -21,7 +21,7 @@ export function CacheView({ deps }: { deps: TuiDeps }) {
 
   const { data, loading, reload } = useAsyncData(fetcher);
 
-  useInput(async (input) => {
+  useInput(async (input, key) => {
     if (key.ctrl && input === 'r') { reload(); setClearMsg(null); return; }
     if (input === 'c' && !clearing) {
       setClearing(true);
