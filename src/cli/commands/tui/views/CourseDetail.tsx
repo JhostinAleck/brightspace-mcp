@@ -31,6 +31,7 @@ export function CourseDetail({ courseId, courseName, deps, onBack }: Props) {
     }
     if (key.leftArrow || (key.shift && key.tab)) {
       setSubTab((t) => SUB_TABS[(SUB_TABS.indexOf(t) - 1 + SUB_TABS.length) % SUB_TABS.length] as SubTab);
+      return;
     }
   });
 
