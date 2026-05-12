@@ -2,9 +2,16 @@
   "courses": {
     "header": "Cursos",
     "empty": "Você não tem cursos.",
-    "count": { "one": "Você tem {count} curso:", "other": "Você tem {count} cursos:" },
+    "count": {
+      "one": "Você tem {count} curso:",
+      "other": "Você tem {count} cursos:"
+    },
     "inactive": "inativo",
-    "table_headers": { "name": "Curso", "code": "Código", "status": "Status" }
+    "table_headers": {
+      "name": "Curso",
+      "code": "Código",
+      "status": "Status"
+    }
   },
   "assignments": {
     "header": "Tarefas",
@@ -19,13 +26,23 @@
       "one": "Entregas: {count}, última em {when}",
       "other": "Entregas: {count}, última em {when}"
     },
-    "table_headers": { "name": "Tarefa", "course": "Curso", "due": "Entrega", "status": "Status" }
+    "table_headers": {
+      "name": "Tarefa",
+      "course": "Curso",
+      "due": "Entrega",
+      "status": "Status"
+    }
   },
   "grades": {
     "header": "Notas",
     "empty": "Ainda não há notas.",
     "ungraded": "sem nota",
-    "table_headers": { "item": "Item", "score": "Pontuação", "percent": "%", "letter": "Letra" }
+    "table_headers": {
+      "item": "Item",
+      "score": "Pontuação",
+      "percent": "%",
+      "letter": "Letra"
+    }
   },
   "feedback": {
     "header": "Feedback",
@@ -35,7 +52,10 @@
   "roster": {
     "header": "Lista de alunos",
     "empty": "Nenhum colega encontrado.",
-    "count": { "one": "{count} colega", "other": "{count} colegas" }
+    "count": {
+      "one": "{count} colega",
+      "other": "{count} colegas"
+    }
   },
   "emails": {
     "header": "E-mails",
@@ -53,13 +73,20 @@
   "announcements": {
     "header": "Avisos",
     "empty": "Sem avisos.",
-    "table_headers": { "date": "Data", "title": "Título", "author": "Autor" }
+    "table_headers": {
+      "date": "Data",
+      "title": "Título",
+      "author": "Autor"
+    }
   },
   "discussions": {
     "header": "Fóruns de discussão",
     "empty": "Sem fóruns de discussão.",
     "no_topics": "(sem tópicos)",
-    "post_count": { "one": "{count} publicação", "other": "{count} publicações" },
+    "post_count": {
+      "one": "{count} publicação",
+      "other": "{count} publicações"
+    },
     "last_post": "última em {when}"
   },
   "calendar": {
@@ -134,18 +161,96 @@
     "next_step": "Configuração concluída. Teste com: npx brightspace-mcp serve (ou abra seu cliente MCP)"
   },
   "tui": {
-    "tabs": { "inicio": "Início", "cursos": "Cursos", "calendario": "Calendário", "config": "Config", "cache": "Cache", "logs": "Logs" },
-    "subtabs": { "tareas": "Tarefas", "notas": "Notas", "anuncios": "Anúncios" },
-    "status": { "profile": "perfil:", "hint": "Tab/→← navegar  Ctrl+R atualizar  Ctrl+C sair" },
-    "common": { "retry": "(Ctrl+R para tentar novamente)", "inactive": "(inativo)", "more": "… e {count} mais", "back": "Backspace/b: voltar", "no_data": "—" },
-    "inicio": { "upcoming_header": "PRÓXIMAS ENTREGAS", "agenda_header": "PRÓXIMOS 7 DIAS", "ann_header": "ANÚNCIOS RECENTES", "empty_upcoming": "nada em 7 dias", "empty_events": "sem eventos", "empty_ann": "sem anúncios", "loading": "Carregando painel…" },
-    "cursos": { "loading": "Carregando cursos…", "hint": "↑↓ navegar · Enter abrir · Esc limpar · Ctrl+R atualizar" },
-    "tareas": { "pending": "Pendentes", "submitted": "Enviadas", "all": "Todas", "empty": "Sem tarefas nesta categoria", "loading": "Carregando tarefas…", "hint": "1/2/3: filtrar · Ctrl+R: atualizar" },
-    "notas": { "average": "Média:", "empty": "Sem notas registradas", "loading": "Carregando notas…", "hint": "Ctrl+R: atualizar" },
-    "ann_curso": { "empty": "Sem anúncios", "loading": "Carregando anúncios…", "hint": "Ctrl+R: atualizar" },
-    "calendario": { "title": "Próximos 30 dias", "empty": "Sem eventos próximos", "loading": "Carregando calendário…", "hint": "Ctrl+R: atualizar" },
-    "config": { "edit_form": "Editar com formulário (e)", "edit_editor": "Editar no $EDITOR (E)", "saved": "✓ Config salvo — reinicie o TUI para aplicar as mudanças.", "editor_saved": "✓ Config válido — reinicie o TUI para aplicar as mudanças.", "back": "Enter para voltar", "form_hint": "Tab: próximo campo · Ctrl+S: salvar · Esc: cancelar" },
-    "cache": { "title": "Estatísticas de cache", "hit_rate": "Hit rate:", "hits": "Hits:", "misses": "Misses:", "total": "Total:", "hint": "c: limpar cache · Ctrl+R: atualizar", "loading": "Carregando estatísticas…" },
-    "logs": { "title": "Audit Log", "subtitle": "(últimas 50 entradas)", "empty": "Sem entradas ainda", "no_results": "Sem resultados para o filtro", "hint": "/: filtrar · Ctrl+R: atualizar", "loading": "Carregando logs…" }
+    "tabs": {
+      "inicio": "Início",
+      "cursos": "Cursos",
+      "calendario": "Calendário",
+      "config": "Config",
+      "cache": "Cache",
+      "logs": "Logs"
+    },
+    "subtabs": {
+      "tareas": "Tarefas",
+      "notas": "Notas",
+      "anuncios": "Anúncios"
+    },
+    "status": {
+      "profile": "perfil:",
+      "hint": "Tab/→← navegar  Ctrl+R atualizar  Ctrl+C sair"
+    },
+    "common": {
+      "retry": "(Ctrl+R para tentar novamente)",
+      "inactive": "(inativo)",
+      "more": "… e {count} mais",
+      "back": "Backspace/b: voltar",
+      "no_data": "—"
+    },
+    "inicio": {
+      "upcoming_header": "PRÓXIMAS ENTREGAS",
+      "agenda_header": "PRÓXIMOS 7 DIAS",
+      "ann_header": "ANÚNCIOS RECENTES",
+      "empty_upcoming": "nada em 7 dias",
+      "empty_events": "sem eventos",
+      "empty_ann": "sem anúncios",
+      "loading": "Carregando painel…"
+    },
+    "cursos": {
+      "loading": "Carregando cursos…",
+      "hint": "↑↓ navegar · Enter abrir · Esc limpar · Ctrl+R atualizar"
+    },
+    "tareas": {
+      "pending": "Pendentes",
+      "submitted": "Enviadas",
+      "all": "Todas",
+      "empty": "Sem tarefas nesta categoria",
+      "loading": "Carregando tarefas…",
+      "hint": "1/2/3: filtrar · Ctrl+R: atualizar",
+      "overdue": "vencida",
+      "tomorrow": "amanhã",
+      "no_date": "sem data",
+      "cleared": "✓ Cache limpo"
+    },
+    "notas": {
+      "average": "Média:",
+      "empty": "Sem notas registradas",
+      "loading": "Carregando notas…",
+      "hint": "Ctrl+R: atualizar"
+    },
+    "ann_curso": {
+      "empty": "Sem anúncios",
+      "loading": "Carregando anúncios…",
+      "hint": "Ctrl+R: atualizar"
+    },
+    "calendario": {
+      "title": "Próximos 30 dias",
+      "empty": "Sem eventos próximos",
+      "loading": "Carregando calendário…",
+      "hint": "Ctrl+R: atualizar"
+    },
+    "config": {
+      "edit_form": "Editar com formulário (e)",
+      "edit_editor": "Editar no $EDITOR (E)",
+      "saved": "✓ Config salvo — reinicie o TUI para aplicar as mudanças.",
+      "editor_saved": "✓ Config válido — reinicie o TUI para aplicar as mudanças.",
+      "back": "Enter para voltar",
+      "form_hint": "Tab: próximo campo · Ctrl+S: salvar · Esc: cancelar"
+    },
+    "cache": {
+      "title": "Estatísticas de cache",
+      "hit_rate": "Hit rate:",
+      "hits": "Hits:",
+      "misses": "Misses:",
+      "total": "Total:",
+      "hint": "c: limpar cache · Ctrl+R: atualizar",
+      "loading": "Carregando estatísticas…"
+    },
+    "logs": {
+      "title": "Audit Log",
+      "subtitle": "(últimas 50 entradas)",
+      "empty": "Sem entradas ainda",
+      "no_results": "Sem resultados para o filtro",
+      "hint": "/: filtrar · Ctrl+R: atualizar",
+      "loading": "Carregando logs…"
+    }
   }
 }

@@ -17,6 +17,7 @@ function stripHtml(html: string): string {
 
 export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: TuiDeps }) {
   const t = deps.output.t;
+  const locale = deps.output.locale;
   const fetcher = useCallback(
     () => deps.communicationsRepo.findAnnouncements(orgUnitId),
     [deps, orgUnitId],
@@ -40,7 +41,7 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
           <Box key={a.id} flexDirection="column" marginBottom={1}>
             <Text bold>{a.title}</Text>
             <Text color="gray">
-              {'  '}{a.postedAt.toLocaleDateString('es-419')}
+              {'  '}{a.postedAt.toLocaleDateString(locale)}
               {a.authorName ? ` · ${a.authorName}` : ''}
             </Text>
             {body && (

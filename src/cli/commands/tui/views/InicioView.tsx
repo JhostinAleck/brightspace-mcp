@@ -16,8 +16,8 @@ interface InicioData {
   announcements: Announcement[];
 }
 
-function formatDate(d: Date): string {
-  return d.toLocaleDateString('es-419', { weekday: 'short', month: 'short', day: 'numeric' });
+function formatDate(d: Date, locale: string): string {
+  return d.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 function assignmentColor(a: Assignment): string {
@@ -33,6 +33,7 @@ function assignmentColor(a: Assignment): string {
 
 export function InicioView({ deps }: { deps: TuiDeps }) {
   const t = deps.output.t;
+  const locale = deps.output.locale;
 
   const fetcher = useCallback(async (): Promise<InicioData> => {
     const allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
@@ -99,7 +100,7 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
             const prefix = a.hasSubmission ? '✓' : '!';
             return (
               <Text key={String(a.id)} color={color}>
-                {prefix} {a.name.slice(0, 28)}{due ? ` · ${formatDate(due)}` : ''}
+                {prefix} {a.name.slice(0, 28)}{due ? ` · ${formatDate(due, locale)}` : ''}
               </Text>
             );
           })}
@@ -111,7 +112,7 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
           {events.length === 0 && <Text color="gray">  {t('tui.inicio.empty_events')}</Text>}
           {events.slice(0, 8).map((e) => (
             <Text key={e.id}>
-              <Text color="gray">{formatDate(e.startAt)} </Text>
+              <Text color="gray">{formatDate(e.startAt, locale)} </Text>
               {e.title.slice(0, 28)}
             </Text>
           ))}
@@ -124,7 +125,7 @@ export function InicioView({ deps }: { deps: TuiDeps }) {
           {announcements.map((a) => (
             <Box key={a.id} flexDirection="column" marginBottom={1}>
               <Text>{a.title.slice(0, 32)}</Text>
-              <Text color="gray">  {formatDate(a.postedAt)}</Text>
+              <Text color="gray">  {formatDate(a.postedAt, locale)}</Text>
             </Box>
           ))}
         </Box>

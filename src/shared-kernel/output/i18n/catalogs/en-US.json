@@ -2,9 +2,16 @@
   "courses": {
     "header": "Courses",
     "empty": "You have no courses.",
-    "count": { "one": "You have {count} course:", "other": "You have {count} courses:" },
+    "count": {
+      "one": "You have {count} course:",
+      "other": "You have {count} courses:"
+    },
     "inactive": "inactive",
-    "table_headers": { "name": "Course", "code": "Code", "status": "Status" }
+    "table_headers": {
+      "name": "Course",
+      "code": "Code",
+      "status": "Status"
+    }
   },
   "assignments": {
     "header": "Assignments",
@@ -19,13 +26,23 @@
       "one": "Submissions: {count}, last at {when}",
       "other": "Submissions: {count}, last at {when}"
     },
-    "table_headers": { "name": "Assignment", "course": "Course", "due": "Due", "status": "Status" }
+    "table_headers": {
+      "name": "Assignment",
+      "course": "Course",
+      "due": "Due",
+      "status": "Status"
+    }
   },
   "grades": {
     "header": "Grades",
     "empty": "No grades posted yet.",
     "ungraded": "ungraded",
-    "table_headers": { "item": "Item", "score": "Score", "percent": "%", "letter": "Letter" }
+    "table_headers": {
+      "item": "Item",
+      "score": "Score",
+      "percent": "%",
+      "letter": "Letter"
+    }
   },
   "feedback": {
     "header": "Feedback",
@@ -35,7 +52,10 @@
   "roster": {
     "header": "Roster",
     "empty": "No classmates found.",
-    "count": { "one": "{count} classmate", "other": "{count} classmates" }
+    "count": {
+      "one": "{count} classmate",
+      "other": "{count} classmates"
+    }
   },
   "emails": {
     "header": "Emails",
@@ -53,13 +73,20 @@
   "announcements": {
     "header": "Announcements",
     "empty": "No announcements.",
-    "table_headers": { "date": "Date", "title": "Title", "author": "Author" }
+    "table_headers": {
+      "date": "Date",
+      "title": "Title",
+      "author": "Author"
+    }
   },
   "discussions": {
     "header": "Discussion forums",
     "empty": "No discussion forums.",
     "no_topics": "(no topics)",
-    "post_count": { "one": "{count} post", "other": "{count} posts" },
+    "post_count": {
+      "one": "{count} post",
+      "other": "{count} posts"
+    },
     "last_post": "last {when}"
   },
   "calendar": {
@@ -134,18 +161,96 @@
     "next_step": "Setup complete. Test with: npx brightspace-mcp serve (or launch your MCP client)"
   },
   "tui": {
-    "tabs": { "inicio": "Home", "cursos": "Courses", "calendario": "Calendar", "config": "Config", "cache": "Cache", "logs": "Logs" },
-    "subtabs": { "tareas": "Assignments", "notas": "Grades", "anuncios": "Announcements" },
-    "status": { "profile": "profile:", "hint": "Tab/→← navigate  Ctrl+R refresh  Ctrl+C quit" },
-    "common": { "retry": "(Ctrl+R to retry)", "inactive": "(inactive)", "more": "… and {count} more", "back": "Backspace/b: back", "no_data": "—" },
-    "inicio": { "upcoming_header": "UPCOMING", "agenda_header": "NEXT 7 DAYS", "ann_header": "RECENT ANNOUNCEMENTS", "empty_upcoming": "nothing due in 7 days", "empty_events": "no events", "empty_ann": "no announcements", "loading": "Loading dashboard…" },
-    "cursos": { "loading": "Loading courses…", "hint": "↑↓ navigate · Enter open · Esc clear · Ctrl+R refresh" },
-    "tareas": { "pending": "Pending", "submitted": "Submitted", "all": "All", "empty": "No assignments in this category", "loading": "Loading assignments…", "hint": "1/2/3: filter · Ctrl+R: refresh" },
-    "notas": { "average": "Average:", "empty": "No grades recorded", "loading": "Loading grades…", "hint": "Ctrl+R: refresh" },
-    "ann_curso": { "empty": "No announcements", "loading": "Loading announcements…", "hint": "Ctrl+R: refresh" },
-    "calendario": { "title": "Next 30 days", "empty": "No upcoming events", "loading": "Loading calendar…", "hint": "Ctrl+R: refresh" },
-    "config": { "edit_form": "Edit with form (e)", "edit_editor": "Edit in $EDITOR (E)", "saved": "✓ Config saved — restart TUI to apply changes.", "editor_saved": "✓ Valid config — restart TUI to apply changes.", "back": "Press Enter to go back", "form_hint": "Tab: next field · Ctrl+S: save · Esc: cancel" },
-    "cache": { "title": "Cache Statistics", "hit_rate": "Hit rate:", "hits": "Hits:", "misses": "Misses:", "total": "Total:", "hint": "c: clear cache · Ctrl+R: refresh", "loading": "Loading stats…" },
-    "logs": { "title": "Audit Log", "subtitle": "(last 50 entries)", "empty": "No entries yet", "no_results": "No results for filter", "hint": "/: filter · Ctrl+R: refresh", "loading": "Loading logs…" }
+    "tabs": {
+      "inicio": "Home",
+      "cursos": "Courses",
+      "calendario": "Calendar",
+      "config": "Config",
+      "cache": "Cache",
+      "logs": "Logs"
+    },
+    "subtabs": {
+      "tareas": "Assignments",
+      "notas": "Grades",
+      "anuncios": "Announcements"
+    },
+    "status": {
+      "profile": "profile:",
+      "hint": "Tab/→← navigate  Ctrl+R refresh  Ctrl+C quit"
+    },
+    "common": {
+      "retry": "(Ctrl+R to retry)",
+      "inactive": "(inactive)",
+      "more": "… and {count} more",
+      "back": "Backspace/b: back",
+      "no_data": "—"
+    },
+    "inicio": {
+      "upcoming_header": "UPCOMING",
+      "agenda_header": "NEXT 7 DAYS",
+      "ann_header": "RECENT ANNOUNCEMENTS",
+      "empty_upcoming": "nothing due in 7 days",
+      "empty_events": "no events",
+      "empty_ann": "no announcements",
+      "loading": "Loading dashboard…"
+    },
+    "cursos": {
+      "loading": "Loading courses…",
+      "hint": "↑↓ navigate · Enter open · Esc clear · Ctrl+R refresh"
+    },
+    "tareas": {
+      "pending": "Pending",
+      "submitted": "Submitted",
+      "all": "All",
+      "empty": "No assignments in this category",
+      "loading": "Loading assignments…",
+      "hint": "1/2/3: filter · Ctrl+R: refresh",
+      "overdue": "overdue",
+      "tomorrow": "tomorrow",
+      "no_date": "no date",
+      "cleared": "✓ Cache cleared"
+    },
+    "notas": {
+      "average": "Average:",
+      "empty": "No grades recorded",
+      "loading": "Loading grades…",
+      "hint": "Ctrl+R: refresh"
+    },
+    "ann_curso": {
+      "empty": "No announcements",
+      "loading": "Loading announcements…",
+      "hint": "Ctrl+R: refresh"
+    },
+    "calendario": {
+      "title": "Next 30 days",
+      "empty": "No upcoming events",
+      "loading": "Loading calendar…",
+      "hint": "Ctrl+R: refresh"
+    },
+    "config": {
+      "edit_form": "Edit with form (e)",
+      "edit_editor": "Edit in $EDITOR (E)",
+      "saved": "✓ Config saved — restart TUI to apply changes.",
+      "editor_saved": "✓ Valid config — restart TUI to apply changes.",
+      "back": "Press Enter to go back",
+      "form_hint": "Tab: next field · Ctrl+S: save · Esc: cancel"
+    },
+    "cache": {
+      "title": "Cache Statistics",
+      "hit_rate": "Hit rate:",
+      "hits": "Hits:",
+      "misses": "Misses:",
+      "total": "Total:",
+      "hint": "c: clear cache · Ctrl+R: refresh",
+      "loading": "Loading stats…"
+    },
+    "logs": {
+      "title": "Audit Log",
+      "subtitle": "(last 50 entries)",
+      "empty": "No entries yet",
+      "no_results": "No results for filter",
+      "hint": "/: filter · Ctrl+R: refresh",
+      "loading": "Loading logs…"
+    }
   }
 }

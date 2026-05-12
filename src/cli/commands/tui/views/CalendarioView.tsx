@@ -14,6 +14,7 @@ interface EventWithCourse {
 
 export function CalendarioView({ deps }: { deps: TuiDeps }) {
   const t = deps.output.t;
+  const locale = deps.output.locale;
 
   const fetcher = useCallback(async (): Promise<EventWithCourse[]> => {
     const allCourses = await deps.courseRepo.findMyCourses({ activeOnly: true });
@@ -53,7 +54,7 @@ export function CalendarioView({ deps }: { deps: TuiDeps }) {
       {data.map(({ event, courseName }) => (
         <Box key={event.id} marginBottom={1}>
           <Text color="gray">
-            {event.startAt.toLocaleDateString('es-419', { weekday: 'short', month: 'short', day: 'numeric' })}{' '}
+            {event.startAt.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}{' '}
           </Text>
           <Text>{event.title.slice(0, 36)}</Text>
           <Text color="gray"> · {courseName.slice(0, 24)}</Text>

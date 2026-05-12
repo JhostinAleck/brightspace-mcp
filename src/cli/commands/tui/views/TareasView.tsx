@@ -7,16 +7,17 @@ import { Spinner } from '../shared/Spinner.js';
 
 type Filter = 'pendientes' | 'enviadas' | 'todas';
 
-function formatDueDate(d: Date | null): string {
-  if (!d) return 'sin fecha';
+function formatDueDate(d: Date | null, locale: string, t: (k: string) => string): string {
+  if (!d) return t('tui.tareas.no_date');
   const diff = d.getTime() - Date.now();
-  if (diff < 0) return `vencida ${d.toLocaleDateString('es-419')}`;
-  if (diff < 2 * 24 * 60 * 60 * 1000) return `mañana ${d.toLocaleDateString('es-419')}`;
-  return d.toLocaleDateString('es-419', { weekday: 'short', month: 'short', day: 'numeric' });
+  if (diff < 0) return `${t('tui.tareas.overdue')} ${d.toLocaleDateString(locale)}`;
+  if (diff < 2 * 24 * 60 * 60 * 1000) return `${t('tui.tareas.tomorrow')} ${d.toLocaleDateString(locale)}`;
+  return d.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: TuiDeps }) {
   const t = deps.output.t;
+  const locale = deps.output.locale;
   const [filter, setFilter] = useState<Filter>('pendientes');
 
   const fetcher = useCallback(
@@ -72,7 +73,7 @@ export function TareasView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: Tu
             <Text color={color}>
               {a.hasSubmission ? '✓' : '!'} {a.name}
             </Text>
-            <Text color="gray">    {formatDueDate(due)}</Text>
+            <Text color="gray">    {formatDueDate(due, locale, t)}</Text>
           </Box>
         );
       })}

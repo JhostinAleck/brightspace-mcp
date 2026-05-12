@@ -28,7 +28,7 @@ export function CacheView({ deps }: { deps: TuiDeps }) {
       setClearing(true);
       try {
         if (deps.httpCache) await deps.httpCache.clearAll();
-        setClearMsg(`✓ Caché limpiado · ${new Date().toLocaleTimeString('es-419')}`);
+        setClearMsg(`${t('tui.tareas.cleared')} · ${new Date().toLocaleTimeString(deps.output.locale)}`);
         reload();
       } finally {
         setClearing(false);
