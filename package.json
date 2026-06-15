@@ -75,7 +75,7 @@
     "eslint": "^10.3.0",
     "mermaid": "^11.14.0",
     "nock": "^14.0.14",
-    "npm-run-all2": "^8.0.4",
+    "npm-run-all2": "^9.0.2",
     "prettier": "^3.0.0",
     "tsc-alias": "^1.8.17",
     "typescript": "^6.0.3",
