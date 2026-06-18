@@ -19,7 +19,7 @@ jobs:
       digest: ${{ steps.push.outputs.digest }}
       image: ${{ steps.image.outputs.image }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Compute lowercase image path
         id: image
