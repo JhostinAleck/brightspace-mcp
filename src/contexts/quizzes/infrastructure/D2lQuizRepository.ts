@@ -4,10 +4,37 @@ import { QuizAttempt } from '@/contexts/quizzes/domain/QuizAttempt.js';
 import type { QuizRepository } from '@/contexts/quizzes/domain/QuizRepository.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 
+interface RichTextDto {
+  Html?: string | null;
+  Text?: string | null;
+}
+
+/**
+ * Pull a plain string out of a D2L RichText field. The API returns this in two
+ * shapes depending on tenant and endpoint: the RichText object inline, or
+ * wrapped one level deeper under `Text`. Returning the object rather than a
+ * string is what produced `q.instructions.replace is not a function` at the
+ * render layer, so normalise here and never hand a non-string upward.
+ */
+function readRichText(field: unknown): string | null {
+  if (field == null) return null;
+  if (typeof field === 'string') return field;
+  if (typeof field !== 'object') return null;
+  const o = field as Record<string, unknown>;
+  if (typeof o.Html === 'string') return o.Html;
+  if (typeof o.Text === 'string') return o.Text;
+  // Nested: { Text: { Html, Text } }
+  if (o.Text != null && typeof o.Text === 'object') return readRichText(o.Text);
+  return null;
+}
+
 interface QuizDto {
   QuizId?: number;
   Name?: string;
-  Description?: { Html?: string | null; Text?: string | null } | null;
+  // D2L is inconsistent here: some tenants/endpoints return the RichText
+  // object inline ({Html, Text}), others nest it under `Text`
+  // ({Text: {Html, Text}, IsDisplayed}). Model both and normalise on read.
+  Description?: RichTextDto | { Text?: RichTextDto | string | null; IsDisplayed?: boolean } | null;
   StartDate?: string | null;
   EndDate?: string | null;
   AttemptsAllowed?: { Type?: { Id?: number }; NumberOfAttemptsAllowed?: number | null } | null;
@@ -92,7 +119,7 @@ export class D2lQuizRepository implements QuizRepository {
       id: dto.QuizId,
       courseOrgUnitId: orgUnit,
       name: dto.Name,
-      instructions: dto.Description?.Html ?? dto.Description?.Text ?? null,
+      instructions: readRichText(dto.Description),
       startDate: dto.StartDate ? new Date(dto.StartDate) : null,
       endDate: dto.EndDate ? new Date(dto.EndDate) : null,
       attemptsTaken: dto.Submissions ?? 0,

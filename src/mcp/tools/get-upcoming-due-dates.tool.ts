@@ -39,7 +39,9 @@ export async function handleGetUpcomingDueDates(
 
   const lines = upcoming.map((a) => {
     const due = a.dueDate.toDate();
-    const dueStr = due ? due.toISOString().slice(0, 16).replace('T', ' ') : 'no due date';
+    // Render in the configured output timezone — toISOString() would silently
+    // report every due date in UTC regardless of output.tz.
+    const dueStr = due ? deps.output.formatDate(due, 'datetime') : 'no due date';
     const course = courseNameByOrgUnit.get(a.courseOrgUnitId) ?? `course ${a.courseOrgUnitId}`;
     return ` • ${dueStr} — ${course}: ${a.name} (id=${AssignmentId.toNumber(a.id)})`;
   });

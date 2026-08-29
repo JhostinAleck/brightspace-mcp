@@ -86,9 +86,15 @@ export class D2lCourseRepository implements CourseRepository {
 
     if (!opts?.activeOnly) return courses;
     return courses.filter((c) => {
-      if (c.active) return true;
+      // Access.IsActive reflects whether the offering is enabled, not whether
+      // it is currently in session — some tenants leave it true on every past
+      // enrollment. Treat the term window as authoritative whenever D2L gives
+      // us one, and fall back to IsActive only for undated org units (student
+      // hubs, training shells, resource sites).
       if (c.startDate && c.endDate) return now >= c.startDate && now <= c.endDate;
-      return false;
+      if (c.startDate) return now >= c.startDate;
+      if (c.endDate) return now <= c.endDate;
+      return c.active;
     });
   }
 
