@@ -86,10 +86,22 @@ export class D2lQuizRepository implements QuizRepository {
 
   async findByCourse(courseId: OrgUnitId): Promise<Quiz[]> {
     const orgUnit = OrgUnitId.toNumber(courseId);
-    const response = await this.client.get<QuizListResponse>(
-      `/d2l/api/le/${this.versions.le}/${orgUnit}/quizzes/`,
-    );
-    const dtos = response.Objects ?? [];
+    // The quizzes list is paged: D2L returns 20 per page and hands back an
+    // absolute `Next` URL. Ignoring it silently truncated courses with more
+    // than 20 quizzes, which is common when homework is modelled as quizzes.
+    const dtos: QuizDto[] = [];
+    let next: string | null = `/d2l/api/le/${this.versions.le}/${orgUnit}/quizzes/`;
+    const seen = new Set<string>();
+    const MAX_PAGES = 200;
+    for (let page = 0; next && page < MAX_PAGES; page++) {
+      if (seen.has(next)) break;
+      seen.add(next);
+      const response: QuizListResponse = await this.client.get<QuizListResponse>(next);
+      dtos.push(...(response.Objects ?? []));
+      // `Next` comes back absolute; the client expects a tenant-relative path.
+      const raw = response.Next ?? null;
+      next = raw ? raw.replace(/^https?:\/\/[^/]+/i, '') : null;
+    }
     return dtos
       .filter((dto): dto is QuizDto & { QuizId: number; Name: string } =>
         typeof dto.QuizId === 'number' && typeof dto.Name === 'string',
