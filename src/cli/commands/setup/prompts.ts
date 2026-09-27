@@ -59,6 +59,7 @@ export function buildMicrosoftSsoSelectors(): {
   pre_mfa_clicks: string[];
   mfa_input: string;
   mfa_submit: string;
+  post_mfa_clicks: string[];
   post_login: string;
 } {
   return {
@@ -72,6 +73,9 @@ export function buildMicrosoftSsoSelectors(): {
     ],
     mfa_input: '#idTxtBx_SAOTCC_OTC',
     mfa_submit: '#idSubmit_SAOTCC_Continue',
+    // Microsoft sometimes shows "Stay signed in?" after MFA; without this click
+    // the login never reaches D2L and times out waiting for post_login.
+    post_mfa_clicks: ['#idSIButton9'],
     post_login: 'd2l-labs-navigation',
   };
 }

@@ -55,6 +55,8 @@ describe('buildMicrosoftSsoSelectors', () => {
     expect(sel.submit).toBe('#idSIButton9');
     expect(sel.password_submit).toBe('#idSIButton9');
     expect(sel.pre_mfa_clicks).toHaveLength(2);
+    // Dismisses Microsoft's intermittent "Stay signed in?" prompt after MFA.
+    expect(sel.post_mfa_clicks).toEqual(['#idSIButton9']);
     expect(sel.mfa_input).toBe('#idTxtBx_SAOTCC_OTC');
     expect(sel.mfa_submit).toBe('#idSubmit_SAOTCC_Continue');
     expect(sel.post_login).toBe('d2l-labs-navigation');

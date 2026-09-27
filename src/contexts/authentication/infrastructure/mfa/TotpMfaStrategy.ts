@@ -6,11 +6,26 @@ import type {
 } from '@/contexts/authentication/domain/MfaStrategy.js';
 import type { SecretValue } from '@/contexts/authentication/domain/SecretValue.js';
 
+/**
+ * Remembers the last TOTP time-step submitted. Identity providers (e.g.
+ * Microsoft Entra) reject a code that was already used, so two logins inside
+ * one 30 s window — from the server, the TUI and a script at once — would
+ * otherwise make the second one fail. Share one store across processes.
+ */
+export interface TotpUsedCounterStore {
+  last(): Promise<number | null>;
+  markUsed(counter: number): Promise<void>;
+}
+
 export interface TotpMfaStrategyOptions {
   secret: SecretValue;
   digits: 6 | 8;
   period: number;
   algorithm: 'SHA1' | 'SHA256' | 'SHA512';
+  usedCounters?: TotpUsedCounterStore;
+  /** Wait for the next window when fewer ms than this remain, so the code doesn't expire in transit. Default 0. */
+  minRemainingMs?: number;
+  sleep?: (ms: number) => Promise<void>;
 }
 
 const ALLOWED_ALGORITHMS = ['SHA1', 'SHA256', 'SHA512'] as const;
@@ -52,10 +67,9 @@ export class TotpMfaStrategy implements MfaStrategy {
       );
     }
 
-    const { digits, period, algorithm } = this.opts;
+    const { digits, algorithm } = this.opts;
     const key = base32Decode(this.opts.secret.reveal());
-    const epochSec = Math.floor(Date.now() / 1000);
-    const counter = Math.floor(epochSec / period);
+    const counter = await this.freshCounter();
 
     const counterBuf = Buffer.alloc(8);
     counterBuf.writeBigInt64BE(BigInt(counter));
@@ -69,6 +83,22 @@ export class TotpMfaStrategy implements MfaStrategy {
        ((digest[offset + 3] ?? 0) & 0xff);
 
     const code = (truncated % 10 ** digits).toString().padStart(digits, '0');
+    await this.opts.usedCounters?.markUsed(counter);
     return { code };
+  }
+
+  /** Current time-step, waiting for the next one if it's nearly over or already used. */
+  private async freshCounter(): Promise<number> {
+    const periodMs = this.opts.period * 1000;
+    const sleep = this.opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+    const minRemaining = this.opts.minRemainingMs ?? 0;
+    const lastUsed = (await this.opts.usedCounters?.last()) ?? null;
+    for (;;) {
+      const now = Date.now();
+      const counter = Math.floor(now / periodMs);
+      const remaining = (counter + 1) * periodMs - now;
+      if (remaining >= minRemaining && (lastUsed === null || counter > lastUsed)) return counter;
+      await sleep(remaining + 50);
+    }
   }
 }

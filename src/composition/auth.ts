@@ -18,6 +18,7 @@ import { FileSessionCache } from '@/contexts/authentication/infrastructure/sessi
 import { RedisSessionCache } from '@/contexts/authentication/infrastructure/session-caches/RedisSessionCache.js';
 import { NoMfaStrategy } from '@/contexts/authentication/infrastructure/mfa/NoMfaStrategy.js';
 import { TotpMfaStrategy } from '@/contexts/authentication/infrastructure/mfa/TotpMfaStrategy.js';
+import { FileTotpUsedCounterStore } from '@/contexts/authentication/infrastructure/mfa/FileTotpUsedCounterStore.js';
 import { ManualPromptMfaStrategy, type Prompter } from '@/contexts/authentication/infrastructure/mfa/ManualPromptMfaStrategy.js';
 import { DuoPushMfaStrategy } from '@/contexts/authentication/infrastructure/mfa/DuoPushMfaStrategy.js';
 import { ApiTokenStrategy } from '@/contexts/authentication/infrastructure/strategies/ApiTokenStrategy.js';
@@ -72,6 +73,8 @@ function buildMfa(
           digits: totp.digits,
           period: totp.period,
           algorithm: totp.algorithm,
+          minRemainingMs: 3_000,
+          usedCounters: new FileTotpUsedCounterStore(`${Paths.rootDir()}/totp-state.json`),
         });
         return real.solve(challenge);
       },

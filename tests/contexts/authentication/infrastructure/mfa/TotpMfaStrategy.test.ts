@@ -98,4 +98,40 @@ describe('TotpMfaStrategy', () => {
       algorithm: 'MD5' as unknown as 'SHA1',
     })).toThrow(/unsupported algorithm/i);
   });
+
+  describe('code freshness and reuse', () => {
+    const make = (extra: Partial<ConstructorParameters<typeof TotpMfaStrategy>[0]> = {}) =>
+      new TotpMfaStrategy({
+        secret: new SecretValue(RFC_BASE32),
+        digits: 6,
+        period: 30,
+        algorithm: 'SHA1',
+        // Advance the fake clock instead of really sleeping.
+        sleep: async (ms: number) => { vi.setSystemTime(new Date(Date.now() + ms)); },
+        ...extra,
+      });
+
+    it('waits for the next window when the current code is about to expire', async () => {
+      vi.setSystemTime(new Date(58_500)); // 1.5 s left in window 1
+      const code = (await make({ minRemainingMs: 3_000 }).solve({ kind: 'totp_code' })).code;
+      vi.setSystemTime(new Date(60_000));
+      const nextWindow = (await make().solve({ kind: 'totp_code' })).code;
+      expect(code).toBe(nextWindow);
+      expect(Date.now()).toBeGreaterThanOrEqual(60_000);
+    });
+
+    it('never submits the same code twice, even across instances sharing a store', async () => {
+      let last: number | null = null;
+      const usedCounters = {
+        last: async () => last,
+        markUsed: async (c: number) => { last = c; },
+      };
+      vi.setSystemTime(new Date(31_000));
+      const a = (await make({ usedCounters }).solve({ kind: 'totp_code' })).code;
+      const b = (await make({ usedCounters }).solve({ kind: 'totp_code' })).code;
+      expect(b).not.toBe(a);
+      expect(last).toBe(2);
+      expect(Date.now()).toBeGreaterThanOrEqual(60_000);
+    });
+  });
 });
