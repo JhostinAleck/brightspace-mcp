@@ -57,4 +57,68 @@ describe('CircuitBreaker', () => {
     await expect(breaker.run(async () => { throw new Error('x'); })).rejects.toThrow();
     expect(breaker.state).toBe('closed');
   });
+
+  describe('isFailure', () => {
+    it('does not count errors that isFailure classifies as not-a-failure', async () => {
+      const clock = new Clock();
+      const breaker = new CircuitBreaker({
+        failureThreshold: 2,
+        resetTimeoutMs: 1_000,
+        now: clock.read,
+        isFailure: (err) => !(err instanceof RangeError),
+      });
+      // A RangeError stands in for a well-formed 4xx: the backend answered,
+      // it just wasn't a success. Any number of these must never open the breaker.
+      await expect(breaker.run(async () => { throw new RangeError('not found'); })).rejects.toThrow('not found');
+      await expect(breaker.run(async () => { throw new RangeError('not found'); })).rejects.toThrow('not found');
+      await expect(breaker.run(async () => { throw new RangeError('not found'); })).rejects.toThrow('not found');
+      expect(breaker.state).toBe('closed');
+    });
+
+    it('still opens on errors isFailure classifies as real failures', async () => {
+      const clock = new Clock();
+      const breaker = new CircuitBreaker({
+        failureThreshold: 2,
+        resetTimeoutMs: 1_000,
+        now: clock.read,
+        isFailure: (err) => !(err instanceof RangeError),
+      });
+      await expect(breaker.run(async () => { throw new Error('real failure'); })).rejects.toThrow();
+      await expect(breaker.run(async () => { throw new Error('real failure'); })).rejects.toThrow();
+      expect(breaker.state).toBe('open');
+    });
+
+    it('does not reset accumulated failures when a non-failure error arrives while closed', async () => {
+      const clock = new Clock();
+      const breaker = new CircuitBreaker({
+        failureThreshold: 2,
+        resetTimeoutMs: 1_000,
+        now: clock.read,
+        isFailure: (err) => !(err instanceof RangeError),
+      });
+      // 5xx, 404, 5xx: the 404 in between must neither count nor wipe the
+      // first failure — otherwise alternating 5xx/404 would never trip it.
+      await expect(breaker.run(async () => { throw new Error('real failure'); })).rejects.toThrow();
+      await expect(breaker.run(async () => { throw new RangeError('not found'); })).rejects.toThrow();
+      await expect(breaker.run(async () => { throw new Error('real failure'); })).rejects.toThrow();
+      expect(breaker.state).toBe('open');
+    });
+
+    it('treats a non-failure error during half-open as a successful probe (closes, does not reopen)', async () => {
+      const clock = new Clock();
+      const breaker = new CircuitBreaker({
+        failureThreshold: 1,
+        resetTimeoutMs: 500,
+        now: clock.read,
+        isFailure: (err) => !(err instanceof RangeError),
+      });
+      await expect(breaker.run(async () => { throw new Error('real failure'); })).rejects.toThrow();
+      expect(breaker.state).toBe('open');
+      clock.advance(501);
+      // The half-open probe gets a well-formed 4xx-equivalent — the backend
+      // is clearly reachable again, so the breaker should close, not reopen.
+      await expect(breaker.run(async () => { throw new RangeError('not found'); })).rejects.toThrow('not found');
+      expect(breaker.state).toBe('closed');
+    });
+  });
 });

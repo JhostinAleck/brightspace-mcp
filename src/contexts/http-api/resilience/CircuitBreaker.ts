@@ -12,6 +12,14 @@ export interface CircuitBreakerOptions {
   resetTimeoutMs: number;
   now?: () => number;
   onStateChange?: (state: CircuitState) => void;
+  /**
+   * Decides whether a thrown error should count against the breaker.
+   * Defaults to treating every error as a failure (backward compatible).
+   * Callers that wrap an HTTP client should return false for well-formed
+   * 4xx-style responses — those mean the backend answered normally, so they
+   * shouldn't trip a breaker meant to detect the backend being unreachable.
+   */
+  isFailure?: (err: unknown) => boolean;
 }
 
 export class CircuitBreaker {
@@ -48,6 +56,18 @@ export class CircuitBreaker {
       this.setState('closed');
       return value;
     } catch (err) {
+      if (this.opts.isFailure && !this.opts.isFailure(err)) {
+        // Not an infrastructure failure — the backend responded, just not
+        // with a success. A half-open probe that gets this proves the
+        // backend is reachable, so close. While closed, leave the counter
+        // alone: it must neither count nor wipe earlier real failures, or
+        // alternating 5xx/4xx responses would never trip the breaker.
+        if (this._state === 'half_open') {
+          this.failureCount = 0;
+          this.setState('closed');
+        }
+        throw err;
+      }
       if (this._state === 'half_open') {
         this.openedAt = this.now();
         this.setState('open');

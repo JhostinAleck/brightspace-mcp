@@ -113,6 +113,7 @@ export class D2lApiClient {
     if (opts.circuit) {
       this.breaker = new CircuitBreaker({
         ...opts.circuit,
+        isFailure: (err) => this.isInfrastructureFailure(err),
         ...(opts.metrics ? { onStateChange: (s) => opts.metrics!.inc(`circuit.${s}`) } : {}),
       });
     }
@@ -500,6 +501,16 @@ export class D2lApiClient {
       throw classifyD2lError(new D2lApiError(response.status, path, body));
     }
     return (await response.json()) as T;
+  }
+
+  // A well-formed 4xx (e.g. "this topic has no attached file") means D2L is
+  // up and answering normally — it shouldn't count against a breaker whose
+  // job is detecting an unreachable/broken backend.
+  // Everything else — network errors, timeouts, 429s, unknown throws —
+  // counts as a real infrastructure failure.
+  private isInfrastructureFailure(err: unknown): boolean {
+    if (err instanceof D2lApiError) return err.status >= 500;
+    return true;
   }
 
   private classify(err: unknown): RetryDecision {
