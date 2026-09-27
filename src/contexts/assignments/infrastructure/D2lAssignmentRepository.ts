@@ -102,13 +102,11 @@ interface FolderDto {
   DropboxType?: number | null;
   GroupTypeId?: number | null;
   LinkAttachments?: Array<{ LinkId?: number; LinkName?: string | null; Href?: string | null }> | null;
-  /** D2L AllowableFileType: 0 = any, 5 = custom (see CustomAllowableFileTypes). */
+  /** D2L AllowableFileType: 0 = any; custom lists come in CustomAllowableFileTypes. */
   AllowableFileType?: number | null;
   CustomAllowableFileTypes?: Array<string | { Extension?: string | null }> | null;
   GradeItemId?: number | null;
 }
-
-const CUSTOM_ALLOWABLE_FILE_TYPE = 5;
 
 function richText(dto: RichTextDto | null | undefined): string {
   const text = dto?.Text?.trim();
@@ -150,7 +148,8 @@ function mapAllowedFileTypes(folder: FolderDto): AllowedFileTypes {
     .map((e) => (typeof e === 'string' ? e : e.Extension ?? ''))
     .map((e) => e.trim())
     .filter(Boolean);
-  if (code === CUSTOM_ALLOWABLE_FILE_TYPE || extensions.length > 0) return { mode: 'custom', extensions };
+  // Custom without a readable extension list degrades to a raw code.
+  if (extensions.length > 0) return { mode: 'custom', extensions };
   return { mode: 'restricted', code };
 }
 
