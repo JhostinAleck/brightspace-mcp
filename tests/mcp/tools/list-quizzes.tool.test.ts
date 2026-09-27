@@ -51,4 +51,79 @@ describe('handleListQuizzes', () => {
     expect(text).toContain('Read carefully');
     expect(text).toContain('unlimited');
   });
+
+  it('shows attempts allowed (not "0 taken") when the taken count is unknown', async () => {
+    const result = await handleListQuizzes(
+      { quizRepo: mkRepo([
+        new Quiz({
+          id: 2, courseOrgUnitId: 100, name: 'Parcial 1',
+          startDate: null, endDate: null,
+          attemptsTaken: null, attemptsAllowed: 1, timeLimitMinutes: null,
+          autoGrade: false, instructions: null,
+        }),
+        new Quiz({
+          id: 3, courseOrgUnitId: 100, name: 'Practice',
+          startDate: null, endDate: null,
+          attemptsTaken: null, attemptsAllowed: null, timeLimitMinutes: null,
+          autoGrade: false, instructions: null,
+        }),
+      ]), output: testOutputContext() },
+      { course_id: 100 },
+    );
+    const text = result.content[0]?.text ?? '';
+    expect(text).toContain('1 attempt allowed');
+    expect(text).toContain('unlimited attempts');
+    expect(text).not.toContain('0 taken');
+  });
+
+  it('formats due/close dates in the configured timezone and flags inactive quizzes', async () => {
+    const result = await handleListQuizzes(
+      { quizRepo: mkRepo([
+        new Quiz({
+          id: 4, courseOrgUnitId: 100, name: 'Quiz 2',
+          startDate: new Date('2026-09-28T13:00:00Z'),
+          endDate: new Date('2026-09-29T04:59:59Z'),
+          dueDate: new Date('2026-09-29T04:59:59Z'),
+          isActive: false,
+          attemptsTaken: null, attemptsAllowed: 1, timeLimitMinutes: 70,
+          autoGrade: true, instructions: null,
+        }),
+      ]), output: testOutputContext({ tz: 'America/Bogota', locale: 'en-US' }) },
+      { course_id: 100, format: 'detailed' },
+    );
+    const text = result.content[0]?.text ?? '';
+    expect(text).toContain('Due:');
+    expect(text).toContain('Opens:');
+    expect(text).toContain('Sep 28');
+    expect(text).toContain('11:59');
+    expect(text).not.toContain('2026-09-29T04:59');
+    expect(text).toContain('inactive');
+  });
+
+  it('detailed format strips HTML/entities and never crashes on non-string instructions', async () => {
+    const result = await handleListQuizzes(
+      { quizRepo: mkRepo([
+        new Quiz({
+          id: 5, courseOrgUnitId: 100, name: 'Midterm',
+          startDate: null, endDate: null,
+          attemptsTaken: null, attemptsAllowed: 1, timeLimitMinutes: null,
+          autoGrade: false, instructions: '<p>This is the midterm&#160;&amp; more</p>',
+        }),
+        new Quiz({
+          id: 6, courseOrgUnitId: 100, name: 'Weird',
+          startDate: null, endDate: null,
+          attemptsTaken: null, attemptsAllowed: 1, timeLimitMinutes: null,
+          autoGrade: false,
+          // Simulates an unexpected upstream shape leaking through.
+          instructions: { Text: { Text: 'x', Html: '<p>x</p>' } } as unknown as string,
+        }),
+      ]), output: testOutputContext() },
+      { course_id: 100, format: 'detailed' },
+    );
+    const text = result.content[0]?.text ?? '';
+    expect(text).toContain('This is the midterm');
+    expect(text).toContain('& more');
+    expect(text).not.toContain('<p>');
+    expect(text).toContain('Weird');
+  });
 });

@@ -8,12 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `brightspace-mcp tui` — full-screen terminal dashboard (Ink 7 + React 19) replacing the broken web UI. Six tabs: Inicio (upcoming assignments, 7-day calendar, recent announcements), Cursos (live search + drill-down with Tareas/Notas/Anuncios sub-tabs), Calendario (30-day agenda), Config (form editor with Zod-derived dropdowns + `$EDITOR` flow), Caché, Logs.
+- `get_upcoming_due_dates` also lists active quizzes due in the window, labeled `[quiz]`.
 
 ### Changed
 - Config form dropdowns (`strategy`, `mfa_strategy`, `locale`, `format`) are derived at runtime from Zod schemas — no hardcoded option lists.
 
 ### Removed
 - `brightspace-mcp ui` command and the Hono + Alpine.js web dashboard. Replaced by `brightspace-mcp tui`.
+
+### Fixed
+- `get_calendar_events` always returned nothing: the adapter expected `Name`/`StartDate` and sent `rangeStart`/`rangeEnd`. It now reads the real D2L shape (`Title`, `StartDateTime`/`EndDateTime`, `LocationName`, all-day `StartDay`/`EndDay`), queries `calendar/events/myEvents/` with `startDateTime`/`endDateTime` following every page (falls back to `calendar/events/` with client-side filtering), strips HTML from descriptions, and no longer prints a redundant end time for zero-length events.
+- `list_quizzes` only returned the first 20 quizzes; it now follows `Next`/bookmark pagination.
+- `list_quizzes` showed every quiz as "(unlimited)" and "0 taken": attempts come from `AttemptsAllowed.{IsUnlimited, NumberOfAttemptsAllowed}`, and the unknown per-student count is shown as "N attempts allowed" instead of a fake 0. Time limits come from `SubmissionTimeLimit`, auto-grade from `IsAutoSetGraded`.
+- `list_quizzes format=detailed` crashed with `q.instructions.replace is not a function`: the rich-text `Description.Text.{Text,Html}` is now unwrapped, and HTML/entities are stripped.
+- `list_quizzes` now shows open/due/close dates and `[inactive]` quizzes, in the configured timezone/locale instead of raw UTC ISO.
+- `get_quiz_attempts` explains the 403 students get (`Quizzing.GradeAttempts`) instead of returning a raw API error; it also follows pagination, accepts `Score` as a number, and formats times in the configured timezone.
+- `get_upcoming_due_dates` printed UTC (a 23:59 Bogotá deadline showed as 04:59 the next day); it now uses the configured timezone/locale.
 
 ## [1.1.0] - 2026-05-12
 

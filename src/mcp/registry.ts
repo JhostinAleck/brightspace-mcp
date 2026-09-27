@@ -175,7 +175,7 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
     {
       title: 'Get Upcoming Due Dates',
       description:
-        'Return assignments with due dates across all active courses within the next N days (default 14).\n' +
+        'Return assignments and quizzes with due dates across all active courses within the next N days (default 14).\n' +
         'Use when the user asks "what is due" or wants a cross-course overview.',
       inputSchema: getUpcomingDueDatesSchema.shape,
     },

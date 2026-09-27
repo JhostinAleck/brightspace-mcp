@@ -17,6 +17,7 @@ interface EventPlain {
   startAtIso: string;
   endAtIso: string | null;
   location: string | null;
+  isAllDay?: boolean;
 }
 
 function toPlain(e: CalendarEvent): EventPlain {
@@ -28,6 +29,7 @@ function toPlain(e: CalendarEvent): EventPlain {
     startAtIso: e.startAt.toISOString(),
     endAtIso: e.endAt ? e.endAt.toISOString() : null,
     location: e.location,
+    isAllDay: e.isAllDay,
   };
 }
 
@@ -40,6 +42,7 @@ function fromPlain(p: EventPlain): CalendarEvent {
     startAt: new Date(p.startAtIso),
     endAt: p.endAtIso ? new Date(p.endAtIso) : null,
     location: p.location,
+    isAllDay: p.isAllDay ?? false,
   });
 }
 

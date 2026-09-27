@@ -1,0 +1,65 @@
+{
+  "Objects": [
+    {
+      "CalendarEventId": 900001,
+      "OrgUnitId": 101,
+      "CreatorUserId": 0,
+      "Title": "Laboratorio 4",
+      "Description": "",
+      "CalendarEventViewUrl": "https://school.example.edu/d2l/le/calendar/101/event/900101/detailsview",
+      "IsAllDayEvent": false,
+      "GroupId": null,
+      "StartDateTime": "2026-05-04T04:59:59.000Z",
+      "EndDateTime": "2026-05-04T04:59:59.000Z",
+      "IsRecurring": false,
+      "RecurrenceInfo": null,
+      "StartDay": null,
+      "EndDay": null,
+      "LocationId": null,
+      "LocationName": "",
+      "OrgUnitName": "SAMPLE COURSE",
+      "OrgUnitCode": "202610_SAMP1000_1",
+      "IsAssociatedWithEntity": true,
+      "AssociatedEntity": {
+        "AssociatedEntityType": "D2L.LE.Dropbox.Dropbox",
+        "AssociatedEntityId": 400001,
+        "Link": "https://school.example.edu/d2l/lms/dropbox/user/folder_submit_files.d2l?ou=101&db=400001"
+      },
+      "HasVisibilityRestrictions": false,
+      "VisibilityRestrictions": { "Type": 1, "Range": null, "HiddenRangeUnitType": null, "StartDate": null, "EndDate": null },
+      "Presenters": [],
+      "EventType": 6
+    },
+    {
+      "CalendarEventId": 900002,
+      "OrgUnitId": 101,
+      "CreatorUserId": 0,
+      "Title": "Midterm Exam",
+      "Description": "<p style=\"text-align: justify;\"><span>In-person, bring a <strong>pencil</strong> &amp; ID.</span></p>",
+      "CalendarEventViewUrl": "https://school.example.edu/d2l/le/calendar/101/event/900102/detailsview",
+      "IsAllDayEvent": false,
+      "GroupId": null,
+      "StartDateTime": "2026-05-01T14:00:00.000Z",
+      "EndDateTime": "2026-05-01T16:00:00.000Z",
+      "IsRecurring": false,
+      "RecurrenceInfo": null,
+      "StartDay": null,
+      "EndDay": null,
+      "LocationId": null,
+      "LocationName": "Room B012",
+      "OrgUnitName": "SAMPLE COURSE",
+      "OrgUnitCode": "202610_SAMP1000_1",
+      "IsAssociatedWithEntity": true,
+      "AssociatedEntity": {
+        "AssociatedEntityType": "D2L.LE.Quizzing.Quiz",
+        "AssociatedEntityId": 300001,
+        "Link": "https://school.example.edu/d2l/lms/quizzing/user/quiz_summary.d2l?ou=101&qi=300001"
+      },
+      "HasVisibilityRestrictions": false,
+      "VisibilityRestrictions": { "Type": 1, "Range": null, "HiddenRangeUnitType": null, "StartDate": null, "EndDate": null },
+      "Presenters": [],
+      "EventType": 3
+    }
+  ],
+  "Next": "https://school.example.edu/d2l/api/le/1.91/101/calendar/events/myEvents/?startDateTime=2026-04-01T00:00:00.000Z&endDateTime=2026-06-01T00:00:00.000Z&bookmark=900002"
+}
