@@ -58,11 +58,14 @@ const KIND_LABEL: Record<SyllabusCandidate['target']['type'], string> = {
 
 function notPublishedText(
   courseId: number,
+  reason: 'not_found' | 'empty',
   candidates: SyllabusCandidate[],
   contentSearched: boolean,
 ): string {
   const lines = [
-    `Brightspace course overview not published (404 or empty description) for course ${courseId}.`,
+    reason === 'not_found'
+      ? `Brightspace course overview not published (404) for course ${courseId}.`
+      : `Brightspace course overview for course ${courseId} exists but its description is empty.`,
   ];
   const fallback =
     `Next: search_course(course_id=${courseId}, query="syllabus") (also try "programa"), ` +
@@ -94,6 +97,6 @@ export async function handleGetSyllabus(deps: GetSyllabusDeps, rawInput: unknown
   const result = await getSyllabus({ repo: deps.contentRepo, courseId: OrgUnitId.of(input.course_id) });
   const text = result.status === 'published'
     ? syllabusToText(result.syllabus, deps.output)
-    : notPublishedText(input.course_id, result.candidates, result.contentSearched);
+    : notPublishedText(input.course_id, result.reason, result.candidates, result.contentSearched);
   return { content: [{ type: 'text' as const, text }] };
 }

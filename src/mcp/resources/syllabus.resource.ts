@@ -25,7 +25,7 @@ export function registerSyllabusResource(server: McpServer, deps: SyllabusResour
         throw new Error(`Invalid courseId: ${String(variables['courseId'])}`);
       }
       const syllabus = await deps.contentRepo.findSyllabus(OrgUnitId.of(courseId));
-      if (!syllabus) {
+      if (!syllabus?.html?.trim()) {
         throw new Error(`Syllabus not found for course ${courseId}`);
       }
       const stripped = (syllabus.html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();

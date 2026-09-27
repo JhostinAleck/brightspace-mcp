@@ -17,11 +17,17 @@ export type SyllabusLookup =
   /** The Brightspace course overview (/overview) has a description. */
   | { status: 'published'; syllabus: Syllabus }
   /**
-   * No overview (404) or an empty one. `candidates` are the places in course
-   * content that most likely hold the syllabus, best first (possibly none);
-   * `contentSearched` is false when the content tree could not be loaded.
+   * No overview (`not_found`, a 404) or a blank one (`empty`). `candidates`
+   * are the places in course content that most likely hold the syllabus, best
+   * first (possibly none); `contentSearched` is false when the content tree
+   * could not be loaded.
    */
-  | { status: 'not_published'; candidates: SyllabusCandidate[]; contentSearched: boolean };
+  | {
+      status: 'not_published';
+      reason: 'not_found' | 'empty';
+      candidates: SyllabusCandidate[];
+      contentSearched: boolean;
+    };
 
 /** Intro pages are small; anything bigger is not a page worth scanning. */
 const MAX_PAGE_BYTES = 512 * 1024;
@@ -50,17 +56,18 @@ async function downloadPages(input: GetSyllabusInput, modules: Module[]): Promis
 export async function getSyllabus(input: GetSyllabusInput): Promise<SyllabusLookup> {
   const syllabus = await input.repo.findSyllabus(input.courseId);
   if (syllabus?.html?.trim()) return { status: 'published', syllabus };
+  const reason = syllabus ? 'empty' : 'not_found';
 
   let modules: Module[];
   try {
     modules = await input.repo.findModules(input.courseId);
   } catch {
-    return { status: 'not_published', candidates: [], contentSearched: false };
+    return { status: 'not_published', reason, candidates: [], contentSearched: false };
   }
   const pages = await downloadPages(input, modules);
   const candidates = findSyllabusCandidates(modules, {
     courseOrgUnitId: OrgUnitId.toNumber(input.courseId),
     pages,
   });
-  return { status: 'not_published', candidates, contentSearched: true };
+  return { status: 'not_published', reason, candidates, contentSearched: true };
 }

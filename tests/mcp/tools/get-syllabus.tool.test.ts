@@ -56,7 +56,8 @@ describe('get_syllabus tool', () => {
     const r = await handleGetSyllabus({ contentRepo, output: testOutputContext() }, { course_id: 101 });
     const text = r.content[0]?.text ?? '';
     expect(scope.isDone()).toBe(true);
-    expect(text).toMatch(/course overview not published \(404/i);
+    expect(text).toMatch(/course overview not published \(404\)/i);
+    expect(text).not.toMatch(/empty/i);
 
     const syllabusCall =
       'get_course_file(course_id=101, path="/content/enforced/101-202620_TEST1010_1/1_RECURSOS_DE_CONTENIDO/Welcome/TEST1010-syllabus.pdf")';

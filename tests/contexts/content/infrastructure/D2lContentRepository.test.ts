@@ -26,6 +26,15 @@ describe('D2lContentRepository', () => {
     expect(syl?.html).toContain('Welcome to ECE 264');
   });
 
+  it('findSyllabus returns an empty syllabus (not null) when the overview exists but has no description', async () => {
+    nock(BASE).get('/d2l/api/le/1.91/103/overview').reply(200, { Description: { Text: '', Html: '' }, UpdatedDate: null });
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lContentRepository(client, { le: '1.91' });
+    const syl = await repo.findSyllabus(OrgUnitId.of(103));
+    expect(syl).not.toBeNull();
+    expect(syl?.html ?? '').toBe('');
+  });
+
   it('findSyllabus returns null when no overview exists (404)', async () => {
     nock(BASE).get('/d2l/api/le/1.91/102/overview').reply(404, '');
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });

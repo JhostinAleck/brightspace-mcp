@@ -160,8 +160,9 @@ export class D2lContentRepository implements ContentRepository {
       const dto = await this.client.get<OverviewDto>(
         `/d2l/api/le/${this.versions.le}/${orgUnit}/overview`,
       );
-      const html = dto.Description?.Html ?? dto.Description?.Text ?? null;
-      if (!html) return null;
+      // An overview that exists but is blank is returned with empty html (not
+      // null) so callers can tell "not published (404)" from "published empty".
+      const html = dto.Description?.Html || dto.Description?.Text || '';
       return new Syllabus({
         courseOrgUnitId: orgUnit,
         title: 'Course Syllabus',

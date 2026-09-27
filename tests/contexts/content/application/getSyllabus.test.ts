@@ -31,7 +31,13 @@ describe('getSyllabus', () => {
     const syl = new Syllabus({ courseOrgUnitId: 101, title: 'Course Syllabus', html: '  ', updatedAt: null, sourceUrl: null });
     const repo = new FakeContentRepository(new Map([[101, syl]]));
     const out = await getSyllabus({ repo, courseId: OrgUnitId.of(101) });
-    expect(out).toEqual({ status: 'not_published', candidates: [], contentSearched: true });
+    expect(out).toEqual({ status: 'not_published', reason: 'empty', candidates: [], contentSearched: true });
+  });
+
+  it('reports not_found when the course has no overview at all', async () => {
+    const repo = new FakeContentRepository(new Map(), new Map([[101, []]]));
+    const out = await getSyllabus({ repo, courseId: OrgUnitId.of(101) });
+    expect(out.status === 'not_published' && out.reason).toBe('not_found');
   });
 
   it('searches course content (scanning the intro page) when there is no overview', async () => {
@@ -60,6 +66,6 @@ describe('getSyllabus', () => {
       throw new Error('403');
     };
     const out = await getSyllabus({ repo, courseId: OrgUnitId.of(101) });
-    expect(out).toEqual({ status: 'not_published', candidates: [], contentSearched: false });
+    expect(out).toEqual({ status: 'not_published', reason: 'not_found', candidates: [], contentSearched: false });
   });
 });
