@@ -33,7 +33,8 @@ describe('D2lContentRepository', () => {
     expect(await repo.findSyllabus(OrgUnitId.of(102))).toBeNull();
   });
 
-  it('findModules builds the tree with topics', async () => {
+  it('findModules builds the tree with topics (legacy root/structure fallback)', async () => {
+    nock(BASE).get('/d2l/api/le/1.91/101/content/toc').reply(404, '');
     nock(BASE).get('/d2l/api/le/1.91/101/content/root/').reply(200, modulesFixture.root);
     nock(BASE)
       .get('/d2l/api/le/1.91/101/content/modules/500/structure/')

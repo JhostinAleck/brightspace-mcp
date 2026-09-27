@@ -2,6 +2,7 @@ import type { ContentRepository } from '@/contexts/content/domain/ContentReposit
 import { Syllabus } from '@/contexts/content/domain/Syllabus.js';
 import { Module } from '@/contexts/content/domain/Module.js';
 import { Topic, type TopicKind } from '@/contexts/content/domain/Topic.js';
+import type { CourseFilePath } from '@/contexts/content/domain/CourseFilePath.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import type { Cache } from '@/shared-kernel/cache/Cache.js';
 
@@ -26,6 +27,7 @@ interface TopicPlain {
   kind: TopicKind;
   url: string | null;
   fileExtension: string | null;
+  isBroken?: boolean;
 }
 
 interface ModulePlain {
@@ -33,6 +35,7 @@ interface ModulePlain {
   title: string;
   topics: TopicPlain[];
   submodules: ModulePlain[];
+  descriptionHtml?: string | null;
 }
 
 type CachedSyllabus = { kind: 'value'; value: SyllabusPlain } | { kind: 'none' };
@@ -64,6 +67,7 @@ function topicToPlain(t: Topic): TopicPlain {
     kind: t.kind,
     url: t.url,
     fileExtension: t.fileExtension,
+    isBroken: t.isBroken,
   };
 }
 
@@ -77,6 +81,7 @@ function moduleToPlain(m: Module): ModulePlain {
     title: m.title,
     topics: m.topics.map(topicToPlain),
     submodules: m.submodules.map(moduleToPlain),
+    descriptionHtml: m.descriptionHtml,
   };
 }
 
@@ -86,6 +91,7 @@ function moduleFromPlain(p: ModulePlain): Module {
     title: p.title,
     topics: p.topics.map(topicFromPlain),
     submodules: p.submodules.map(moduleFromPlain),
+    descriptionHtml: p.descriptionHtml ?? null,
   });
 }
 
@@ -112,6 +118,10 @@ export class CachedContentRepository implements ContentRepository {
 
   async findTopicRenderedText(courseId: OrgUnitId, topicId: number): Promise<string> {
     return this.inner.findTopicRenderedText(courseId, topicId);
+  }
+
+  async findCourseFile(courseId: OrgUnitId, path: CourseFilePath): Promise<Buffer> {
+    return this.inner.findCourseFile(courseId, path);
   }
 
   async findModules(courseId: OrgUnitId): Promise<Module[]> {

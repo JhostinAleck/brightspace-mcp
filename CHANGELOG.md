@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `get_course_file(course_id, path)` — download and read files stored under the course's own `/content/enforced/{ou}-…/` area (PDFs/slides linked or embedded in HTML topics and module descriptions). Accepts paths, tenant URLs, or relative links plus the `topic_id` they came from; other courses, other hosts and path traversal are refused.
+- `get_module(course_id, module_id)` — full module description text, every link/embedded file, topics and submodules.
+- Reusable file extraction module (`shared-kernel/extract`): PDF, DOCX, XLSX/XLSM, PPTX (new), HTML, plain text, CSV, JSON and Jupyter notebooks to text; images to base64; media to metadata.
 - `brightspace-mcp tui` — full-screen terminal dashboard (Ink 7 + React 19) replacing the broken web UI. Six tabs: Inicio (upcoming assignments, 7-day calendar, recent announcements), Cursos (live search + drill-down with Tareas/Notas/Anuncios sub-tabs), Calendario (30-day agenda), Config (form editor with Zod-derived dropdowns + `$EDITOR` flow), Caché, Logs.
 - `get_upcoming_due_dates` also lists active quizzes due in the window, labeled `[quiz]`.
 - `get_assignment_rubric` tool — renders an assignment's rubric as one markdown table per criteria group (criteria × levels with points and descriptions), plus max points and overall levels.
@@ -16,6 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `get_course_content` shows a topic's URL whenever D2L provides one (e.g. Zoom quicklinks classified as `other`).
 
 ### Changed
+- Course content is loaded with one `GET /content/toc` call instead of one `/structure/` call per module (the old walk remains as a fallback).
+- `get_course_content` shows module description excerpts with their links, a `module_id` for described modules, and `[broken]` topics.
+- `get_topic_file` returns images as MCP image content, audio/video as metadata, renders notebooks as cells, keeps newlines in text/CSV, raises the text limit to 40,000 characters and always reports truncation.
+- `search_course` also searches module description text.
 - Config form dropdowns (`strategy`, `mfa_strategy`, `locale`, `format`) are derived at runtime from Zod schemas — no hardcoded option lists.
 - `get_feedback` shows the per-criterion rubric outcome (level, score, comment) and says "not graded yet" when nothing is released.
 - The MCP server reports its real package version to clients (was hardcoded `0.1.0`).
@@ -38,6 +45,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `get_upcoming_due_dates` printed UTC (a 23:59 Bogotá deadline showed as 04:59 the next day); it now uses the configured timezone/locale.
 - Well-formed 4xx responses (e.g. a topic without an attached file) no longer trip the HTTP circuit breaker.
 - The calendar cache never hit because its key used millisecond-precision timestamps.
+- Content topics were all classified `[other]`: topic kinds now come from `ActivityType` / quicklink type / `TopicType` (`file`, `link`, `quiz`, `lti`, …).
+- Module descriptions were dropped, hiding all material in courses that keep it there.
+- Office files whose first zip entry is `[Content_Types].xml` came back as `[ZIP — N bytes]`; PowerPoint had no extractor.
+- `get_topic_file` requested `/topics/{id}/file` for links, quiz quicklinks and LTI topics (404); it now returns the URL with a hint, and broken topics get an explicit message.
+- Images and other media fell back to the browser-rendered D2L page, returning the navigation chrome and the user's name.
+- `d2lSessionVal` session tokens embedded in content links are no longer echoed back.
 
 ### Removed
 - `brightspace-mcp ui` command and the Hono + Alpine.js web dashboard. Replaced by `brightspace-mcp tui`.

@@ -67,9 +67,26 @@ Course syllabus (parsed from D2L's first-content-topic heuristic).
 **Args:** `course_id`.
 
 ### `get_course_content`
-Module tree with topics. Use this to find topic IDs.
+Module tree with topics, loaded with a single `GET /content/toc` call. Use this to find topic IDs.
 
 **Args:** `course_id`, `depth` *(0–5, default 2)*.
+
+Each topic shows its real kind (`file`, `link`, `quiz`, `lti`, `dropbox`, `discussion`), its URL when it has one, and `[broken]` when Brightspace flags it as broken. Many courses keep their material in **module descriptions** rather than topics, so modules with a description also show a short excerpt (200 characters), up to 5 of the files/links it contains (session tokens stripped) and a `module_id=…` — call `get_module` for the full text and `get_course_file` for the linked `/content/enforced/...` files.
+
+### `get_module`
+One module in full: the complete description text, every link or embedded file (anchors, iframes, `<object>`/`<embed>` media), its topics and its submodules.
+
+**Args:** `course_id`, `module_id` *(shown as `module_id=…` by `get_course_content`)*.
+
+### `get_course_file`
+Download and read a file stored in the course content area — the PDFs, slides and documents that HTML topics and module descriptions link or embed (`/content/enforced/{course_id}-…/file.pdf`).
+
+**Args:**
+- `course_id`, `path` *(both required)* — the path exactly as shown by `get_course_content`, `get_module` or `get_topic_file`. A full URL on your Brightspace host is accepted too.
+- `topic_id` *(optional)* — the HTML topic a **relative** link came from; the link is resolved against that topic's folder.
+- `save_to` *(optional)* — also write the raw file to disk.
+
+Only files of that same course are served: other courses' folders, other hosts, `..`/encoded traversal and non-`/content/enforced/` paths are refused with an error. Uses the same text extraction as `get_topic_file`. If Brightspace answers with an HTML page instead of the requested binary (typically an expired session), an explicit error is returned.
 
 ### `get_announcements`
 News feed.
@@ -104,6 +121,21 @@ Download a single content topic file. Returns extracted text and optionally save
 - `save_to` *(string, optional — `~/...`, `%VAR%\...`, or absolute path)*
 
 If `save_to` is provided, the raw file binary is also written to disk and the response includes `[Saved to: /abs/path]`.
+
+**What comes back, by format:**
+
+| Format | Result |
+|---|---|
+| PDF | Text (line breaks kept) |
+| DOCX, XLSX/XLSM, PPTX | Text — detected from the zip central directory or the topic URL extension; PPTX in slide order |
+| HTML topic | Readable text; relative links resolved to `/content/enforced/...` paths usable with `get_course_file`; embedded iframes/media listed |
+| Plain text, CSV, JSON | Text with newlines preserved (JSON pretty-printed) |
+| Jupyter `.ipynb` | Markdown cells + fenced code cells (outputs omitted) |
+| PNG / JPEG / GIF / WebP | MCP `image` content (inline up to 4 MB) |
+| Audio / video / unknown binaries | Metadata only (type and size) — use `save_to` |
+| ZIP | List of entries |
+
+Text is capped at 40,000 characters and the response says so when it was truncated. Link, quiz-quicklink and LTI topics return their URL and a hint instead of a file; broken topics return an explicit message. The browser-rendered page is only used as a fallback for HTML topics without extractable text.
 
 ### `get_my_groups`
 List the groups you're enrolled in for a course, with member names.
@@ -156,7 +188,7 @@ User activity feed — due-date reminders, grade releases, announcement posts.
 - `limit` *(integer 1–100, default 25)*
 
 ### `search_course`
-Ranked full-text search across content modules, announcements, and discussion forums for a single course. In-memory term-frequency scoring.
+Ranked full-text search across content modules (titles, **module description text** and topic titles), announcements, and discussion forums for a single course. In-memory term-frequency scoring.
 
 **Args:**
 - `course_id` *(integer, required)*

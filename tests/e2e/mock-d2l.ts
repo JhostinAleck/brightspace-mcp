@@ -109,9 +109,13 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
         return;
       }
       if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/calendar\/events\//)) {
-        res.end(JSON.stringify([
-          { Id: 9500, Name: 'Smoke Midterm', Description: null, StartDate: new Date(Date.now() + 86400000).toISOString(), EndDate: null, Location: 'Smoke Hall' },
-        ]));
+        // Real LE shape; myEvents/ is paged ({ Objects, Next }), events/ is a bare array.
+        const event = {
+          CalendarEventId: 9500, OrgUnitId: 1, Title: 'Smoke Midterm', Description: '',
+          StartDateTime: new Date(Date.now() + 86400000).toISOString(), EndDateTime: null,
+          IsAllDayEvent: false, LocationName: 'Smoke Hall',
+        };
+        res.end(JSON.stringify(req.url.includes('/myEvents/') ? { Objects: [event], Next: null } : [event]));
         return;
       }
       res.statusCode = 404;

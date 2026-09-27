@@ -47,6 +47,17 @@ function readCentralDirectory(buf: Buffer): CdEntry[] | null {
 }
 
 /**
+ * List every entry name in a ZIP buffer (central-directory order), or null if
+ * the buffer is not a readable ZIP. Used to tell DOCX/XLSX/PPTX apart: their
+ * first entry is always `[Content_Types].xml`, so sniffing the leading bytes
+ * is not enough.
+ */
+export function listZipEntries(buf: Buffer): string[] | null {
+  const cd = readCentralDirectory(buf);
+  return cd ? cd.map((e) => e.filename) : null;
+}
+
+/**
  * Extract a single file from a ZIP buffer using the central directory.
  * Returns null if the entry is missing, the buffer is malformed, or the
  * compression method is unsupported (only stored=0 and deflate=8 are handled).
@@ -185,7 +196,8 @@ export function extractXlsxText(buf: Buffer): string {
   }
 
   if (parts.length === 0) return '[Excel: no readable content found]';
-  return parts.join('\n\n').slice(0, 12_000);
+  // No silent cap here: callers (shared-kernel/extract) truncate with a notice.
+  return parts.join('\n\n');
 }
 
 // ── DOCX extraction ──────────────────────────────────────────────────────────
@@ -212,4 +224,37 @@ export function extractDocxText(buf: Buffer): string {
   let out = xml;
   for (const [re, rep] of DOCX_REPLACES) out = out.replace(re, rep);
   return out.trim();
+}
+
+// ── PPTX extraction ──────────────────────────────────────────────────────────
+
+/**
+ * Extract the text of every slide (`ppt/slides/slideN.xml`), in numeric slide
+ * order, one `--- Slide N ---` block per slide. Paragraphs (`<a:p>`) become
+ * lines; text runs (`<a:t>`) inside a paragraph are concatenated.
+ */
+export function extractPptxText(buf: Buffer): string {
+  const names = listZipEntries(buf) ?? [];
+  const slides = names
+    .map((n) => ({ n, m: /^ppt\/slides\/slide(\d+)\.xml$/.exec(n) }))
+    .filter((x): x is { n: string; m: RegExpExecArray } => x.m !== null)
+    .map((x) => ({ name: x.n, index: Number(x.m[1]) }))
+    .sort((a, b) => a.index - b.index);
+
+  const parts: string[] = [];
+  for (const slide of slides) {
+    const xml = extractZipEntry(buf, slide.name);
+    if (!xml) continue;
+    const lines: string[] = [];
+    const paraRe = /<a:p[\s>][\s\S]*?<\/a:p>/g;
+    let para: RegExpExecArray | null;
+    while ((para = paraRe.exec(xml)) !== null) {
+      const runs = [...para[0].matchAll(/<a:t(?:\s[^>]*)?>([^<]*)<\/a:t>/g)].map((r) => xlsxDecodeEntities(r[1] ?? ''));
+      const line = runs.join('').trim();
+      if (line) lines.push(line);
+    }
+    if (lines.length > 0) parts.push(`--- Slide ${slide.index} ---\n${lines.join('\n')}`);
+  }
+  if (parts.length === 0) return '[PowerPoint: no readable slide text found]';
+  return parts.join('\n\n');
 }

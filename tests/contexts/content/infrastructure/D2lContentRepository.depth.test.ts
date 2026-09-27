@@ -14,6 +14,8 @@ describe('D2lContentRepository.findModules — depth guard', () => {
     // Build a pathological tree where every module contains another module
     // of the same shape. The fix caps at depth=12.
     nock(BASE)
+      .get('/d2l/api/le/1.91/100/content/toc')
+      .reply(404, '')
       .get('/d2l/api/le/1.91/100/content/root/')
       .reply(200, [{ Id: 1, Title: 'M1' }])
       .get(/\/d2l\/api\/le\/1\.91\/100\/content\/modules\/\d+\/structure\//)

@@ -10,5 +10,5 @@ export interface GetCourseContentDeps { contentRepo: ContentRepository; output: 
 export async function handleGetCourseContent(deps: GetCourseContentDeps, rawInput: unknown) {
   const input = getCourseContentSchema.parse(rawInput);
   const modules = await getCourseContent({ repo: deps.contentRepo, courseId: OrgUnitId.of(input.course_id) });
-  return { content: [{ type: 'text' as const, text: courseContentToText(modules, input.depth, deps.output) }] };
+  return { content: [{ type: 'text' as const, text: courseContentToText(modules, input.depth, deps.output, input.course_id) }] };
 }

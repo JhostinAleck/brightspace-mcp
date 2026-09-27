@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { CommunicationsRepository } from '@/contexts/communications/domain/CommunicationsRepository.js';
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
 import type { Module } from '@/contexts/content/domain/Module.js';
+import { htmlToPlainText } from '@/shared-kernel/text/htmlLinks.js';
 import { createOrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 
 export const searchCourseSchema = z.object({
@@ -60,11 +61,24 @@ function snippet(text: string, around: number, length = 160): string {
   return (start > 0 ? '…' : '') + text.slice(start, end).trim() + (end < text.length ? '…' : '');
 }
 
-function flattenModules(modules: readonly Module[]): Array<{ title: string; topics: Array<{ id: number; title: string }> }> {
-  const out: Array<{ title: string; topics: Array<{ id: number; title: string }> }> = [];
+interface FlatModule {
+  id: number;
+  title: string;
+  description: string;
+  topics: Array<{ id: number; title: string }>;
+}
+
+function flattenModules(modules: readonly Module[]): FlatModule[] {
+  const out: FlatModule[] = [];
   const walk = (mods: readonly Module[]): void => {
     for (const m of mods) {
-      out.push({ title: m.title, topics: m.topics.map((t) => ({ id: t.id, title: t.title })) });
+      out.push({
+        id: m.id,
+        title: m.title,
+        // Module descriptions often carry the real material; the TOC already includes them.
+        description: m.descriptionHtml ? htmlToPlainText(m.descriptionHtml) : '',
+        topics: m.topics.map((t) => ({ id: t.id, title: t.title })),
+      });
       walk(m.submodules);
     }
   };
@@ -84,7 +98,7 @@ export async function handleSearchCourse(deps: SearchCourseDeps, rawInput: unkno
     try {
       const modules = await deps.contentRepo.findModules(courseId);
       for (const m of flattenModules(modules)) {
-        const text = `${m.title}\n${m.topics.map((t) => t.title).join('\n')}`;
+        const text = [m.title, m.description, ...m.topics.map((t) => t.title)].filter(Boolean).join('\n');
         const { score: s, firstMatch } = score(text, queryTerms);
         if (s > 0) {
           hits.push({
@@ -92,7 +106,7 @@ export async function handleSearchCourse(deps: SearchCourseDeps, rawInput: unkno
             title: m.title,
             snippet: snippet(text, firstMatch),
             score: s,
-            reference: `module: ${m.title}`,
+            reference: `module: ${m.title} (module_id=${m.id})`,
           });
         }
         for (const t of m.topics) {

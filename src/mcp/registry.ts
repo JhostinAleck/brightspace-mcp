@@ -43,6 +43,8 @@ import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discu
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
 import { handleGetAssignmentFiles, type GetAssignmentFilesDeps } from './tools/get-assignment-files.tool.js';
 import { handleGetTopicFile, type GetTopicFileDeps } from './tools/get-topic-file.tool.js';
+import { handleGetCourseFile, getCourseFileSchema, type GetCourseFileDeps } from './tools/get-course-file.tool.js';
+import { handleGetModule, getModuleSchema, type GetModuleDeps } from './tools/get-module.tool.js';
 import { handleGetAuditLog, type GetAuditLogDeps } from './tools/get-audit-log.tool.js';
 import { handleListQuizzes, type ListQuizzesDeps } from './tools/list-quizzes.tool.js';
 import { handleGetQuizAttempts, type GetQuizAttemptsDeps } from './tools/get-quiz-attempts.tool.js';
@@ -88,6 +90,8 @@ export interface ToolDeps
     GetCalendarEventsDeps,
     GetAssignmentFilesDeps,
     GetTopicFileDeps,
+    GetCourseFileDeps,
+    GetModuleDeps,
     GetAuditLogDeps,
     ListQuizzesDeps,
     GetQuizAttemptsDeps,
@@ -254,8 +258,11 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
     {
       title: 'Get Course Content',
       description:
-        'Return the course module tree with topics (files, quizzes, discussions, etc.).\n' +
-        'Use when the user asks what materials are posted or wants to navigate modules.',
+        'Return the course module tree with topics (files, links, quizzes, LTI tools, etc.), ' +
+        'plus a short excerpt of each module description and the file links it contains ' +
+        '(some courses keep all their material in module descriptions).\n' +
+        'Use when the user asks what materials are posted or wants to navigate modules.\n' +
+        'Follow up with get_topic_file (topic id), get_module (module_id) or get_course_file (/content/enforced/... path).',
       inputSchema: getCourseContentSchema.shape,
     },
     async (input: unknown) => handleGetCourseContent(deps, input),
@@ -318,11 +325,40 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       description:
         'Download and read a content topic file from a Brightspace course.\n' +
         'Use get_course_content first to find the topic id (shown as id=XXXX next to each topic).\n' +
-        'Use when the user wants to read a specific file posted in the course content (PDFs, DOCX, XLSX, etc.).\n' +
+        'Use when the user wants to read a specific file posted in the course content ' +
+        '(PDF, DOCX, XLSX/XLSM, PPTX, HTML pages, notebooks, CSV/text; images are returned as images).\n' +
+        'Link / quiz / LTI topics return their URL instead of a file.\n' +
         'Pass save_to with an absolute or ~/... path to also save the raw file to disk (e.g. ~/Downloads/file.xlsx).',
       inputSchema: getTopicFileSchema.shape,
     },
     async (input: unknown) => handleGetTopicFile(deps, input),
+  );
+
+  server.registerTool(
+    'get_module',
+    {
+      title: 'Get Module',
+      description:
+        'Return one content module in full: its complete description text, every link or embedded file it contains, ' +
+        'its topics and submodules.\n' +
+        'Use when get_course_content shows a module_id with a truncated description, or the material lives in the module description.',
+      inputSchema: getModuleSchema.shape,
+    },
+    async (input: unknown) => handleGetModule(deps, input),
+  );
+
+  server.registerTool(
+    'get_course_file',
+    {
+      title: 'Get Course File',
+      description:
+        'Download and read a file stored in the course content area (/content/enforced/{course}-.../file.pdf) — ' +
+        'the PDFs, slides and documents linked or embedded inside HTML topics and module descriptions.\n' +
+        'Pass the path exactly as shown by get_course_content, get_module or get_topic_file. ' +
+        'Only files of that same course are allowed. Same text extraction as get_topic_file; pass save_to to keep the raw file.',
+      inputSchema: getCourseFileSchema.shape,
+    },
+    async (input: unknown) => handleGetCourseFile(deps, input),
   );
 
   server.registerTool(
