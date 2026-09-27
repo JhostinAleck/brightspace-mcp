@@ -1,85 +1,57 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
+import type { Topic } from '@/contexts/content/domain/Topic.js';
+import { readTopic } from '@/contexts/content/application/readTopic.js';
 import { getTopicFileSchema } from '@/mcp/schemas.js';
-import { expandPath } from '@/shared-kernel/path/expandPath.js';
+import { extractedToMcpContent, saveBufferToDisk, type McpContentBlock } from '@/mcp/file-content.js';
+import { extractFileContent } from '@/shared-kernel/extract/extractFileContent.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
-import { extractDocxText, extractXlsxText } from '@/shared-kernel/zip/extractZipEntry.js';
-import { stripHtmlPreservingLinks } from '@/shared-kernel/text/stripHtml.js';
-import { PDFParse } from 'pdf-parse';
 
 export interface GetTopicFileDeps { contentRepo: ContentRepository; }
 
-function bufToText(buf: Buffer, contentType: string): string {
-  if (contentType.includes('pdf')) return `[PDF — ${buf.length} bytes]`;
-  if (contentType.includes('wordprocessingml') || contentType.includes('docx')) {
-    return extractDocxText(buf);
-  }
-  if (contentType.includes('spreadsheetml')) return extractXlsxText(buf);
-  if (contentType.includes('presentationml')) return `[PowerPoint — ${buf.length} bytes]`;
-  if (contentType.includes('zip')) return `[ZIP — ${buf.length} bytes]`;
-  if (contentType.includes('text') || contentType.includes('html')) return stripHtmlPreservingLinks(buf.toString('utf8')).slice(0, 5000);
-  return `[${contentType} — ${buf.length} bytes]`;
+const NON_FILE_HINTS: Record<string, string> = {
+  link: 'It is a web link, not a file: open the URL directly.',
+  quiz: 'It is a quiz quicklink: use list_quizzes / get_quiz_attempts for quiz details.',
+  lti: 'It is an external tool (LTI) launch: it can only be opened inside Brightspace.',
+  dropbox: 'It is an assignment (dropbox) quicklink: use get_assignments / get_assignment_files.',
+  discussion: 'It is a discussion quicklink: use get_discussions.',
+  other: 'It has no downloadable file.',
+};
+
+function nonFileMessage(topic: Topic): string {
+  const url = topic.url ? `\nURL: ${topic.url}` : '';
+  return `"${topic.title}" (id=${topic.id}) is a ${topic.kind} topic. ${NON_FILE_HINTS[topic.kind] ?? NON_FILE_HINTS['other']}${url}`;
 }
 
-function detectContentType(buf: Buffer): string {
-  if (buf.length < 4) return 'application/octet-stream';
-  // PDF
-  if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) return 'application/pdf';
-  // ZIP-based (DOCX, XLSX, PPTX) — differentiate by internal entry names
-  if (buf[0] === 0x50 && buf[1] === 0x4B) {
-    const header = buf.slice(0, Math.min(buf.length, 200)).toString('latin1');
-    if (header.includes('word/')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    if (header.includes('xl/')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    if (header.includes('ppt/')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-    return 'application/zip';
-  }
-  // HTML / XML — check first 512 bytes as text
-  const head = buf.slice(0, 512).toString('utf8');
-  if (head.includes('<!DOCTYPE') || head.includes('<html') || head.includes('<?xml')) return 'text/html';
-  // Heuristic: if all bytes are printable ASCII or common UTF-8 control chars, treat as text
-  const sample = buf.slice(0, 256);
-  const printable = [...sample].filter(b => b >= 0x09 && b <= 0x7E).length;
-  if (printable / sample.length > 0.85) return 'text/plain';
-  return 'application/octet-stream';
+function brokenMessage(topic: Topic): string {
+  return `"${topic.title}" (id=${topic.id}) is marked as broken in Brightspace: its file was deleted or unlinked, ` +
+    'so there is nothing to download. Check get_course_content for a replacement or ask the instructor.';
 }
 
-function saveToDisk(buf: Buffer, rawPath: string): string {
-  const abs = resolve(expandPath(rawPath));
-  mkdirSync(dirname(abs), { recursive: true });
-  writeFileSync(abs, buf);
-  return abs;
-}
+const text = (t: string): { content: McpContentBlock[] } => ({ content: [{ type: 'text', text: t }] });
 
 export async function handleGetTopicFile(deps: GetTopicFileDeps, rawInput: unknown) {
   const input = getTopicFileSchema.parse(rawInput);
   const courseId = OrgUnitId.of(input.course_id);
-  const buf = await deps.contentRepo.findTopicFile(courseId, input.topic_id);
+  const result = await readTopic({ repo: deps.contentRepo, courseId, topicId: input.topic_id });
 
-  const savedNote = input.save_to
-    ? `\n\n[Saved to: ${saveToDisk(buf, input.save_to)}]`
-    : '';
+  if (result.status === 'broken') return text(brokenMessage(result.topic));
+  if (result.status === 'not_downloadable') return text(nonFileMessage(result.topic));
 
-  const contentType = detectContentType(buf);
+  const notes: string[] = [];
+  if (input.save_to) notes.push(`[Saved to: ${saveBufferToDisk(result.content, input.save_to)}]`);
 
-  // For PDFs: extract text directly from the binary
-  if (contentType === 'application/pdf') {
-    try {
-      const parser = new PDFParse({ data: buf });
-      const result = await parser.getText();
-      await parser.destroy();
-      const text = result.text.replace(/\s+/g, ' ').trim().slice(0, 12000);
-      if (text) return { content: [{ type: 'text' as const, text: text + savedNote }] };
-    } catch { /* fall through to size report */ }
-    return { content: [{ type: 'text' as const, text: `[PDF — ${buf.length} bytes, text extraction failed]${savedNote}` }] };
-  }
+  const extracted = await extractFileContent(result.content, { filename: result.filename });
+  const isHtmlTopic = ['html', 'htm'].includes(result.topic?.fileExtension ?? '') || extracted.format === 'html';
 
-  // For unrecognized binary (D2L internal format), fall back to Playwright-rendered view URL
-  if (contentType === 'application/octet-stream') {
+  // Only HTML pages may need the browser-rendered view (e.g. JS-built pages).
+  // Never for images/media/binaries: that view is the D2L page chrome.
+  if (isHtmlTopic && (extracted.kind !== 'text' || extracted.text.trim() === '')) {
     const rendered = await deps.contentRepo.findTopicRenderedText(courseId, input.topic_id);
-    if (rendered) return { content: [{ type: 'text' as const, text: rendered + savedNote }] };
+    if (rendered) return text([rendered, ...notes].join('\n\n'));
   }
 
-  const text = bufToText(buf, contentType);
-  return { content: [{ type: 'text' as const, text: text + savedNote }] };
+  if (extracted.kind === 'text' && extracted.format === 'html' && extracted.text.includes('/content/enforced/')) {
+    notes.push('[Linked course files (/content/enforced/...) can be read with get_course_file(course_id, path).]');
+  }
+  return { content: extractedToMcpContent(extracted, { notes }) };
 }
