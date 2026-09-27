@@ -15,11 +15,25 @@ export class FakeCommunicationsRepository implements CommunicationsRepository {
   constructor(
     private readonly announcementsByCourse: Map<number, Announcement[]> = new Map(),
     private readonly discussionsByCourse: Map<number, DiscussionForum[]> = new Map(),
+    /** Keyed `${courseId}/${announcementId}/${attachmentId}`. */
+    public readonly attachmentFiles: Map<string, Buffer> = new Map(),
   ) {}
 
   async findAnnouncements(courseId: OrgUnitId, opts?: { limit?: number }): Promise<Announcement[]> {
     const all = this.announcementsByCourse.get(OrgUnitId.toNumber(courseId)) ?? [];
     return opts?.limit ? all.slice(0, opts.limit) : all;
+  }
+
+  async findAnnouncement(courseId: OrgUnitId, announcementId: number): Promise<Announcement | null> {
+    const all = this.announcementsByCourse.get(OrgUnitId.toNumber(courseId)) ?? [];
+    return all.find((a) => a.id === announcementId) ?? null;
+  }
+
+  async downloadAnnouncementAttachment(courseId: OrgUnitId, announcementId: number, attachmentId: number): Promise<Buffer> {
+    const key = `${OrgUnitId.toNumber(courseId)}/${announcementId}/${attachmentId}`;
+    const buf = this.attachmentFiles.get(key);
+    if (!buf) throw new Error(`no fake attachment ${key}`);
+    return buf;
   }
 
   async findDiscussions(courseId: OrgUnitId): Promise<DiscussionForum[]> {

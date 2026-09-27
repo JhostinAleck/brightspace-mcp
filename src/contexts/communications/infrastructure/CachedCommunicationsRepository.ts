@@ -4,7 +4,7 @@ import type {
   PostReplyInput,
   PostReplyResult,
 } from '@/contexts/communications/domain/CommunicationsRepository.js';
-import { Announcement } from '@/contexts/communications/domain/Announcement.js';
+import { Announcement, type AnnouncementAttachment } from '@/contexts/communications/domain/Announcement.js';
 import { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import { DiscussionTopic } from '@/contexts/communications/domain/DiscussionTopic.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
@@ -24,6 +24,8 @@ interface AnnouncementPlain {
   html: string | null;
   authorName: string | null;
   postedAtIso: string;
+  pinned?: boolean;
+  attachments?: AnnouncementAttachment[];
 }
 
 interface TopicPlain {
@@ -48,6 +50,8 @@ function announcementToPlain(a: Announcement): AnnouncementPlain {
     html: a.html,
     authorName: a.authorName,
     postedAtIso: a.postedAt.toISOString(),
+    pinned: a.pinned,
+    attachments: [...a.attachments],
   };
 }
 
@@ -59,6 +63,8 @@ function announcementFromPlain(p: AnnouncementPlain): Announcement {
     html: p.html,
     authorName: p.authorName,
     postedAt: new Date(p.postedAtIso),
+    pinned: p.pinned ?? false,
+    attachments: p.attachments ?? [],
   });
 }
 
@@ -113,6 +119,22 @@ export class CachedCommunicationsRepository implements CommunicationsRepository 
     const fresh = await this.inner.findAnnouncements(courseId);
     await this.cache.set(key, fresh.map(announcementToPlain), this.ttls.announcementsTtlMs);
     return opts?.limit ? fresh.slice(0, opts.limit) : fresh;
+  }
+
+  async findAnnouncement(courseId: OrgUnitId, announcementId: number): Promise<Announcement | null> {
+    const key = `${PREFIX}announcements:${OrgUnitId.toNumber(courseId)}`;
+    const cached = await this.cache.get<AnnouncementPlain[]>(key);
+    const hit = cached?.find((p) => p.id === announcementId);
+    if (hit) return announcementFromPlain(hit);
+    return this.inner.findAnnouncement(courseId, announcementId);
+  }
+
+  async downloadAnnouncementAttachment(
+    courseId: OrgUnitId,
+    announcementId: number,
+    attachmentId: number,
+  ): Promise<Buffer> {
+    return this.inner.downloadAnnouncementAttachment(courseId, announcementId, attachmentId);
   }
 
   async findDiscussions(courseId: OrgUnitId): Promise<DiscussionForum[]> {

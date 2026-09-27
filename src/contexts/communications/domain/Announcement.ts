@@ -1,3 +1,10 @@
+export interface AnnouncementAttachment {
+  id: number;
+  name: string;
+  /** Size in bytes. */
+  size: number;
+}
+
 export interface AnnouncementProps {
   id: number;
   courseOrgUnitId: number;
@@ -5,6 +12,8 @@ export interface AnnouncementProps {
   html: string | null;
   authorName: string | null;
   postedAt: Date;
+  pinned?: boolean;
+  attachments?: AnnouncementAttachment[];
 }
 
 export class Announcement {
@@ -15,4 +24,6 @@ export class Announcement {
   get html(): string | null { return this.props.html; }
   get authorName(): string | null { return this.props.authorName; }
   get postedAt(): Date { return this.props.postedAt; }
+  get pinned(): boolean { return this.props.pinned ?? false; }
+  get attachments(): readonly AnnouncementAttachment[] { return this.props.attachments ?? []; }
 }

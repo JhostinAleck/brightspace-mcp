@@ -21,4 +21,12 @@ describe('getAnnouncements', () => {
     expect(out).toHaveLength(1);
     expect(out[0]?.title).toBe('A');
   });
+
+  it('puts pinned announcements first', async () => {
+    const pinnedOld = new Announcement({ id: 1, courseOrgUnitId: 101, title: 'Pinned', html: null, authorName: null, postedAt: new Date('2026-01-10'), pinned: true });
+    const newer = new Announcement({ id: 2, courseOrgUnitId: 101, title: 'New', html: null, authorName: null, postedAt: new Date('2026-04-20') });
+    const repo = new FakeCommunicationsRepository(new Map([[101, [newer, pinnedOld]]]));
+    const out = await getAnnouncements({ repo, courseId: OrgUnitId.of(101) });
+    expect(out.map((a) => a.title)).toEqual(['Pinned', 'New']);
+  });
 });

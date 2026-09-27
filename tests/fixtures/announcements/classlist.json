@@ -1,0 +1,4 @@
+[
+  { "Identifier": "1001", "ProfileIdentifier": "p1001", "DisplayName": "Student One", "Username": "s1", "OrgDefinedId": null, "Email": null, "FirstName": "Student", "LastName": "One", "RoleId": 109, "LastAccessed": null, "IsOnline": false, "ClasslistRoleDisplayName": "Student", "Pronouns": null },
+  { "Identifier": "2001", "ProfileIdentifier": "p2001", "DisplayName": "Instructor Two", "Username": "i2", "OrgDefinedId": null, "Email": null, "FirstName": "Instructor", "LastName": "Two", "RoleId": 103, "LastAccessed": null, "IsOnline": false, "ClasslistRoleDisplayName": "Instructor", "Pronouns": null }
+]
