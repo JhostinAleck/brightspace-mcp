@@ -31,6 +31,10 @@ List Dropbox folders (assignments) for a course.
 - `include_past` *(boolean, default `false`)*
 - `format` *(`compact|detailed`)*
 
+Status is `submitted`, `not submitted`, or `status unavailable` — the last one when Brightspace refuses to disclose submissions (typical for group folders and closed folders), so the tool never claims "not submitted" without evidence. Folders with no due date but an availability end date show it as the close date.
+
+The `detailed` format also shows, when present: open/close dates, points, whether the folder is a group assignment, allowed file types, link attachments, and the rubric name (use `get_assignment_rubric` for the full rubric).
+
 ### `get_upcoming_due_dates`
 Cross-course view of what's coming due.
 
@@ -41,9 +45,16 @@ Cross-course view of what's coming due.
 All times are formatted in the timezone configured in `output.tz` (auto-detected from system if not set). ISO timestamps are included in the meta footer.
 
 ### `get_feedback`
-Submission feedback (score + comments).
+Grade and instructor feedback for one assignment: score, overall comment, release date, and — when the folder has a rubric — the per-criterion rubric outcome (level, score, comment per criterion, plus overall rubric score and level). Says "not graded yet" when nothing has been released.
+
+Sources: the folder's grade item (`/grades/{id}/values/myGradeValue`) and the rubric assessment (`/le/unstable/{ou}/assessment?assessmentType=Rubric…`, keyed by the `whoami` user id). If the rubric route is unavailable on a tenant, only the grade and comment are shown.
 
 **Args:** `course_id`, `assignment_id`.
+
+### `get_assignment_rubric`
+The grading rubric attached to an assignment, rendered as one markdown table per criteria group (criteria × levels, each cell with points and the level description), plus the rubric's size, max points and overall levels.
+
+**Args:** `course_id` *(integer)*, `assignment_id` *(integer)*.
 
 ### `get_roster` / `get_classlist_emails`
 Classmates and their emails.

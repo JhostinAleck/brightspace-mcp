@@ -8,9 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `brightspace-mcp tui` — full-screen terminal dashboard (Ink 7 + React 19) replacing the broken web UI. Six tabs: Inicio (upcoming assignments, 7-day calendar, recent announcements), Cursos (live search + drill-down with Tareas/Notas/Anuncios sub-tabs), Calendario (30-day agenda), Config (form editor with Zod-derived dropdowns + `$EDITOR` flow), Caché, Logs.
+- `get_assignment_rubric` tool — renders an assignment's rubric as one markdown table per criteria group (criteria × levels with points and descriptions), plus max points and overall levels.
+- `get_assignments` detailed format shows points, open/close dates, group type, allowed file types, link attachments and the rubric name.
 
 ### Changed
 - Config form dropdowns (`strategy`, `mfa_strategy`, `locale`, `format`) are derived at runtime from Zod schemas — no hardcoded option lists.
+- `get_feedback` shows the per-criterion rubric outcome (level, score, comment) and says "not graded yet" when nothing is released.
+
+### Fixed
+- `get_feedback` never returned feedback: it called `/dropbox/folders/{id}/feedback/me`, which is not a Valence route (always 404). Feedback now comes from the grade item value and the rubric assessment.
+- Group and closed assignments were reported as "not submitted" when Brightspace refused the `mysubmissions` request (403/404); they now show "status unavailable".
+- Assignments with no due date but an availability end date now show the close date instead of "no due date".
+- `SubmissionType` sent as a bare number (LE 1.99) was ignored, so the submission mode was always `unknown`.
+- The assignment cache dropped `submissionMode`.
 
 ### Removed
 - `brightspace-mcp ui` command and the Hono + Alpine.js web dashboard. Replaced by `brightspace-mcp tui`.
