@@ -16,6 +16,7 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
 import { Feedback } from '@/contexts/assignments/domain/Feedback.js';
+import type { RubricAssessment } from '@/contexts/assignments/domain/RubricAssessment.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
 import { parseValidDate } from '@/shared-kernel/date/parseValidDate.js';
@@ -58,6 +59,8 @@ interface FeedbackPlain {
   outOf: number | null;
   text: string | null;
   releasedAtIso: string | null;
+  displayedGrade?: string | null;
+  rubricAssessments?: RubricAssessment[];
 }
 
 function assignmentToPlain(a: Assignment): AssignmentPlain {
@@ -116,6 +119,8 @@ function feedbackToPlain(f: Feedback): FeedbackPlain {
     outOf: f.outOf,
     text: f.text,
     releasedAtIso: f.releasedAt ? f.releasedAt.toISOString() : null,
+    displayedGrade: f.displayedGrade,
+    rubricAssessments: [...f.rubricAssessments],
   };
 }
 
@@ -125,6 +130,8 @@ function feedbackFromPlain(p: FeedbackPlain): Feedback {
     outOf: p.outOf,
     text: p.text,
     releasedAt: p.releasedAtIso ? new Date(p.releasedAtIso) : null,
+    displayedGrade: p.displayedGrade ?? null,
+    rubricAssessments: p.rubricAssessments ?? [],
   });
 }
 

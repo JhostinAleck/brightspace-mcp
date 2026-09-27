@@ -24,6 +24,7 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
 import { Feedback } from '@/contexts/assignments/domain/Feedback.js';
+import type { RubricAssessment } from '@/contexts/assignments/domain/RubricAssessment.js';
 import type { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { D2lApiError } from '@/contexts/http-api/errors.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
@@ -159,11 +160,55 @@ function mapLinkAttachments(folder: FolderDto): LinkAttachment[] {
     .map((l) => ({ name: l.LinkName?.trim() || (l.Href ?? ''), url: l.Href ?? '' }));
 }
 
-interface FeedbackDto {
-  Score?: number | null;
-  OutOf?: number | null;
-  Feedback?: { Text?: string | null } | null;
+/** Null when the rubric has not been assessed yet (no overall score, no criteria). */
+function toRubricAssessment(rubric: Rubric, dto: RubricAssessmentDto): RubricAssessment | null {
+  const overall = dto.OverallOutcome ?? null;
+  const outcomes = dto.CriteriaOutcome ?? [];
+  const overallScore = overall?.Score ?? null;
+  if (overallScore === null && (overall?.LevelId ?? null) === null && outcomes.length === 0) return null;
+  return {
+    rubricId: rubric.id,
+    rubricName: rubric.name,
+    score: overallScore,
+    maxPoints: rubric.maxPoints,
+    levelName: rubric.levelName(overall?.LevelId ?? null),
+    feedback: richText(overall?.Feedback) || null,
+    criteria: outcomes.map((o) => {
+      const hit = rubric.findCriterion(o.CriterionId);
+      return {
+        groupName: hit?.group.name ?? null,
+        criterionName: hit?.criterion.name ?? String(o.CriterionId),
+        levelName: rubric.levelName(o.LevelId ?? null),
+        score: o.Score ?? null,
+        maxPoints: hit?.maxPoints ?? null,
+        feedback: richText(o.Feedback) || null,
+      };
+    }),
+  };
+}
+
+/** `/grades/{gradeItemId}/values/myGradeValue` — 404 until the grade is released. */
+interface GradeValueDto {
+  PointsNumerator?: number | null;
+  PointsDenominator?: number | null;
+  DisplayedGrade?: string | null;
+  Comments?: RichTextDto | null;
   ReleasedDate?: string | null;
+}
+
+interface OutcomeDto {
+  LevelId?: number | null;
+  Score?: number | null;
+  Feedback?: RichTextDto | null;
+}
+
+/**
+ * `/le/unstable/{ou}/assessment?assessmentType=Rubric&...&userId={me}` — the
+ * only student-accessible route exposing per-criterion rubric results.
+ */
+interface RubricAssessmentDto {
+  OverallOutcome?: OutcomeDto | null;
+  CriteriaOutcome?: Array<OutcomeDto & { CriterionId: number }> | null;
 }
 
 export interface D2lAssignmentRepositoryOptions {
@@ -173,6 +218,9 @@ export interface D2lAssignmentRepositoryOptions {
 }
 
 export class D2lAssignmentRepository implements AssignmentRepository {
+  /** Memoized whoami Identifier (rubric assessments are fetched per user). */
+  private myUserId: Promise<number | null> | undefined;
+
   constructor(
     private readonly client: D2lApiClient,
     private readonly versions: D2lAssignmentRepositoryOptions,
@@ -381,23 +429,87 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     return this.client.getRaw(file.url);
   }
 
+  /**
+   * There is no Valence "my feedback" route for dropbox folders (the old
+   * `/feedback/me` path is always 404). Feedback is reassembled from:
+   *   - the folder's grade item value (score + overall comments), and
+   *   - the rubric assessment of each attached rubric (per-criterion outcomes).
+   * Returns null when neither has anything yet (= not graded).
+   */
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const fid = AssignmentId.toNumber(assignmentId);
+    const folder = await this.getFolder(orgUnit, fid);
+    if (!folder) return null;
+
+    const rubrics = (folder.Assessment?.Rubrics ?? []).map(toRubric);
+    const [grade, assessments] = await Promise.all([
+      this.getMyGradeValue(orgUnit, folder.GradeItemId ?? null),
+      this.getRubricAssessments(orgUnit, fid, rubrics),
+    ]);
+    if (!grade && assessments.length === 0) return null;
+
+    return new Feedback({
+      score: grade?.PointsNumerator ?? null,
+      outOf: grade?.PointsDenominator ?? folder.Assessment?.ScoreDenominator ?? null,
+      text: richText(grade?.Comments) || null,
+      releasedAt: parseValidDate(grade?.ReleasedDate ?? null),
+      displayedGrade: grade?.DisplayedGrade ?? null,
+      rubricAssessments: assessments,
+    });
+  }
+
+  private async getMyGradeValue(orgUnit: number, gradeItemId: number | null): Promise<GradeValueDto | null> {
+    if (!gradeItemId) return null;
     try {
-      const dto = await this.client.get<FeedbackDto>(
-        `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${fid}/feedback/me`,
+      return await this.client.get<GradeValueDto>(
+        `/d2l/api/le/${this.versions.le}/${orgUnit}/grades/${gradeItemId}/values/myGradeValue`,
       );
-      return new Feedback({
-        score: dto.Score ?? null,
-        outOf: dto.OutOf ?? null,
-        text: dto.Feedback?.Text ?? null,
-        releasedAt: dto.ReleasedDate ? new Date(dto.ReleasedDate) : null,
-      });
     } catch (err) {
-      if (err instanceof D2lApiError && err.status === 404) return null;
+      // 404 = not graded / not released yet; 403 = grade hidden from students.
+      if (err instanceof D2lApiError && (err.status === 403 || err.status === 404)) return null;
       throw err;
     }
+  }
+
+  private async getRubricAssessments(
+    orgUnit: number,
+    fid: number,
+    rubrics: Rubric[],
+  ): Promise<RubricAssessment[]> {
+    if (rubrics.length === 0 || !this.versions.lp) return [];
+    const me = await this.getMyUserId();
+    if (me === null) return [];
+    const results = await Promise.all(
+      rubrics.map(async (rubric) => {
+        try {
+          const dto = await this.client.get<RubricAssessmentDto>(
+            `/d2l/api/le/unstable/${orgUnit}/assessment?assessmentType=Rubric&objectType=Dropbox&objectId=${fid}&rubricId=${rubric.id}&userId=${me}`,
+          );
+          return toRubricAssessment(rubric, dto);
+        } catch (err) {
+          // `unstable` route: treat any API refusal as "no rubric detail"
+          // rather than failing the whole feedback lookup.
+          if (err instanceof D2lApiError) return null;
+          throw err;
+        }
+      }),
+    );
+    return results.filter((r): r is RubricAssessment => r !== null);
+  }
+
+  private getMyUserId(): Promise<number | null> {
+    this.myUserId ??= this.client
+      .get<{ Identifier?: string | null }>(`/d2l/api/lp/${this.versions.lp}/users/whoami`)
+      .then((me) => {
+        const id = Number.parseInt(me.Identifier ?? '', 10);
+        return Number.isInteger(id) && id > 0 ? id : null;
+      })
+      .catch((err: unknown) => {
+        this.myUserId = undefined;
+        throw err;
+      });
+    return this.myUserId;
   }
 
   async findRubrics(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Rubric[]> {

@@ -123,4 +123,32 @@ describe('CachedAssignmentRepository', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(out[0]?.name).toBe('R');
   });
+
+  it('preserves rubric outcomes and displayed grade across a feedback cache round-trip', async () => {
+    const feedback = new Feedback({
+      score: 4.5,
+      outOf: 5,
+      text: null,
+      releasedAt: null,
+      displayedGrade: '4.50',
+      rubricAssessments: [{
+        rubricId: 1,
+        rubricName: 'R',
+        score: 9,
+        maxPoints: 10,
+        levelName: 'Top',
+        feedback: null,
+        criteria: [{ groupName: 'G', criterionName: 'C', levelName: 'L', score: 5, maxPoints: 5, feedback: 'ok' }],
+      }],
+    });
+    const inner = new FakeAssignmentRepository(new Map(), new Map([['101:5001', feedback]]));
+    const repo = new CachedAssignmentRepository(inner, new InMemoryCache(), {
+      listTtlMs: 60_000,
+      feedbackTtlMs: 60_000,
+    });
+    await repo.findFeedback(OrgUnitId.of(101), AssignmentId.of(5001));
+    const cached = await repo.findFeedback(OrgUnitId.of(101), AssignmentId.of(5001));
+    expect(cached?.displayedGrade).toBe('4.50');
+    expect(cached?.rubricAssessments[0]?.criteria[0]?.feedback).toBe('ok');
+  });
 });

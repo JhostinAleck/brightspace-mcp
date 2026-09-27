@@ -1,0 +1,16 @@
+{
+  "PointsNumerator": 4.500000000,
+  "PointsDenominator": 5.000000000,
+  "WeightedNumerator": null,
+  "WeightedDenominator": null,
+  "GradeObjectIdentifier": "9001",
+  "GradeObjectName": "Lab 4",
+  "GradeObjectType": 1,
+  "GradeObjectTypeName": "Numeric",
+  "DisplayedGrade": "4.50",
+  "Comments": { "Text": "Good work overall.", "Html": "<p>Good work overall.</p>" },
+  "PrivateComments": { "Text": "", "Html": "" },
+  "LastModified": "2026-09-20T15:00:00.000Z",
+  "LastModifiedBy": 1,
+  "ReleasedDate": "2026-09-21T15:00:00.000Z"
+}

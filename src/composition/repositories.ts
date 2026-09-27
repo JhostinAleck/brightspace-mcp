@@ -73,7 +73,7 @@ export function buildRepositories(input: RepositoriesInput) {
   });
   const rawAssignmentRepo = new D2lAssignmentRepository(
     apiClient,
-    { le: versions.le },
+    { le: versions.le, lp: versions.lp },
     uiSubmitter,
   );
   const assignmentRepo = new CachedAssignmentRepository(rawAssignmentRepo, cache, {

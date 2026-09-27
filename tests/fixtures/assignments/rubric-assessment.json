@@ -1,0 +1,40 @@
+{
+  "RubricId": 8001,
+  "UserId": 12345,
+  "ObjectType": 1,
+  "ObjectId": 7001,
+  "OverallOutcome": {
+    "LevelId": 8101,
+    "Score": 9.000000000,
+    "ScoreIsOverridden": false,
+    "Feedback": { "Text": "", "Html": "" },
+    "FeedbackIsOverridden": false,
+    "AssessorId": "1"
+  },
+  "CriteriaOutcome": [
+    {
+      "CriterionId": 8301,
+      "LevelId": 8201,
+      "Score": 5.000000000,
+      "ScoreIsOverridden": false,
+      "Feedback": { "Text": "", "Html": "" },
+      "FeedbackIsOverridden": false
+    },
+    {
+      "CriterionId": 8302,
+      "LevelId": 8202,
+      "Score": 1.000000000,
+      "ScoreIsOverridden": false,
+      "Feedback": { "Text": "", "Html": "<p>Add sources for each claim.</p>" },
+      "FeedbackIsOverridden": false
+    },
+    {
+      "CriterionId": 8501,
+      "LevelId": 8401,
+      "Score": 3.000000000,
+      "ScoreIsOverridden": true,
+      "Feedback": { "Text": "Nice layout.", "Html": "<p>Nice layout.</p>" },
+      "FeedbackIsOverridden": false
+    }
+  ]
+}

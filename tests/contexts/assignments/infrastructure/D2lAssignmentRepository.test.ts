@@ -10,7 +10,6 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId';
 
 const BASE = 'https://x.com';
 const foldersFixture = JSON.parse(readFileSync(resolve(__dirname, '../../../fixtures/assignments/folders.json'), 'utf-8'));
-const feedbackFixture = JSON.parse(readFileSync(resolve(__dirname, '../../../fixtures/assignments/feedback.json'), 'utf-8'));
 
 afterEach(() => nock.cleanAll());
 
@@ -39,27 +38,6 @@ describe('D2lAssignmentRepository', () => {
     const discussion = out.find((a) => a.name === 'Discussion Post');
     expect(discussion?.dueDate.toDate()).toBeNull();
     expect(discussion?.instructions).toBeNull();
-  });
-
-  it('findFeedback returns Feedback when the endpoint responds 200', async () => {
-    nock(BASE)
-      .get(/\/d2l\/api\/le\/1\.91\/101\/dropbox\/folders\/5001\/feedback\/me$/)
-      .reply(200, feedbackFixture);
-    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
-    const repo = new D2lAssignmentRepository(client, { le: '1.91' });
-    const fb = await repo.findFeedback(OrgUnitId.of(101), AssignmentId.of(5001));
-    expect(fb?.score).toBe(88);
-    expect(fb?.text).toContain('tighten');
-  });
-
-  it('findFeedback returns null on 404', async () => {
-    nock(BASE)
-      .get(/\/d2l\/api\/le\/1\.91\/101\/dropbox\/folders\/5002\/feedback\/me$/)
-      .reply(404, '');
-    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
-    const repo = new D2lAssignmentRepository(client, { le: '1.91' });
-    const fb = await repo.findFeedback(OrgUnitId.of(101), AssignmentId.of(5002));
-    expect(fb).toBeNull();
   });
 
   it('findFiles uses Attachments from folder list when present', async () => {
