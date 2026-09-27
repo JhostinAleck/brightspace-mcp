@@ -1,6 +1,7 @@
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
 import type { Syllabus } from '@/contexts/content/domain/Syllabus.js';
 import type { Module } from '@/contexts/content/domain/Module.js';
+import type { CourseFilePath } from '@/contexts/content/domain/CourseFilePath.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 
 export class FakeContentRepository implements ContentRepository {
@@ -23,5 +24,9 @@ export class FakeContentRepository implements ContentRepository {
 
   async findTopicRenderedText(_courseId: OrgUnitId, _topicId: number): Promise<string> {
     return '';
+  }
+
+  async findCourseFile(_courseId: OrgUnitId, _path: CourseFilePath): Promise<Buffer> {
+    return Buffer.alloc(0);
   }
 }

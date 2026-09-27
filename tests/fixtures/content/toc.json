@@ -1,0 +1,163 @@
+{
+  "_comment": "Sanitized shape of GET /d2l/api/le/{v}/{ou}/content/toc (real Brightspace 2026 responses, names/ids/tokens replaced).",
+  "Modules": [
+    {
+      "IsHidden": false,
+      "SortOrder": 1,
+      "StartDateTime": null,
+      "EndDateTime": null,
+      "IsLocked": false,
+      "PacingStartDate": null,
+      "PacingEndDate": null,
+      "DefaultPath": "/content/enforced/101-202620_TEST1010_1/",
+      "ModuleId": 900,
+      "Title": "Welcome",
+      "LastModifiedDate": "2026-01-16T19:58:42.127Z",
+      "Description": {
+        "Text": "\r\n\r\n",
+        "Html": "<div class=\"banner\"><img src=\"/content/enforced/101-202620_TEST1010_1/assets/banner%20completo.png?_&amp;d2lSessionVal=FAKESESSION1&amp;_&amp;d2lSessionVal=FAKESESSION2\" width=\"100%\"/></div>"
+      },
+      "Modules": [
+        {
+          "IsHidden": false,
+          "SortOrder": 2,
+          "DefaultPath": "/content/enforced/101-202620_TEST1010_1/",
+          "ModuleId": 901,
+          "Title": "Sprint 1",
+          "LastModifiedDate": "2026-02-01T10:00:00.000Z",
+          "Description": { "Text": "", "Html": "" },
+          "Modules": [],
+          "Topics": [
+            {
+              "IsExempt": false,
+              "IsHidden": false,
+              "SortOrder": 1,
+              "IsLocked": false,
+              "IsBroken": false,
+              "ActivityId": "https://ids.brightspace.com/activities/contenttopic/FAKE-1",
+              "CompletionType": 2,
+              "TopicId": 9011,
+              "Identifier": "9011",
+              "TypeIdentifier": "File",
+              "Title": "SPRINT1-Activity description.pdf",
+              "Bookmarked": false,
+              "Unread": false,
+              "Url": "/content/enforced/101-202620_TEST1010_1/1_RECURSOS/Sprint 1/SPRINT1-Activity description.pdf",
+              "ToolId": null,
+              "ToolItemId": null,
+              "ActivityType": 1,
+              "GradeItemId": null,
+              "LastModifiedDate": "2026-02-01T10:00:00.000Z",
+              "Description": { "Text": "", "Html": "" }
+            },
+            {
+              "IsBroken": true,
+              "TopicId": 9012,
+              "Identifier": "9012",
+              "TypeIdentifier": "File",
+              "Title": "MS1-Optional.pdf",
+              "Url": null,
+              "ToolId": null,
+              "ToolItemId": null,
+              "ActivityType": 1,
+              "Description": { "Text": "", "Html": "" }
+            }
+          ]
+        }
+      ],
+      "Topics": [
+        {
+          "IsBroken": false,
+          "TopicId": 9001,
+          "Identifier": "9001",
+          "TypeIdentifier": "File",
+          "Title": "Welcome",
+          "Url": "/content/enforced/101-202620_TEST1010_1/Welcome.html",
+          "ToolId": null,
+          "ToolItemId": null,
+          "ActivityType": 1,
+          "Description": { "Text": "", "Html": "" }
+        },
+        {
+          "IsBroken": false,
+          "TopicId": 9002,
+          "Identifier": "9002",
+          "TypeIdentifier": "Link",
+          "Title": "Clase grabada",
+          "Url": "https://www.youtube.com/watch?v=FAKEVIDEO",
+          "ToolId": null,
+          "ToolItemId": null,
+          "ActivityType": 2,
+          "Description": { "Text": "", "Html": "" }
+        },
+        {
+          "IsBroken": true,
+          "TopicId": 9003,
+          "Identifier": "9003",
+          "TypeIdentifier": "Link",
+          "Title": "Ejercicios Basicos - Sesion 2",
+          "Url": "/d2l/common/dialogs/quickLink/quickLink.d2l?ou=101&type=quiz&rcode=FAKE-134704",
+          "ToolId": 51000,
+          "ToolItemId": null,
+          "ActivityType": 4,
+          "Description": { "Text": "", "Html": "" }
+        },
+        {
+          "IsBroken": false,
+          "TopicId": 9004,
+          "Identifier": "9004",
+          "TypeIdentifier": "Link",
+          "Title": "PRODUCTION ECRITE 1",
+          "Url": "/d2l/common/dialogs/quickLink/quickLink.d2l?ou=101&type=lti&rCode=FAKE-2751889",
+          "ToolId": 390000,
+          "ToolItemId": 88150,
+          "ActivityType": 7,
+          "Description": { "Text": "", "Html": "" }
+        },
+        {
+          "IsBroken": false,
+          "TopicId": 9005,
+          "Identifier": "9005",
+          "TypeIdentifier": "File",
+          "Title": "Rubric",
+          "Url": "/content/enforced/101-202620_TEST1010_1/Rubric.png",
+          "ToolId": null,
+          "ToolItemId": null,
+          "ActivityType": 1,
+          "Description": { "Text": "", "Html": "" }
+        }
+      ]
+    },
+    {
+      "IsHidden": false,
+      "SortOrder": 3,
+      "DefaultPath": "/content/enforced/101-202620_TEST1010_1/",
+      "ModuleId": 910,
+      "Title": "Diapositivas",
+      "Description": { "Text": "", "Html": "" },
+      "Topics": [],
+      "Modules": [
+        {
+          "ModuleId": 911,
+          "Title": "Capitulo 1 - Introduccion a las Redes",
+          "Description": {
+            "Text": "Capitulo 1 - Introduccion a las Redes",
+            "Html": "<p><a rel=\"noopener\" href=\"/content/enforced/101-202620_TEST1010_1/Capi%CC%81tulo%201.pdf\" target=\"_blank\">Cap&#237;tulo 1 - Introducci&#243;n a las Redes</a></p>"
+          },
+          "Modules": [],
+          "Topics": []
+        },
+        {
+          "ModuleId": 912,
+          "Title": "Capa de Transporte (videos)",
+          "Description": {
+            "Text": "\n\t\t\t/content/enforced/999-OLDCOURSE/Transporte 01.mov\n\t\t\tTransporte 01\n",
+            "Html": "<p>Videos del cap&iacute;tulo 3 sobre TCP y UDP.</p><p><object title=\"Transporte 01\" width=\"400\" height=\"300\"><param name=\"src\" value=\"/content/enforced/101-202620_TEST1010_1/Transporte%20-%20Diap%2001%20480p.mov?_&amp;d2lSessionVal=FAKESESSION3\"/><object type=\"video/quicktime\" data=\"/content/enforced/101-202620_TEST1010_1/Transporte%20-%20Diap%2001%20480p.mov?_&amp;d2lSessionVal=FAKESESSION3\"><dl><dt><a rel=\"noopener\" href=\"/content/enforced/101-202620_TEST1010_1/Transporte%20-%20Diap%2001%20480p.mov\" target=\"_blank\">/content/enforced/999-OLDCOURSE/Transporte 01.mov</a></dt></dl></object></object></p>"
+          },
+          "Modules": [],
+          "Topics": []
+        }
+      ]
+    }
+  ]
+}
