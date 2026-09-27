@@ -29,8 +29,12 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: 22, cache: 'npm' }
       - run: npm ci
-      - name: Run npm audit (fail only on high/critical)
-        run: npm audit --audit-level=high
+      # Gate only on what users install. Dev-only advisories (e.g. vite via
+      # vitepress for the docs site) are reported but don't block merges.
+      - name: Run npm audit on production deps (fail on high/critical)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Report npm audit on all deps (non-blocking)
+        run: npm audit --audit-level=high || true
 
   scorecard:
     runs-on: ubuntu-latest
