@@ -65,6 +65,27 @@
     "none": "No feedback posted yet.",
     "released_at": "Released: {when}"
   },
+  "rubric": {
+    "header": "Rubric: {name}",
+    "none": "No rubric attached to this assignment.",
+    "groups_count": {
+      "one": "{count} criteria group",
+      "other": "{count} criteria groups"
+    },
+    "criteria_count": {
+      "one": "{count} criterion",
+      "other": "{count} criteria"
+    },
+    "max_points": "max {points}",
+    "points_short": "{points} pts",
+    "overall_levels": "Overall levels",
+    "criterion": "Criterion",
+    "group": "Group",
+    "level": "Level",
+    "score": "Score",
+    "feedback": "Feedback",
+    "overall_level": "Overall level"
+  },
   "roster": {
     "header": "Roster",
     "empty": "No classmates found.",

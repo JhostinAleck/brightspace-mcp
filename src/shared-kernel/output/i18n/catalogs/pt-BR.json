@@ -65,6 +65,27 @@
     "none": "Ainda não há feedback.",
     "released_at": "Publicado: {when}"
   },
+  "rubric": {
+    "header": "Rubrica: {name}",
+    "none": "Esta tarefa não tem rubrica.",
+    "groups_count": {
+      "one": "{count} grupo de critérios",
+      "other": "{count} grupos de critérios"
+    },
+    "criteria_count": {
+      "one": "{count} critério",
+      "other": "{count} critérios"
+    },
+    "max_points": "máx. {points}",
+    "points_short": "{points} pts",
+    "overall_levels": "Níveis gerais",
+    "criterion": "Critério",
+    "group": "Grupo",
+    "level": "Nível",
+    "score": "Pontuação",
+    "feedback": "Feedback",
+    "overall_level": "Nível geral"
+  },
   "roster": {
     "header": "Lista de alunos",
     "empty": "Nenhum colega encontrado.",

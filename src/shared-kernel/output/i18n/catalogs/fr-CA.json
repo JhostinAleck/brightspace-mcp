@@ -65,6 +65,27 @@
     "none": "Aucune rétroaction pour l'instant.",
     "released_at": "Publiée : {when}"
   },
+  "rubric": {
+    "header": "Grille d'évaluation : {name}",
+    "none": "Aucune grille d'évaluation pour ce travail.",
+    "groups_count": {
+      "one": "{count} groupe de critères",
+      "other": "{count} groupes de critères"
+    },
+    "criteria_count": {
+      "one": "{count} critère",
+      "other": "{count} critères"
+    },
+    "max_points": "max. {points}",
+    "points_short": "{points} pts",
+    "overall_levels": "Niveaux globaux",
+    "criterion": "Critère",
+    "group": "Groupe",
+    "level": "Niveau",
+    "score": "Note",
+    "feedback": "Rétroaction",
+    "overall_level": "Niveau global"
+  },
   "roster": {
     "header": "Liste de classe",
     "empty": "Aucun camarade trouvé.",

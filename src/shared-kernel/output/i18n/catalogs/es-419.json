@@ -65,6 +65,27 @@
     "none": "Aún no hay retroalimentación.",
     "released_at": "Publicada: {when}"
   },
+  "rubric": {
+    "header": "Rúbrica: {name}",
+    "none": "Esta tarea no tiene rúbrica.",
+    "groups_count": {
+      "one": "{count} grupo de criterios",
+      "other": "{count} grupos de criterios"
+    },
+    "criteria_count": {
+      "one": "{count} criterio",
+      "other": "{count} criterios"
+    },
+    "max_points": "máx. {points}",
+    "points_short": "{points} pts",
+    "overall_levels": "Niveles generales",
+    "criterion": "Criterio",
+    "group": "Grupo",
+    "level": "Nivel",
+    "score": "Puntaje",
+    "feedback": "Retroalimentación",
+    "overall_level": "Nivel general"
+  },
   "roster": {
     "header": "Lista del curso",
     "empty": "No se encontraron compañeros.",
