@@ -57,3 +57,7 @@ secrets/
 .claude/*
 !.claude/CLAUDE.md
 .superpowers/
+
+# Local tooling artifacts
+.playwright-mcp/
+download.html
