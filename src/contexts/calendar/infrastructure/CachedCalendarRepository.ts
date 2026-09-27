@@ -8,6 +8,7 @@ export interface CachedCalendarRepositoryTtls {
 }
 
 const PREFIX = 'calendar:';
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 interface EventPlain {
   id: number;
@@ -54,11 +55,20 @@ export class CachedCalendarRepository implements CalendarRepository {
   ) {}
 
   async findEvents(courseId: OrgUnitId, from: Date, to: Date): Promise<CalendarEvent[]> {
-    const key = `${PREFIX}${OrgUnitId.toNumber(courseId)}:${from.toISOString()}:${to.toISOString()}`;
+    // Callers pass "now"-based windows, so exact timestamps never repeat.
+    // Cache the enclosing whole-day (UTC) window instead and filter to the
+    // exact range, so every call on the same day shares one entry.
+    const dayFrom = new Date(Math.floor(from.getTime() / DAY_MS) * DAY_MS);
+    const dayTo = new Date(Math.ceil(to.getTime() / DAY_MS) * DAY_MS);
+    const key = `${PREFIX}${OrgUnitId.toNumber(courseId)}:${dayFrom.toISOString()}:${dayTo.toISOString()}`;
     const cached = await this.cache.get<EventPlain[]>(key);
-    if (cached) return cached.map(fromPlain);
-    const fresh = await this.inner.findEvents(courseId, from, to);
-    await this.cache.set(key, fresh.map(toPlain), this.ttls.ttlMs);
-    return fresh;
+    let events: CalendarEvent[];
+    if (cached) {
+      events = cached.map(fromPlain);
+    } else {
+      events = await this.inner.findEvents(courseId, dayFrom, dayTo);
+      await this.cache.set(key, events.map(toPlain), this.ttls.ttlMs);
+    }
+    return events.filter((e) => e.startAt >= from && e.startAt <= to);
   }
 }
