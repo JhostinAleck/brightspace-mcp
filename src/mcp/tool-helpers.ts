@@ -178,7 +178,7 @@ export function courseContentToText(
       lines.push(`${'  '.repeat(level)}- ${ctx.md.bold(m.title)}${desc ? ` (module_id=${m.id})` : ''}`);
       if (desc) {
         describedModules++;
-        if (desc.excerpt) lines.push(`${indent}${ctx.md.italic(desc.excerpt)}`);
+        if (desc.excerpt && desc.excerpt !== m.title.trim()) lines.push(`${indent}${ctx.md.italic(desc.excerpt)}`);
         for (const link of desc.links) lines.push(`${indent}↳ ${link}`);
         if (desc.excerptTruncated || desc.hiddenLinks > 0) {
           const more = desc.hiddenLinks > 0 ? `+${desc.hiddenLinks} more link(s); ` : '';

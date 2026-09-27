@@ -34,10 +34,7 @@ export function summarizeDescription(
   const maxChars = opts.maxChars ?? DESCRIPTION_EXCERPT_CHARS;
   const maxLinks = opts.maxLinks ?? DESCRIPTION_MAX_LINKS;
   const found = extractHtmlLinks(html);
-  // Anchors whose text is a raw path/URL are noise in prose (the target is listed below anyway).
-  const prose = html.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, (m, inner: string) =>
-    /^\s*(\/|https?:\/\/)/i.test(htmlToPlainText(inner)) ? ' ' : m);
-  let plain = htmlToPlainText(prose);
+  let plain = htmlToPlainText(html);
   // A description made only of link labels would just repeat the link list.
   const labels = found.map((l) => l.label).filter(Boolean);
   if (labels.length > 0 && !/\p{L}/u.test(labels.reduce((rest, l) => rest.split(l).join(' '), plain))) plain = '';

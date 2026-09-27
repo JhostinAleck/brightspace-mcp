@@ -17,9 +17,12 @@ const NON_FILE_HINTS: Record<string, string> = {
   other: 'It has no downloadable file.',
 };
 
+const KIND_LABEL: Record<string, string> = { lti: 'an LTI', other: 'an unclassified' };
+
 function nonFileMessage(topic: Topic): string {
   const url = topic.url ? `\nURL: ${topic.url}` : '';
-  return `"${topic.title}" (id=${topic.id}) is a ${topic.kind} topic. ${NON_FILE_HINTS[topic.kind] ?? NON_FILE_HINTS['other']}${url}`;
+  const kind = KIND_LABEL[topic.kind] ?? `a ${topic.kind}`;
+  return `"${topic.title}" (id=${topic.id}) is ${kind} topic. ${NON_FILE_HINTS[topic.kind] ?? NON_FILE_HINTS['other']}${url}`;
 }
 
 function brokenMessage(topic: Topic): string {

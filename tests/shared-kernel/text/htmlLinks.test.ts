@@ -104,6 +104,11 @@ describe('htmlToText', () => {
     expect(out).toContain('/content/enforced/1-X/Slides.pdf');
   });
 
+  it('drops anchor labels that are stale raw paths, keeping the real target', () => {
+    const out = htmlToText('<p><a href="/content/enforced/1-NEW/v.mov">/content/enforced/9-OLD/v.mov</a></p><p>Clip 01</p>');
+    expect(out).toBe('/content/enforced/1-NEW/v.mov\nClip 01');
+  });
+
   it('drops scripts, styles and session tokens', () => {
     const out = htmlToText('<style>p{}</style><script>var x=1</script><a href="/c/f.pdf?d2lSessionVal=S3CR3T">f</a>');
     expect(out).toBe('f (/c/f.pdf)');

@@ -106,9 +106,23 @@ export function extractHtmlLinks(html: string, opts: HtmlLinkOptions = {}): Html
   return out;
 }
 
-/** Visible text only (no link targets), whitespace collapsed to single spaces. */
+/**
+ * D2L often labels embedded media with a raw path copied from an older course
+ * (`<a href="/content/enforced/NEW/x.mov">/content/enforced/OLD/x.mov</a>`).
+ * Such labels are noise at best and misleading at worst: blank them so only
+ * the real target survives.
+ */
+function blankPathLikeAnchorLabels(html: string): string {
+  return html.replace(/(<a\b[^>]*>)([\s\S]*?)(<\/a>)/gi, (m, open: string, inner: string, close: string) =>
+    /^(\/|https?:\/\/)\S*$/i.test(labelText(inner).replace(/\s+/g, '')) ? `${open}${close}` : m);
+}
+
+/**
+ * Visible text only (no link targets), whitespace collapsed to single spaces.
+ * Anchor labels that are just raw paths/URLs are dropped.
+ */
 export function htmlToPlainText(html: string): string {
-  return labelText(removeCode(html));
+  return labelText(blankPathLikeAnchorLabels(removeCode(html)));
 }
 
 const BLOCK_BREAK_RE = /<(?:br|hr)\b[^>]*>|<\/(?:p|div|li|h[1-6]|tr|table|ul|ol|blockquote|pre|section|article|header|footer|dt|dd|center)\s*>/gi;
@@ -122,7 +136,7 @@ const BLOCK_BREAK_RE = /<(?:br|hr)\b[^>]*>|<\/(?:p|div|li|h[1-6]|tr|table|ul|ol|
  */
 export function htmlToText(html: string, opts: HtmlLinkOptions = {}): string {
   const src = removeCode(html);
-  const withResolvedHrefs = src.replace(
+  const withResolvedHrefs = blankPathLikeAnchorLabels(src).replace(
     /(<a\b[^>]*?\bhref\s*=\s*)(["'])([^"']*)\2/gi,
     (_m, pre: string, q: string, href: string) => {
       const url = cleanUrl(href, opts);
