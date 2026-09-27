@@ -62,7 +62,7 @@
   },
   "feedback": {
     "header": "Rétroaction",
-    "none": "Aucune rétroaction pour l'instant.",
+    "none": "Pas encore évalué — aucune rétroaction publiée.",
     "released_at": "Publiée : {when}"
   },
   "rubric": {

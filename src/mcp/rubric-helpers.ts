@@ -1,5 +1,6 @@
 import type { OutputContext } from '@/shared-kernel/output/index.js';
 import { Rubric } from '@/contexts/assignments/domain/Rubric.js';
+import type { RubricAssessment } from '@/contexts/assignments/domain/RubricAssessment.js';
 
 function pts(n: number, ctx: OutputContext): string {
   return ctx.t('rubric.points_short', { points: ctx.formatDecimal(n) });
@@ -44,4 +45,40 @@ function rubricToText(rubric: Rubric, ctx: OutputContext): string {
 export function rubricsToText(rubrics: readonly Rubric[], ctx: OutputContext): string {
   if (rubrics.length === 0) return ctx.t('rubric.none');
   return rubrics.map((r) => rubricToText(r, ctx)).join('\n\n');
+}
+
+function scoreText(score: number | null, max: number | null, ctx: OutputContext): string {
+  if (score === null) return '—';
+  return max === null ? ctx.formatDecimal(score) : ctx.formatPoints(score, max);
+}
+
+/** Per-criterion outcomes of the student's graded rubric(s), one table per rubric. */
+export function rubricAssessmentsToText(assessments: readonly RubricAssessment[], ctx: OutputContext): string {
+  return assessments
+    .map((a) => {
+      const head = [ctx.md.bold(ctx.t('rubric.header', { name: a.rubricName }))];
+      if (a.score !== null) head.push(scoreText(a.score, a.maxPoints, ctx));
+      if (a.levelName) head.push(`${ctx.t('rubric.overall_level')}: ${a.levelName}`);
+      const parts = [head.join(' — ')];
+      if (a.feedback) parts.push(ctx.md.blockquote(a.feedback));
+      if (a.criteria.length > 0) {
+        const headers = [
+          ctx.t('rubric.group'),
+          ctx.t('rubric.criterion'),
+          ctx.t('rubric.level'),
+          ctx.t('rubric.score'),
+          ctx.t('rubric.feedback'),
+        ];
+        const rows = a.criteria.map((c) => [
+          c.groupName ?? '',
+          c.criterionName,
+          c.levelName ?? '—',
+          scoreText(c.score, c.maxPoints, ctx),
+          c.feedback ?? '',
+        ]);
+        parts.push(ctx.md.table(headers, rows));
+      }
+      return parts.join('\n\n');
+    })
+    .join('\n\n');
 }

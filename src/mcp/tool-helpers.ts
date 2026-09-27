@@ -12,6 +12,7 @@ import type { Module } from '@/contexts/content/domain/Module.js';
 import type { Announcement } from '@/contexts/communications/domain/Announcement.js';
 import type { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import type { CalendarEvent } from '@/contexts/calendar/domain/CalendarEvent.js';
+import { rubricAssessmentsToText } from '@/mcp/rubric-helpers.js';
 
 export function coursesToCompact(courses: Course[], ctx: OutputContext): string {
   if (courses.length === 0) return ctx.t('courses.empty');
@@ -78,7 +79,12 @@ export function feedbackToText(fb: Feedback | null, ctx: OutputContext): string 
     ? `\n${ctx.t('feedback.released_at', { when: ctx.formatDate(fb.releasedAt) })}`
     : '';
   const text = fb.text ? `\n\n${ctx.md.blockquote(fb.text)}` : '';
-  return [ctx.md.h4(ctx.t('feedback.header')), `${score}${pct}${released}${text}`].join('\n\n');
+  const rubrics = fb.rubricAssessments ?? [];
+  return [
+    ctx.md.h4(ctx.t('feedback.header')),
+    `${score}${pct}${released}${text}`,
+    ...(rubrics.length > 0 ? [rubricAssessmentsToText(rubrics, ctx)] : []),
+  ].join('\n\n');
 }
 
 function assignmentStatus(a: Assignment, ctx: OutputContext): string {

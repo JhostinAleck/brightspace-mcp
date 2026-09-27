@@ -62,7 +62,7 @@
   },
   "feedback": {
     "header": "Retroalimentación",
-    "none": "Aún no hay retroalimentación.",
+    "none": "Aún no está calificada — no hay retroalimentación.",
     "released_at": "Publicada: {when}"
   },
   "rubric": {

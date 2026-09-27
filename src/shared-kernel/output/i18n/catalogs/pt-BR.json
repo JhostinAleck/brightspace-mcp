@@ -62,7 +62,7 @@
   },
   "feedback": {
     "header": "Feedback",
-    "none": "Ainda não há feedback.",
+    "none": "Ainda não avaliada — nenhum feedback publicado.",
     "released_at": "Publicado: {when}"
   },
   "rubric": {
