@@ -127,6 +127,14 @@ describe('get_course_file', () => {
     expect(spy.mock.calls[0]?.[1].path).toBe('/content/enforced/101-X/Welcome/files/syllabus.pdf');
   });
 
+  it('flags an HTML (login/error) page served in place of a binary file', async () => {
+    const repo = new FakeContentRepository();
+    vi.spyOn(repo, 'findCourseFile').mockResolvedValue(Buffer.from('<!DOCTYPE html><html><body>Log in</body></html>'));
+    const r = await handleGetCourseFile({ contentRepo: repo }, { course_id: COURSE, path: '/content/enforced/101-X/a.pdf' });
+    expect(r.isError).toBe(true);
+    expect(text(r)).toMatch(/HTML page instead of the \.pdf file/);
+  });
+
   it('turns a 404 into a readable message', async () => {
     const repo = new FakeContentRepository();
     vi.spyOn(repo, 'findCourseFile').mockRejectedValue(new D2lApiError(404, '/content/enforced/101-X/a.pdf', ''));
