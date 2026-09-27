@@ -32,7 +32,7 @@ List Dropbox folders (assignments) for a course.
 - `format` *(`compact|detailed`)*
 
 ### `get_upcoming_due_dates`
-Cross-course view of what's coming due.
+Cross-course view of what's coming due: assignments plus active quizzes whose due date (or close date) falls in the window, labeled `[quiz]` and sorted together.
 
 **Args:**
 - `days` *(integer 1–365, default 14)*
@@ -71,9 +71,13 @@ Forum threads.
 **Args:** `course_id`, `topic_id` *(optional — list forums if omitted)*.
 
 ### `get_calendar_events`
-Course calendar items.
+Course calendar items visible to you (lectures, exams, due dates, content releases) from now through the next N days.
 
-**Args:** `course_id`, `from_date`, `to_date`.
+**Args:**
+- `course_id` *(integer, required)*
+- `days` *(integer 1–365, default 30)*
+
+**Returns:** events sorted by start time, formatted in the configured `output.tz`/`output.locale`. All-day events show a date only; location and a short plain-text description (HTML stripped) are included when set. Uses `calendar/events/myEvents/` (paged) and falls back to `calendar/events/` on older tenants.
 
 ### `get_assignment_files`
 Download and read attachments posted on an assignment (instructions, templates).
@@ -99,10 +103,12 @@ List the groups you're enrolled in for a course, with member names.
 Useful for "who's in my group?" or finding the right `grpid` for a manual UI URL.
 
 ### `list_quizzes`
-List quizzes for a course with attempt counts, time limits, close dates.
+List every quiz in a course (all pages) with attempts allowed, time limits, and open/due/close dates.
 
 **Args:** `course_id`, `format` *(`compact|detailed`)*.
-**Returns:** newest-first list with attempts taken, attempts remaining, due date.
+**Returns:** compact: name, due (or close) date, attempts allowed. Detailed adds opens/due/closes, enforced time limit, and a plain-text instructions snippet. Inactive quizzes are tagged `[inactive]`. Dates use the configured `output.tz`/`output.locale`.
+
+The D2L quiz list does not include how many attempts *you* have used, and the attempts endpoint is normally forbidden to students, so the tool shows "N attempts allowed" rather than a guessed "0 taken".
 
 ⚠️ Read-only by design — quiz questions and answer keys are NOT exposed even if the API permits it. Quiz integrity matters.
 
@@ -110,7 +116,9 @@ List quizzes for a course with attempt counts, time limits, close dates.
 Your attempts on a single quiz with scores and submission status.
 
 **Args:** `course_id`, `quiz_id`.
-**Returns:** per-attempt score, percent, submission status, start/complete timestamps.
+**Returns:** per-attempt score, percent (when the total is known), submission status, start/complete times in the configured timezone.
+
+D2L gates this endpoint behind the `Quizzing.GradeAttempts` permission. Most student accounts get a 403; the tool then returns an explanation pointing to `get_my_grades` instead of an error.
 
 ### `clear_cache`
 Drop cached responses to force re-fetch.
