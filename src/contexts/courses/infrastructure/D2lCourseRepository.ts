@@ -25,15 +25,11 @@ interface EnrollmentsPage {
 interface ClasslistUserDto {
   Identifier: string;
   DisplayName: string;
-  UserName: string;
+  Username?: string | null;
   Email?: string | null;
   RoleId?: number | null;
+  ClasslistRoleDisplayName?: string | null;
   OrgDefinedId?: string | null;
-}
-
-interface ClasslistEmailDto {
-  Identifier: string;
-  EmailAddress: string | null;
 }
 
 export interface D2lCourseRepositoryOptions {
@@ -138,41 +134,56 @@ export class D2lCourseRepository implements CourseRepository {
     }
   }
 
+  // The LP classlist route (/lp/{v}/{ou}/classlist/) is 404 on real tenants;
+  // the LE one is what students can read.
+  private async fetchClasslist(orgUnit: number): Promise<ClasslistUserDto[]> {
+    return this.client.get<ClasslistUserDto[]>(`/d2l/api/le/${this.versions.le}/${orgUnit}/classlist/`);
+  }
+
   async findRoster(id: CourseId): Promise<Classmate[]> {
-    const orgUnit = CourseId.toNumber(id);
-    const users = await this.client.get<ClasslistUserDto[]>(
-      `/d2l/api/lp/${this.versions.lp}/${orgUnit}/classlist/`,
-    );
+    const users = await this.fetchClasslist(CourseId.toNumber(id));
     return users.map((u) => this.toClassmate(u));
   }
 
+  // There is no student-readable email route (classlist/email/ is 404 on both
+  // LP and LE); emails come from the classlist and are often hidden by policy.
   async findClasslistEmails(id: CourseId): Promise<string[]> {
-    const orgUnit = CourseId.toNumber(id);
-    const emails = await this.client.get<ClasslistEmailDto[]>(
-      `/d2l/api/lp/${this.versions.lp}/${orgUnit}/classlist/email/`,
-    );
-    return emails
-      .map((e) => e.EmailAddress)
+    const users = await this.fetchClasslist(CourseId.toNumber(id));
+    return users
+      .map((u) => u.Email)
       .filter((e): e is string => typeof e === 'string' && e.length > 0);
   }
 
   private toClassmate(dto: ClasslistUserDto): Classmate {
-    const role = this.classifyRole(dto.RoleId);
+    const role = this.classifyRole(dto.RoleId, dto.ClasslistRoleDisplayName);
     return new Classmate({
       userId: UserId.of(Number.parseInt(dto.Identifier, 10)),
       displayName: dto.DisplayName,
-      uniqueName: dto.UserName,
+      uniqueName: dto.Username ?? '',
       email: dto.Email ?? null,
       role,
     });
   }
 
+  /**
+   * Role ids are tenant-specific (Uniandes: 109 = "Profesor", 110 =
+   * "Estudiante"), so classify by the role's display name and only fall back
+   * to D2L's stock ids when no name is given.
+   */
   private classifyRole(
     roleId: number | null | undefined,
+    roleName: string | null | undefined,
   ): 'student' | 'instructor' | 'ta' | 'other' {
-    if (roleId === 109) return 'student';
-    if (roleId === 103) return 'instructor';
-    if (roleId === 112) return 'ta';
+    const name = (roleName ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (name) {
+      if (/\b(asistente|assistant|monitor|ta|tutor)\b/.test(name)) return 'ta';
+      if (/\b(profesor|professor|instructor|teacher|docente)\b/.test(name)) return 'instructor';
+      if (/\b(estudiante|student|learner|alumno)\b/.test(name)) return 'student';
+      return 'other';
+    }
+    if (roleId === 110) return 'student';
+    if (roleId === 109) return 'instructor';
     return 'other';
   }
+
 }

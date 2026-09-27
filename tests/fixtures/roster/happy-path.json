@@ -1,12 +1,64 @@
 {
   "classlist": [
-    { "Identifier": "1001", "DisplayName": "Alice Student", "UserName": "alice", "Email": "alice@x.edu", "RoleId": 109 },
-    { "Identifier": "1002", "DisplayName": "Bob Instructor", "UserName": "bob", "Email": "bob@x.edu", "RoleId": 103 },
-    { "Identifier": "1003", "DisplayName": "Carol TA", "UserName": "carol", "Email": null, "RoleId": 112 }
-  ],
-  "emails": [
-    { "Identifier": "1001", "EmailAddress": "alice@x.edu" },
-    { "Identifier": "1002", "EmailAddress": "bob@x.edu" },
-    { "Identifier": "1003", "EmailAddress": null }
+    {
+      "Identifier": "1001",
+      "ProfileIdentifier": "p1",
+      "DisplayName": "Alice Student",
+      "Username": "alice",
+      "OrgDefinedId": null,
+      "Email": "alice@x.edu",
+      "FirstName": "Alice",
+      "LastName": "Student",
+      "RoleId": 110,
+      "LastAccessed": null,
+      "IsOnline": false,
+      "ClasslistRoleDisplayName": "Estudiante",
+      "Pronouns": null
+    },
+    {
+      "Identifier": "1002",
+      "ProfileIdentifier": "p2",
+      "DisplayName": "Bob Instructor",
+      "Username": "bob",
+      "OrgDefinedId": null,
+      "Email": "bob@x.edu",
+      "FirstName": "Bob",
+      "LastName": "Instructor",
+      "RoleId": 109,
+      "LastAccessed": null,
+      "IsOnline": false,
+      "ClasslistRoleDisplayName": "Profesor",
+      "Pronouns": null
+    },
+    {
+      "Identifier": "1003",
+      "ProfileIdentifier": "p3",
+      "DisplayName": "Carol TA",
+      "Username": "carol",
+      "OrgDefinedId": null,
+      "Email": null,
+      "FirstName": "Carol",
+      "LastName": "TA",
+      "RoleId": 131,
+      "LastAccessed": null,
+      "IsOnline": false,
+      "ClasslistRoleDisplayName": "Asistente graduado",
+      "Pronouns": null
+    },
+    {
+      "Identifier": "1004",
+      "ProfileIdentifier": "p4",
+      "DisplayName": "Dan CoTeacher",
+      "Username": "dan",
+      "OrgDefinedId": null,
+      "Email": "",
+      "FirstName": "Dan",
+      "LastName": "CoTeacher",
+      "RoleId": 129,
+      "LastAccessed": null,
+      "IsOnline": false,
+      "ClasslistRoleDisplayName": "Profesor secundario",
+      "Pronouns": null
+    }
   ]
 }

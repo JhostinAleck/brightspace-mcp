@@ -107,7 +107,7 @@ export function buildRepositories(input: RepositoriesInput) {
     communicationsRepo,
     calendarRepo,
     quizRepo: new D2lQuizRepository(apiClient, { le: versions.le }),
-    groupRepo: new D2lGroupRepository(apiClient, { lp: versions.lp }),
+    groupRepo: new D2lGroupRepository(apiClient, { lp: versions.lp, le: versions.le }),
     notificationRepo: new D2lNotificationRepository(apiClient, { lp: versions.lp }),
   };
 }

@@ -99,12 +99,6 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
         ]));
         return;
       }
-      if (req.url?.match(/\/d2l\/api\/lp\/1\.56\/1\/classlist\/$/)) {
-        res.end(JSON.stringify([
-          { Identifier: '42', DisplayName: 'Test User', UserName: 'test', Email: 'test@x.edu', RoleId: 109 },
-        ]));
-        return;
-      }
       if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/overview$/)) {
         res.end(JSON.stringify({ Description: { Html: '<p>Smoke syllabus body</p>' } }));
         return;
@@ -133,6 +127,7 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
       }
       if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/classlist\/$/)) {
         res.end(JSON.stringify([
+          { Identifier: '42', ProfileIdentifier: 'p42', DisplayName: 'Test User', Username: 'test', OrgDefinedId: null, Email: 'test@x.edu', FirstName: 'Test', LastName: 'User', RoleId: 110, LastAccessed: null, IsOnline: false, ClasslistRoleDisplayName: 'Student', Pronouns: null },
           { Identifier: '7', ProfileIdentifier: 'p7', DisplayName: 'Smoke Instructor', Username: 'si', OrgDefinedId: null, Email: null, FirstName: 'Smoke', LastName: 'Instructor', RoleId: 103, LastAccessed: null, IsOnline: false, ClasslistRoleDisplayName: 'Instructor', Pronouns: null },
         ]));
         return;

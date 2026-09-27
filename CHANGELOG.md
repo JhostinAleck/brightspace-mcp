@@ -35,6 +35,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dependencies: fixed all high-severity advisories in production deps; CI `npm audit` now gates on production dependencies only.
 
 ### Fixed
+- `get_roster` / `get_classlist_emails` / group member names used the LP classlist route, which is 404 on real tenants; they now use the LE classlist. Roles are classified by `ClasslistRoleDisplayName` (role ids are tenant-specific: on Uniandes 109 is "Profesor", previously shown as a student). The emails tool explains when the course hides addresses.
+- Unattended Microsoft TOTP logins intermittently timed out: codes are never reused across processes (last time-step persisted, counter only), a code with under 3 s left waits for the next window, and the Microsoft SSO setup preset dismisses "Stay signed in?" via `post_mfa_clicks`.
+- `get_syllabus` states whether the overview is missing (404) or published but empty.
 - Announcement bodies were cut to 100 characters with HTML entities left encoded (`&oacute;`).
 - Announcement authors were always empty: the code read `Author.DisplayName`, which D2L never sends. The `CreatedBy` user id is now resolved through the course classlist; no author is shown when that fails or the instructor hid author info (never a raw id).
 - Announcement attachments were ignored and hidden announcements were not filtered out.

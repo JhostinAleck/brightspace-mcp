@@ -23,11 +23,12 @@ interface UserDto {
 interface ClasslistEntry {
   Identifier: string;
   DisplayName?: string;
-  UserName?: string;
+  Username?: string;
 }
 
 export interface D2lGroupRepositoryOptions {
   lp: string;
+  le: string;
 }
 
 /**
@@ -67,7 +68,7 @@ export class D2lGroupRepository implements GroupRepository {
     let classlistById: Map<number, ClasslistEntry> = new Map();
     try {
       const classlist = await this.client.get<ClasslistEntry[]>(
-        `/d2l/api/lp/${this.versions.lp}/${orgUnit}/classlist/`,
+        `/d2l/api/le/${this.versions.le}/${orgUnit}/classlist/`,
       );
       classlistById = new Map(
         classlist
@@ -92,7 +93,7 @@ export class D2lGroupRepository implements GroupRepository {
             userId: uid,
             displayName: cl?.DisplayName ?? `User ${uid}`,
           };
-          if (cl?.UserName !== undefined) m.username = cl.UserName;
+          if (cl?.Username !== undefined) m.username = cl.Username;
           return m;
         });
         result.push(new Group({

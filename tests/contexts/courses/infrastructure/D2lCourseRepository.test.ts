@@ -59,19 +59,23 @@ describe('D2lCourseRepository.findMyCourses', () => {
     expect(byId.get(5003)?.endDate?.toISOString()).toBe('2026-12-18T05:00:00.000Z');
   });
 
-  it('findRoster parses classlist users into Classmate entities with roles', async () => {
-    nock(BASE).get('/d2l/api/lp/1.56/101/classlist/').reply(200, rosterFixture.classlist);
+  it('findRoster reads the LE classlist and classifies roles by their display name', async () => {
+    // The LP classlist route is 404 on real tenants; role ids are tenant-specific
+    // (on Uniandes 109 is "Profesor"), so the display name is authoritative.
+    nock(BASE).get('/d2l/api/le/1.91/101/classlist/').reply(200, rosterFixture.classlist);
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
     const repo = new D2lCourseRepository(client, { le: '1.91', lp: '1.56' });
     const roster = await repo.findRoster(CourseId.of(101));
-    expect(roster).toHaveLength(3);
+    expect(roster).toHaveLength(4);
     expect(roster.find((m) => m.displayName === 'Alice Student')?.role).toBe('student');
     expect(roster.find((m) => m.displayName === 'Bob Instructor')?.role).toBe('instructor');
     expect(roster.find((m) => m.displayName === 'Carol TA')?.role).toBe('ta');
+    expect(roster.find((m) => m.displayName === 'Dan CoTeacher')?.role).toBe('instructor');
+    expect(roster.find((m) => m.displayName === 'Alice Student')?.uniqueName).toBe('alice');
   });
 
-  it('findClasslistEmails returns only non-null emails', async () => {
-    nock(BASE).get('/d2l/api/lp/1.56/101/classlist/email/').reply(200, rosterFixture.emails);
+  it('findClasslistEmails returns only non-empty emails from the LE classlist', async () => {
+    nock(BASE).get('/d2l/api/le/1.91/101/classlist/').reply(200, rosterFixture.classlist);
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
     const repo = new D2lCourseRepository(client, { le: '1.91', lp: '1.56' });
     const emails = await repo.findClasslistEmails(CourseId.of(101));

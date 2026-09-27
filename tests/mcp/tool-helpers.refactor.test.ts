@@ -49,7 +49,7 @@ describe('tool-helpers after refactor', () => {
   });
 
   it('emailsToText empty', () => {
-    expect(emailsToText([], ctx)).toBe('No emails found.');
+    expect(emailsToText([], ctx)).toContain('get_roster');
   });
 
   it('syllabusToText null', () => {

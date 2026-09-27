@@ -96,7 +96,7 @@
   },
   "emails": {
     "header": "Courriels",
-    "empty": "Aucun courriel trouvé."
+    "empty": "Aucun courriel disponible : la liste de classe de ce cours n'expose pas les adresses des participants (réglage de confidentialité courant). Utilisez get_roster pour les noms et rôles."
   },
   "syllabus": {
     "header": "Plan de cours",

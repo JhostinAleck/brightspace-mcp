@@ -10,7 +10,7 @@ const BASE = 'https://sandbox.d2l.com';
 
 function makeRepo(): D2lGroupRepository {
   const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
-  return new D2lGroupRepository(client, { lp: '1.59' });
+  return new D2lGroupRepository(client, { lp: '1.59', le: '1.99' });
 }
 
 describe('D2lGroupRepository.findMyGroups', () => {
@@ -22,8 +22,8 @@ describe('D2lGroupRepository.findMyGroups', () => {
     nock(BASE).get('/d2l/api/lp/1.59/100/groupcategories/').reply(200, [
       { GroupCategoryId: 1, Name: 'Lab Groups' },
     ]);
-    nock(BASE).get('/d2l/api/lp/1.59/100/classlist/').reply(200, [
-      { Identifier: '42', DisplayName: 'Me Myself', UserName: 'me' },
+    nock(BASE).get('/d2l/api/le/1.99/100/classlist/').reply(200, [
+      { Identifier: '42', DisplayName: 'Me Myself', Username: 'me' },
       { Identifier: '7', DisplayName: 'Carlos' },
     ]);
     nock(BASE).get('/d2l/api/lp/1.59/100/groupcategories/1/groups/').reply(200, [
@@ -54,7 +54,7 @@ describe('D2lGroupRepository.findMyGroups', () => {
     nock(BASE).get('/d2l/api/lp/1.59/100/groupcategories/').reply(200, [
       { GroupCategoryId: 1, Name: 'Lab' },
     ]);
-    nock(BASE).get('/d2l/api/lp/1.59/100/classlist/').reply(403, '');
+    nock(BASE).get('/d2l/api/le/1.99/100/classlist/').reply(403, '');
     nock(BASE).get('/d2l/api/lp/1.59/100/groupcategories/1/groups/').reply(200, [
       { GroupId: 99, Name: 'G', Enrollments: [42, 7] },
     ]);

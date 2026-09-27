@@ -96,7 +96,7 @@
   },
   "emails": {
     "header": "E-mails",
-    "empty": "Nenhum e-mail encontrado."
+    "empty": "Nenhum e-mail disponível: a lista de turma deste curso não expõe os e-mails dos colegas (configuração de privacidade comum da instituição). Use get_roster para ver nomes e papéis."
   },
   "syllabus": {
     "header": "Plano de ensino",

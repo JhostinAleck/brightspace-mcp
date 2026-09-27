@@ -96,7 +96,7 @@
   },
   "emails": {
     "header": "Emails",
-    "empty": "No emails found."
+    "empty": "No emails available: this course's classlist does not expose classmates' email addresses (common institutional privacy setting). Use get_roster for names and roles."
   },
   "syllabus": {
     "header": "Syllabus",
