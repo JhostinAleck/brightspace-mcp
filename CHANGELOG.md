@@ -9,14 +9,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `brightspace-mcp tui` — full-screen terminal dashboard (Ink 7 + React 19) replacing the broken web UI. Six tabs: Inicio (upcoming assignments, 7-day calendar, recent announcements), Cursos (live search + drill-down with Tareas/Notas/Anuncios sub-tabs), Calendario (30-day agenda), Config (form editor with Zod-derived dropdowns + `$EDITOR` flow), Caché, Logs.
 - `get_upcoming_due_dates` also lists active quizzes due in the window, labeled `[quiz]`.
+- `get_assignment_rubric` tool — renders an assignment's rubric as one markdown table per criteria group (criteria × levels with points and descriptions), plus max points and overall levels.
+- `get_assignments` detailed format shows points, open/close dates, group type, allowed file types, link attachments and the rubric name.
+- Update notices reach MCP users: the server checks npm at most once a day and appends a one-time notice to the first tool response when a newer version exists or the installed version is deprecated (security releases). Status also appears under `update` in `get_diagnostics`. Opt out with `BRIGHTSPACE_NO_UPDATE_CHECK=1`.
+- HTML-to-text conversion keeps link targets (`label (href)`), decodes HTML entities in a single pass and drops `javascript:` links and `<script>`/`<style>` bodies.
+- `get_course_content` shows a topic's URL whenever D2L provides one (e.g. Zoom quicklinks classified as `other`).
 
 ### Changed
 - Config form dropdowns (`strategy`, `mfa_strategy`, `locale`, `format`) are derived at runtime from Zod schemas — no hardcoded option lists.
-
-### Removed
-- `brightspace-mcp ui` command and the Hono + Alpine.js web dashboard. Replaced by `brightspace-mcp tui`.
+- `get_feedback` shows the per-criterion rubric outcome (level, score, comment) and says "not graded yet" when nothing is released.
+- The MCP server reports its real package version to clients (was hardcoded `0.1.0`).
+- Composition root split into focused builders under `src/composition/` (no behavior change).
+- Docker base image moved to `node:24-alpine`.
+- Dependencies: fixed all high-severity advisories in production deps; CI `npm audit` now gates on production dependencies only.
 
 ### Fixed
+- `get_feedback` never returned feedback: it called `/dropbox/folders/{id}/feedback/me`, which is not a Valence route (always 404). Feedback now comes from the grade item value and the rubric assessment.
+- Group and closed assignments were reported as "not submitted" when Brightspace refused the `mysubmissions` request (403/404); they now show "status unavailable".
+- Assignments with no due date but an availability end date now show the close date instead of "no due date".
+- `SubmissionType` sent as a bare number (LE 1.99) was ignored, so the submission mode was always `unknown`.
+- The assignment cache dropped `submissionMode`.
 - `get_calendar_events` always returned nothing: the adapter expected `Name`/`StartDate` and sent `rangeStart`/`rangeEnd`. It now reads the real D2L shape (`Title`, `StartDateTime`/`EndDateTime`, `LocationName`, all-day `StartDay`/`EndDay`), queries `calendar/events/myEvents/` with `startDateTime`/`endDateTime` following every page (falls back to `calendar/events/` with client-side filtering), strips HTML from descriptions, and no longer prints a redundant end time for zero-length events.
 - `list_quizzes` only returned the first 20 quizzes; it now follows `Next`/bookmark pagination.
 - `list_quizzes` showed every quiz as "(unlimited)" and "0 taken": attempts come from `AttemptsAllowed.{IsUnlimited, NumberOfAttemptsAllowed}`, and the unknown per-student count is shown as "N attempts allowed" instead of a fake 0. Time limits come from `SubmissionTimeLimit`, auto-grade from `IsAutoSetGraded`.
@@ -24,6 +36,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `list_quizzes` now shows open/due/close dates and `[inactive]` quizzes, in the configured timezone/locale instead of raw UTC ISO.
 - `get_quiz_attempts` explains the 403 students get (`Quizzing.GradeAttempts`) instead of returning a raw API error; it also follows pagination, accepts `Score` as a number, and formats times in the configured timezone.
 - `get_upcoming_due_dates` printed UTC (a 23:59 Bogotá deadline showed as 04:59 the next day); it now uses the configured timezone/locale.
+- Well-formed 4xx responses (e.g. a topic without an attached file) no longer trip the HTTP circuit breaker.
+- The calendar cache never hit because its key used millisecond-precision timestamps.
+
+### Removed
+- `brightspace-mcp ui` command and the Hono + Alpine.js web dashboard. Replaced by `brightspace-mcp tui`.
 
 ## [1.1.0] - 2026-05-12
 

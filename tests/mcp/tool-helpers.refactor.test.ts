@@ -41,7 +41,7 @@ describe('tool-helpers after refactor', () => {
   });
 
   it('feedbackToText null', () => {
-    expect(feedbackToText(null, ctx)).toBe('No feedback posted yet.');
+    expect(feedbackToText(null, ctx)).toBe('Not graded yet — no feedback posted.');
   });
 
   it('rosterToText en empty', () => {

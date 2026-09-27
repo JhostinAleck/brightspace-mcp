@@ -4,7 +4,13 @@ import type {
   SubmitInput,
   SubmitResult,
 } from '@/contexts/assignments/domain/AssignmentRepository.js';
-import { Assignment, type SubmissionMode } from '@/contexts/assignments/domain/Assignment.js';
+import {
+  Assignment,
+  type AllowedFileTypes,
+  type LinkAttachment,
+  type SubmissionMode,
+} from '@/contexts/assignments/domain/Assignment.js';
+import { Rubric, type RubricCriteriaGroup } from '@/contexts/assignments/domain/Rubric.js';
 
 function mapSubmissionType(id: number | undefined): SubmissionMode {
   // D2L Valence enum: see https://docs.valence.desire2learn.com/res/dropbox.html#term-SUBMISSION_T
@@ -18,6 +24,7 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
 import { Feedback } from '@/contexts/assignments/domain/Feedback.js';
+import type { RubricAssessment } from '@/contexts/assignments/domain/RubricAssessment.js';
 import type { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { D2lApiError } from '@/contexts/http-api/errors.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
@@ -53,6 +60,27 @@ interface AttachmentDto {
   Size?: number | null;
 }
 
+interface RichTextDto {
+  Text?: string | null;
+  Html?: string | null;
+}
+
+interface RubricDto {
+  RubricId: number;
+  Name?: string | null;
+  Description?: RichTextDto | null;
+  OverallLevels?: Array<{ Id: number; Name?: string | null; RangeStart?: number | null }> | null;
+  CriteriaGroups?: Array<{
+    Name?: string | null;
+    Levels?: Array<{ Id: number; Name?: string | null; Points?: number | null }> | null;
+    Criteria?: Array<{
+      Id: number;
+      Name?: string | null;
+      Cells?: Array<{ LevelId: number; Description?: RichTextDto | null; Points?: number | null }> | null;
+    }> | null;
+  }> | null;
+}
+
 interface FolderDto {
   Id: number;
   Name: string;
@@ -66,22 +94,133 @@ interface FolderDto {
    *   1 AllSubmissionsKept       → each submission appended to history
    *   2 OnlyOneSubmissionAllowed → cannot resubmit at all
    *   3 ObservedInPerson, 4 TextSubmission (not file-based)
+   * LE 1.99 sends a bare number; older docs show `{ Id }`. Accept both.
    */
-  SubmissionType?: { Id?: number } | null;
+  SubmissionType?: number | { Id?: number } | null;
+  Availability?: { StartDate?: string | null; EndDate?: string | null } | null;
+  Assessment?: { ScoreDenominator?: number | null; Rubrics?: RubricDto[] | null } | null;
+  /** D2L DropboxType: 1 = Group, 2 = Individual. */
+  DropboxType?: number | null;
+  GroupTypeId?: number | null;
+  LinkAttachments?: Array<{ LinkId?: number; LinkName?: string | null; Href?: string | null }> | null;
+  /** D2L AllowableFileType: 0 = any; custom lists come in CustomAllowableFileTypes. */
+  AllowableFileType?: number | null;
+  CustomAllowableFileTypes?: Array<string | { Extension?: string | null }> | null;
+  GradeItemId?: number | null;
 }
 
-interface FeedbackDto {
-  Score?: number | null;
-  OutOf?: number | null;
-  Feedback?: { Text?: string | null } | null;
+function richText(dto: RichTextDto | null | undefined): string {
+  const text = dto?.Text?.trim();
+  if (text) return text;
+  return (dto?.Html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim();
+}
+
+function toRubric(dto: RubricDto): Rubric {
+  const groups: RubricCriteriaGroup[] = (dto.CriteriaGroups ?? []).map((g) => ({
+    name: g.Name ?? '',
+    levels: (g.Levels ?? []).map((l) => ({ id: l.Id, name: l.Name ?? '', points: l.Points ?? null })),
+    criteria: (g.Criteria ?? []).map((c) => ({
+      id: c.Id,
+      name: c.Name ?? '',
+      cells: (c.Cells ?? []).map((cell) => ({
+        levelId: cell.LevelId,
+        description: richText(cell.Description),
+        points: cell.Points ?? null,
+      })),
+    })),
+  }));
+  return new Rubric({
+    id: dto.RubricId,
+    name: dto.Name ?? String(dto.RubricId),
+    description: richText(dto.Description) || null,
+    groups,
+    overallLevels: (dto.OverallLevels ?? []).map((l) => ({
+      id: l.Id,
+      name: l.Name ?? '',
+      rangeStart: l.RangeStart ?? null,
+    })),
+  });
+}
+
+function mapAllowedFileTypes(folder: FolderDto): AllowedFileTypes {
+  const code = folder.AllowableFileType ?? 0;
+  if (code === 0) return { mode: 'any' };
+  const extensions = (folder.CustomAllowableFileTypes ?? [])
+    .map((e) => (typeof e === 'string' ? e : e.Extension ?? ''))
+    .map((e) => e.trim())
+    .filter(Boolean);
+  // Custom without a readable extension list degrades to a raw code.
+  if (extensions.length > 0) return { mode: 'custom', extensions };
+  return { mode: 'restricted', code };
+}
+
+function mapLinkAttachments(folder: FolderDto): LinkAttachment[] {
+  return (folder.LinkAttachments ?? [])
+    .filter((l) => l.Href)
+    .map((l) => ({ name: l.LinkName?.trim() || (l.Href ?? ''), url: l.Href ?? '' }));
+}
+
+/** Null when the rubric has not been assessed yet (no overall score, no criteria). */
+function toRubricAssessment(rubric: Rubric, dto: RubricAssessmentDto): RubricAssessment | null {
+  const overall = dto.OverallOutcome ?? null;
+  const outcomes = dto.CriteriaOutcome ?? [];
+  const overallScore = overall?.Score ?? null;
+  if (overallScore === null && (overall?.LevelId ?? null) === null && outcomes.length === 0) return null;
+  return {
+    rubricId: rubric.id,
+    rubricName: rubric.name,
+    score: overallScore,
+    maxPoints: rubric.maxPoints,
+    levelName: rubric.levelName(overall?.LevelId ?? null),
+    feedback: richText(overall?.Feedback) || null,
+    criteria: outcomes.map((o) => {
+      const hit = rubric.findCriterion(o.CriterionId);
+      return {
+        groupName: hit?.group.name ?? null,
+        criterionName: hit?.criterion.name ?? String(o.CriterionId),
+        levelName: rubric.levelName(o.LevelId ?? null),
+        score: o.Score ?? null,
+        maxPoints: hit?.maxPoints ?? null,
+        feedback: richText(o.Feedback) || null,
+      };
+    }),
+  };
+}
+
+/** `/grades/{gradeItemId}/values/myGradeValue` — 404 until the grade is released. */
+interface GradeValueDto {
+  PointsNumerator?: number | null;
+  PointsDenominator?: number | null;
+  DisplayedGrade?: string | null;
+  Comments?: RichTextDto | null;
   ReleasedDate?: string | null;
+}
+
+interface OutcomeDto {
+  LevelId?: number | null;
+  Score?: number | null;
+  Feedback?: RichTextDto | null;
+}
+
+/**
+ * `/le/unstable/{ou}/assessment?assessmentType=Rubric&...&userId={me}` — the
+ * only student-accessible route exposing per-criterion rubric results.
+ */
+interface RubricAssessmentDto {
+  OverallOutcome?: OutcomeDto | null;
+  CriteriaOutcome?: Array<OutcomeDto & { CriterionId: number }> | null;
 }
 
 export interface D2lAssignmentRepositoryOptions {
   le: string;
+  /** LP version — needed for `/users/whoami` (rubric assessments are per user). */
+  lp?: string;
 }
 
 export class D2lAssignmentRepository implements AssignmentRepository {
+  /** Memoized whoami Identifier (rubric assessments are fetched per user). */
+  private myUserId: Promise<number | null> | undefined;
+
   constructor(
     private readonly client: D2lApiClient,
     private readonly versions: D2lAssignmentRepositoryOptions,
@@ -113,8 +252,9 @@ export class D2lAssignmentRepository implements AssignmentRepository {
           // Only swallow 403 (tenant-restricted) and 404 (locked/future folder
           // or group assignments — D2L returns "not found" for mysubmissions on
           // group folders; there is no student-accessible API for group status).
+          // Mark the status as unknown rather than "no submissions".
           if (err instanceof D2lApiError && (err.status === 403 || err.status === 404)) {
-            return this.toAssignment(folder, orgUnit);
+            return this.toAssignment(folder, orgUnit, undefined, false);
           }
           // Circuit breaker, network errors, etc. — re-throw so the caller
           // surfaces the real error instead of silently showing 0 submissions.
@@ -289,21 +429,115 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     return this.client.getRaw(file.url);
   }
 
+  /**
+   * There is no Valence "my feedback" route for dropbox folders (the old
+   * `/feedback/me` path is always 404). Feedback is reassembled from:
+   *   - the folder's grade item value (score + overall comments), and
+   *   - the rubric assessment of each attached rubric (per-criterion outcomes).
+   * Returns null when neither has anything yet (= not graded).
+   */
   async findFeedback(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Feedback | null> {
     const orgUnit = OrgUnitId.toNumber(courseId);
     const fid = AssignmentId.toNumber(assignmentId);
+    const folder = await this.getFolder(orgUnit, fid);
+    if (!folder) return null;
+
+    const rubrics = (folder.Assessment?.Rubrics ?? []).map(toRubric);
+    const [grade, assessments] = await Promise.all([
+      this.getMyGradeValue(orgUnit, folder.GradeItemId ?? null),
+      this.getRubricAssessments(orgUnit, fid, rubrics),
+    ]);
+    if (!grade && assessments.length === 0) return null;
+
+    return new Feedback({
+      score: grade?.PointsNumerator ?? null,
+      outOf: grade?.PointsDenominator ?? folder.Assessment?.ScoreDenominator ?? null,
+      text: richText(grade?.Comments) || null,
+      releasedAt: parseValidDate(grade?.ReleasedDate ?? null),
+      displayedGrade: grade?.DisplayedGrade ?? null,
+      rubricAssessments: assessments,
+    });
+  }
+
+  private async getMyGradeValue(orgUnit: number, gradeItemId: number | null): Promise<GradeValueDto | null> {
+    if (!gradeItemId) return null;
     try {
-      const dto = await this.client.get<FeedbackDto>(
-        `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${fid}/feedback/me`,
+      return await this.client.get<GradeValueDto>(
+        `/d2l/api/le/${this.versions.le}/${orgUnit}/grades/${gradeItemId}/values/myGradeValue`,
       );
-      return new Feedback({
-        score: dto.Score ?? null,
-        outOf: dto.OutOf ?? null,
-        text: dto.Feedback?.Text ?? null,
-        releasedAt: dto.ReleasedDate ? new Date(dto.ReleasedDate) : null,
-      });
     } catch (err) {
-      if (err instanceof D2lApiError && err.status === 404) return null;
+      // 404 = not graded / not released yet; 403 = grade hidden from students.
+      if (err instanceof D2lApiError && (err.status === 403 || err.status === 404)) return null;
+      throw err;
+    }
+  }
+
+  private async getRubricAssessments(
+    orgUnit: number,
+    fid: number,
+    rubrics: Rubric[],
+  ): Promise<RubricAssessment[]> {
+    if (rubrics.length === 0 || !this.versions.lp) return [];
+    const me = await this.getMyUserId();
+    if (me === null) return [];
+    const results = await Promise.all(
+      rubrics.map(async (rubric) => {
+        try {
+          const dto = await this.client.get<RubricAssessmentDto>(
+            `/d2l/api/le/unstable/${orgUnit}/assessment?assessmentType=Rubric&objectType=Dropbox&objectId=${fid}&rubricId=${rubric.id}&userId=${me}`,
+          );
+          return toRubricAssessment(rubric, dto);
+        } catch (err) {
+          // `unstable` route: treat any API refusal as "no rubric detail"
+          // rather than failing the whole feedback lookup.
+          if (err instanceof D2lApiError) return null;
+          throw err;
+        }
+      }),
+    );
+    return results.filter((r): r is RubricAssessment => r !== null);
+  }
+
+  private getMyUserId(): Promise<number | null> {
+    this.myUserId ??= this.client
+      .get<{ Identifier?: string | null }>(`/d2l/api/lp/${this.versions.lp}/users/whoami`)
+      .then((me) => {
+        const id = Number.parseInt(me.Identifier ?? '', 10);
+        return Number.isInteger(id) && id > 0 ? id : null;
+      })
+      .catch((err: unknown) => {
+        this.myUserId = undefined;
+        throw err;
+      });
+    return this.myUserId;
+  }
+
+  async findRubrics(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Rubric[]> {
+    const orgUnit = OrgUnitId.toNumber(courseId);
+    const fid = AssignmentId.toNumber(assignmentId);
+    const folder = await this.getFolder(orgUnit, fid);
+    const embedded = folder?.Assessment?.Rubrics;
+    if (embedded && embedded.length > 0) return embedded.map(toRubric);
+    // Some tenants/versions omit Rubrics from the folder payload — ask the
+    // rubrics endpoint directly.
+    try {
+      const list = await this.client.get<RubricDto[]>(
+        `/d2l/api/le/${this.versions.le}/${orgUnit}/rubrics?objectType=Dropbox&objectId=${fid}`,
+      );
+      return Array.isArray(list) ? list.map(toRubric) : [];
+    } catch (err) {
+      if (err instanceof D2lApiError && (err.status === 403 || err.status === 404)) return [];
+      throw err;
+    }
+  }
+
+  private async getFolder(orgUnit: number, fid: number): Promise<FolderDto | null> {
+    try {
+      return await this.client.get<FolderDto>(
+        `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${fid}`,
+      );
+    } catch (err) {
+      if (err instanceof D2lApiError && (err.status === 403 || err.status === 404)) return null;
       throw err;
     }
   }
@@ -312,6 +546,7 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     folder: FolderDto,
     orgUnit: number,
     enrichedSubs?: SubmissionsByEntityDto[],
+    submissionsKnown = true,
   ): Assignment {
     const due = folder.DueDate ? DueDate.at(new Date(folder.DueDate)) : DueDate.unspecified();
     let submissions: Submission[];
@@ -334,7 +569,17 @@ export class D2lAssignmentRepository implements AssignmentRepository {
       instructions: folder.CustomInstructions?.Html ?? null,
       dueDate: due,
       submissions,
-      submissionMode: mapSubmissionType(folder.SubmissionType?.Id),
+      submissionMode: mapSubmissionType(
+        typeof folder.SubmissionType === 'number' ? folder.SubmissionType : folder.SubmissionType?.Id,
+      ),
+      submissionsKnown,
+      kind: folder.DropboxType === 1 ? 'group' : 'individual',
+      points: folder.Assessment?.ScoreDenominator ?? null,
+      startDate: parseValidDate(folder.Availability?.StartDate ?? null),
+      endDate: parseValidDate(folder.Availability?.EndDate ?? null),
+      linkAttachments: mapLinkAttachments(folder),
+      allowedFileTypes: mapAllowedFileTypes(folder),
+      rubrics: (folder.Assessment?.Rubrics ?? []).map(toRubric),
     });
   }
 

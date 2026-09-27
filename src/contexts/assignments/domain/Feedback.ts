@@ -1,8 +1,13 @@
+import type { RubricAssessment } from './RubricAssessment.js';
+
 export interface FeedbackProps {
   score: number | null;
   outOf: number | null;
   text: string | null;
   releasedAt: Date | null;
+  /** Grade as displayed by D2L (may be a letter or scheme symbol). */
+  displayedGrade?: string | null;
+  rubricAssessments?: RubricAssessment[];
 }
 
 export class Feedback {
@@ -18,6 +23,12 @@ export class Feedback {
   }
   get releasedAt(): Date | null {
     return this.props.releasedAt;
+  }
+  get displayedGrade(): string | null {
+    return this.props.displayedGrade ?? null;
+  }
+  get rubricAssessments(): readonly RubricAssessment[] {
+    return this.props.rubricAssessments ?? [];
   }
 
   get percent(): number | null {

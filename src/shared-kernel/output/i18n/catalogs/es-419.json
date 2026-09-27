@@ -20,6 +20,22 @@
     "no_due": "sin fecha de entrega",
     "submitted": "entregada",
     "not_submitted": "sin entregar",
+    "status_unknown": "estado no disponible",
+    "status_unknown_group": "estado no disponible (tarea grupal)",
+    "submissions_unknown": "Entregas: estado no disponible (Brightspace no lo expone para esta carpeta)",
+    "submissions_unknown_group": "Entregas: estado no disponible (tarea grupal)",
+    "closes": "cierra {when}",
+    "closes_label": "Cierra",
+    "opens": "Abre",
+    "points": "Puntos",
+    "kind": "Tipo",
+    "kind_group": "grupal",
+    "kind_individual": "individual",
+    "file_types": "Tipos de archivo permitidos",
+    "file_types_restricted": "restringido (tipo Brightspace {code})",
+    "links": "Enlaces",
+    "rubric": "Rúbrica",
+    "rubric_hint": "{name} (usa get_assignment_rubric)",
     "instructions": "Instrucciones",
     "submissions_none": "Entregas: ninguna",
     "submissions_count": {
@@ -46,8 +62,29 @@
   },
   "feedback": {
     "header": "Retroalimentación",
-    "none": "Aún no hay retroalimentación.",
+    "none": "Aún no está calificada — no hay retroalimentación.",
     "released_at": "Publicada: {when}"
+  },
+  "rubric": {
+    "header": "Rúbrica: {name}",
+    "none": "Esta tarea no tiene rúbrica.",
+    "groups_count": {
+      "one": "{count} grupo de criterios",
+      "other": "{count} grupos de criterios"
+    },
+    "criteria_count": {
+      "one": "{count} criterio",
+      "other": "{count} criterios"
+    },
+    "max_points": "máx. {points}",
+    "points_short": "{points} pts",
+    "overall_levels": "Niveles generales",
+    "criterion": "Criterio",
+    "group": "Grupo",
+    "level": "Nivel",
+    "score": "Puntaje",
+    "feedback": "Retroalimentación",
+    "overall_level": "Nivel general"
   },
   "roster": {
     "header": "Lista del curso",

@@ -4,13 +4,22 @@ import type {
   SubmitInput,
   SubmitResult,
 } from '@/contexts/assignments/domain/AssignmentRepository.js';
-import { Assignment } from '@/contexts/assignments/domain/Assignment.js';
+import {
+  Assignment,
+  type AllowedFileTypes,
+  type AssignmentKind,
+  type LinkAttachment,
+  type SubmissionMode,
+} from '@/contexts/assignments/domain/Assignment.js';
+import { Rubric, type RubricProps } from '@/contexts/assignments/domain/Rubric.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
 import { Feedback } from '@/contexts/assignments/domain/Feedback.js';
+import type { RubricAssessment } from '@/contexts/assignments/domain/RubricAssessment.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
+import { parseValidDate } from '@/shared-kernel/date/parseValidDate.js';
 import type { Cache } from '@/shared-kernel/cache/Cache.js';
 
 export interface CachedAssignmentRepositoryTtls {
@@ -33,6 +42,16 @@ interface AssignmentPlain {
   instructions: string | null;
   dueIso: string | null;
   submissions: SubmissionPlain[];
+  // Optional so entries cached by older versions still deserialize.
+  submissionMode?: SubmissionMode;
+  submissionsKnown?: boolean;
+  kind?: AssignmentKind;
+  points?: number | null;
+  startIso?: string | null;
+  endIso?: string | null;
+  linkAttachments?: LinkAttachment[];
+  allowedFileTypes?: AllowedFileTypes;
+  rubrics?: RubricProps[];
 }
 
 interface FeedbackPlain {
@@ -40,6 +59,8 @@ interface FeedbackPlain {
   outOf: number | null;
   text: string | null;
   releasedAtIso: string | null;
+  displayedGrade?: string | null;
+  rubricAssessments?: RubricAssessment[];
 }
 
 function assignmentToPlain(a: Assignment): AssignmentPlain {
@@ -54,6 +75,15 @@ function assignmentToPlain(a: Assignment): AssignmentPlain {
       submittedByUserId: UserId.toNumber(s.submittedBy),
       comments: s.comments,
     })),
+    submissionMode: a.submissionMode,
+    submissionsKnown: a.submissionStatus !== 'unknown',
+    kind: a.kind,
+    points: a.points,
+    startIso: a.startDate?.toISOString() ?? null,
+    endIso: a.endDate?.toISOString() ?? null,
+    linkAttachments: [...a.linkAttachments],
+    allowedFileTypes: a.allowedFileTypes,
+    rubrics: a.rubrics.map((r) => r.toProps()),
   };
 }
 
@@ -71,6 +101,15 @@ function assignmentFromPlain(p: AssignmentPlain): Assignment {
     instructions: p.instructions,
     dueDate: due,
     submissions,
+    ...(p.submissionMode !== undefined ? { submissionMode: p.submissionMode } : {}),
+    ...(p.submissionsKnown !== undefined ? { submissionsKnown: p.submissionsKnown } : {}),
+    ...(p.kind !== undefined ? { kind: p.kind } : {}),
+    ...(p.allowedFileTypes !== undefined ? { allowedFileTypes: p.allowedFileTypes } : {}),
+    points: p.points ?? null,
+    startDate: parseValidDate(p.startIso),
+    endDate: parseValidDate(p.endIso),
+    linkAttachments: p.linkAttachments ?? [],
+    rubrics: (p.rubrics ?? []).map((r) => new Rubric(r)),
   });
 }
 
@@ -80,6 +119,8 @@ function feedbackToPlain(f: Feedback): FeedbackPlain {
     outOf: f.outOf,
     text: f.text,
     releasedAtIso: f.releasedAt ? f.releasedAt.toISOString() : null,
+    displayedGrade: f.displayedGrade,
+    rubricAssessments: [...f.rubricAssessments],
   };
 }
 
@@ -89,6 +130,8 @@ function feedbackFromPlain(p: FeedbackPlain): Feedback {
     outOf: p.outOf,
     text: p.text,
     releasedAt: p.releasedAtIso ? new Date(p.releasedAtIso) : null,
+    displayedGrade: p.displayedGrade ?? null,
+    rubricAssessments: p.rubricAssessments ?? [],
   });
 }
 
@@ -107,6 +150,15 @@ export class CachedAssignmentRepository implements AssignmentRepository {
     if (cached) return cached.map(assignmentFromPlain);
     const fresh = await this.inner.findByCourse(courseId);
     await this.cache.set(key, fresh.map(assignmentToPlain), this.ttls.listTtlMs);
+    return fresh;
+  }
+
+  async findRubrics(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<Rubric[]> {
+    const key = `${PREFIX}rubrics:${OrgUnitId.toNumber(courseId)}:${AssignmentId.toNumber(assignmentId)}`;
+    const cached = await this.cache.get<RubricProps[]>(key);
+    if (cached) return cached.map((r) => new Rubric(r));
+    const fresh = await this.inner.findRubrics(courseId, assignmentId);
+    await this.cache.set(key, fresh.map((r) => r.toProps()), this.ttls.listTtlMs);
     return fresh;
   }
 

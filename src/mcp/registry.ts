@@ -29,6 +29,11 @@ import { handleGetMyGrades, type GetMyGradesDeps } from './tools/get-my-grades.t
 import { handleGetAssignments, type GetAssignmentsDeps } from './tools/get-assignments.tool.js';
 import { handleGetUpcomingDueDates, type GetUpcomingDueDatesDeps } from './tools/get-upcoming-due-dates.tool.js';
 import { handleGetFeedback, type GetFeedbackDeps } from './tools/get-feedback.tool.js';
+import {
+  handleGetAssignmentRubric,
+  getAssignmentRubricSchema,
+  type GetAssignmentRubricDeps,
+} from './tools/get-assignment-rubric.tool.js';
 import { handleGetRoster, type GetRosterDeps } from './tools/get-roster.tool.js';
 import { handleGetClasslistEmails, type GetClasslistEmailsDeps } from './tools/get-classlist-emails.tool.js';
 import { handleGetSyllabus, type GetSyllabusDeps } from './tools/get-syllabus.tool.js';
@@ -73,6 +78,7 @@ export interface ToolDeps
     GetAssignmentsDeps,
     GetUpcomingDueDatesDeps,
     GetFeedbackDeps,
+    GetAssignmentRubricDeps,
     GetRosterDeps,
     GetClasslistEmailsDeps,
     GetSyllabusDeps,
@@ -192,6 +198,18 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getFeedbackSchema.shape,
     },
     async (input: unknown) => handleGetFeedback(deps, input),
+  );
+
+  server.registerTool(
+    'get_assignment_rubric',
+    {
+      title: 'Get Assignment Rubric',
+      description:
+        'Return the grading rubric of an assignment: criteria groups, criteria, levels, points and level descriptions.\n' +
+        'Use when the user asks how an assignment will be graded or what each criterion requires.',
+      inputSchema: getAssignmentRubricSchema.shape,
+    },
+    async (input: unknown) => handleGetAssignmentRubric(deps, input),
   );
 
   server.registerTool(

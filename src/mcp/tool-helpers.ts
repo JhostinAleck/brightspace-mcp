@@ -12,6 +12,7 @@ import type { Module } from '@/contexts/content/domain/Module.js';
 import type { Announcement } from '@/contexts/communications/domain/Announcement.js';
 import type { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import type { CalendarEvent } from '@/contexts/calendar/domain/CalendarEvent.js';
+import { rubricAssessmentsToText } from '@/mcp/rubric-helpers.js';
 
 export function coursesToCompact(courses: Course[], ctx: OutputContext): string {
   if (courses.length === 0) return ctx.t('courses.empty');
@@ -78,7 +79,56 @@ export function feedbackToText(fb: Feedback | null, ctx: OutputContext): string 
     ? `\n${ctx.t('feedback.released_at', { when: ctx.formatDate(fb.releasedAt) })}`
     : '';
   const text = fb.text ? `\n\n${ctx.md.blockquote(fb.text)}` : '';
-  return [ctx.md.h4(ctx.t('feedback.header')), `${score}${pct}${released}${text}`].join('\n\n');
+  const rubrics = fb.rubricAssessments ?? [];
+  return [
+    ctx.md.h4(ctx.t('feedback.header')),
+    `${score}${pct}${released}${text}`,
+    ...(rubrics.length > 0 ? [rubricAssessmentsToText(rubrics, ctx)] : []),
+  ].join('\n\n');
+}
+
+function assignmentStatus(a: Assignment, ctx: OutputContext): string {
+  if (a.submissionStatus === 'unknown') {
+    return ctx.t(a.kind === 'group' ? 'assignments.status_unknown_group' : 'assignments.status_unknown');
+  }
+  return a.hasSubmission ? ctx.t('assignments.submitted') : ctx.t('assignments.not_submitted');
+}
+
+/** Due date, or the folder close date when D2L has no due date (EndDate only). */
+function assignmentDue(a: Assignment, ctx: OutputContext): string {
+  const dueDate = a.dueDate.toDate();
+  if (dueDate) return ctx.formatDate(dueDate, 'datetime');
+  if (a.endDate) return ctx.t('assignments.closes', { when: ctx.formatDate(a.endDate, 'datetime') });
+  return ctx.t('assignments.no_due');
+}
+
+function assignmentMetadataLines(a: Assignment, ctx: OutputContext): string[] {
+  const label = (key: string, value: string) => `${ctx.md.bold(ctx.t(key))}: ${value}`;
+  const lines: string[] = [];
+  const due = a.dueDate.toDate();
+  if (due && a.endDate && a.endDate.getTime() !== due.getTime()) {
+    lines.push(label('assignments.closes_label', ctx.formatDate(a.endDate, 'datetime')));
+  }
+  if (a.startDate) lines.push(label('assignments.opens', ctx.formatDate(a.startDate, 'datetime')));
+  if (a.points !== null && a.points !== undefined) {
+    lines.push(label('assignments.points', ctx.formatDecimal(a.points)));
+  }
+  if (a.kind === 'group') lines.push(label('assignments.kind', ctx.t('assignments.kind_group')));
+  const types = a.allowedFileTypes;
+  if (types?.mode === 'custom') {
+    lines.push(label('assignments.file_types', types.extensions.join(', ')));
+  } else if (types?.mode === 'restricted') {
+    lines.push(label('assignments.file_types', ctx.t('assignments.file_types_restricted', { code: types.code })));
+  }
+  const links = a.linkAttachments ?? [];
+  if (links.length > 0) {
+    lines.push(label('assignments.links', links.map((l) => ctx.md.link(l.name, l.url)).join(', ')));
+  }
+  const rubrics = a.rubrics ?? [];
+  if (rubrics.length > 0) {
+    lines.push(label('assignments.rubric', rubrics.map((r) => ctx.t('assignments.rubric_hint', { name: r.name })).join('; ')));
+  }
+  return lines;
 }
 
 export function assignmentsToCompact(assignments: Assignment[], ctx: OutputContext): string {
@@ -88,37 +138,37 @@ export function assignmentsToCompact(assignments: Assignment[], ctx: OutputConte
     ctx.t('assignments.table_headers.due'),
     ctx.t('assignments.table_headers.status'),
   ];
-  const rows = assignments.map((a) => {
-    const dueDate = a.dueDate.toDate();
-    const due = dueDate ? ctx.formatDate(dueDate, 'datetime') : ctx.t('assignments.no_due');
-    const status = a.hasSubmission
-      ? ctx.t('assignments.submitted')
-      : ctx.t('assignments.not_submitted');
-    return [`${a.name} (id=${AssignmentId.toNumber(a.id)})`, due, status];
-  });
+  const rows = assignments.map((a) => [
+    `${a.name} (id=${AssignmentId.toNumber(a.id)})`,
+    assignmentDue(a, ctx),
+    assignmentStatus(a, ctx),
+  ]);
   return [ctx.md.h3(ctx.t('assignments.header')), ctx.md.table(headers, rows)].join('\n\n');
 }
 
 export function assignmentsToDetailed(assignments: Assignment[], ctx: OutputContext): string {
   if (assignments.length === 0) return ctx.t('assignments.empty');
   const blocks = assignments.map((a) => {
-    const dueDate = a.dueDate.toDate();
-    const due = dueDate ? ctx.formatDate(dueDate, 'datetime') : ctx.t('assignments.no_due');
     const instructions = a.instructions
       ? `\n${ctx.md.bold(ctx.t('assignments.instructions'))}: ${a.instructions.replace(/\s+/g, ' ').slice(0, 200)}`
       : '';
     const lastSub =
       a.submissions.length > 0 ? a.submissions[a.submissions.length - 1]!.submittedAt : null;
-    const subs =
-      a.submissions.length === 0
-        ? ctx.t('assignments.submissions_none')
-        : ctx.t('assignments.submissions_count', {
-            count: a.submissions.length,
-            when: ctx.formatDate(lastSub, 'datetime'),
-          });
+    let subs: string;
+    if (a.submissionStatus === 'unknown') {
+      subs = ctx.t(a.kind === 'group' ? 'assignments.submissions_unknown_group' : 'assignments.submissions_unknown');
+    } else if (a.submissions.length === 0) {
+      subs = ctx.t('assignments.submissions_none');
+    } else {
+      subs = ctx.t('assignments.submissions_count', {
+        count: a.submissions.length,
+        when: ctx.formatDate(lastSub, 'datetime'),
+      });
+    }
     return [
       ctx.md.h4(`${a.name} (id=${AssignmentId.toNumber(a.id)})`),
-      `${ctx.md.bold(ctx.t('assignments.table_headers.due'))}: ${due}`,
+      `${ctx.md.bold(ctx.t('assignments.table_headers.due'))}: ${assignmentDue(a, ctx)}`,
+      ...assignmentMetadataLines(a, ctx),
       instructions.trim(),
       subs,
     ]
