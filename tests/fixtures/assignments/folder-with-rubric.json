@@ -1,0 +1,100 @@
+{
+  "Id": 7001,
+  "CategoryId": null,
+  "Name": "Lab 4",
+  "CustomInstructions": { "Text": "Follow the lab guide.", "Html": "<p>Follow the lab guide.</p>" },
+  "Attachments": [{ "FileId": 900001, "FileName": "lab4.pdf", "Size": 1024 }],
+  "TotalFiles": -1,
+  "UnreadFiles": -1,
+  "FlaggedFiles": -1,
+  "TotalUsers": -1,
+  "TotalUsersWithSubmissions": -1,
+  "TotalUsersWithFeedback": -1,
+  "Availability": {
+    "StartDate": "2026-09-01T05:00:00.000Z",
+    "EndDate": "2026-09-28T04:59:59.000Z",
+    "StartDateAvailabilityType": null,
+    "EndDateAvailabilityType": 0
+  },
+  "IsHidden": false,
+  "Assessment": {
+    "ScoreDenominator": 5.000000000,
+    "Rubrics": [
+      {
+        "RubricId": 8001,
+        "Name": "Lab 4 rubric",
+        "Description": { "Text": "", "Html": "" },
+        "RubricType": 1,
+        "ScoringMethod": 3,
+        "IsAutoApplyEnabled": null,
+        "IsScoreVisibleToAssessedUsers": true,
+        "ReverseLevelDisplayOrder": false,
+        "RubricStateId": 0,
+        "Visibility": 0,
+        "OverallLevels": [
+          { "Id": 8101, "Name": "Excellent", "RangeStart": 85.000000000, "Description": { "Text": "", "Html": "" }, "Feedback": { "Text": "", "Html": "" } },
+          { "Id": 8102, "Name": "Poor", "RangeStart": 0E-9, "Description": { "Text": "", "Html": "" }, "Feedback": { "Text": "", "Html": "" } }
+        ],
+        "CriteriaGroups": [
+          {
+            "Name": "Analysis",
+            "Levels": [
+              { "Id": 8201, "Name": "Level 2", "Points": null },
+              { "Id": 8202, "Name": "Level 1", "Points": null }
+            ],
+            "Criteria": [
+              {
+                "Id": 8301,
+                "Name": "Identifies issues",
+                "Cells": [
+                  { "Feedback": { "Text": "", "Html": "" }, "Description": { "Text": "Identifies all issues.", "Html": "<p>Identifies all issues.</p>" }, "Points": 5.000000000, "LevelId": 8201 },
+                  { "Feedback": { "Text": "", "Html": "" }, "Description": { "Text": "Identifies few | some issues.", "Html": "<p>Identifies few | some issues.</p>" }, "Points": 0E-9, "LevelId": 8202 }
+                ]
+              },
+              {
+                "Id": 8302,
+                "Name": "Justifies findings",
+                "Cells": [
+                  { "Feedback": { "Text": "", "Html": "" }, "Description": { "Text": "", "Html": "<p>Clear <b>justification</b>.</p>" }, "Points": 3.000000000, "LevelId": 8201 },
+                  { "Feedback": { "Text": "", "Html": "" }, "Description": { "Text": "No justification.", "Html": "<p>No justification.</p>" }, "Points": 1.000000000, "LevelId": 8202 }
+                ]
+              }
+            ]
+          },
+          {
+            "Name": "Report",
+            "Levels": [
+              { "Id": 8401, "Name": "Complete", "Points": 2.000000000 },
+              { "Id": 8402, "Name": "Missing", "Points": 0E-9 }
+            ],
+            "Criteria": [
+              {
+                "Id": 8501,
+                "Name": "Formatting",
+                "Cells": [
+                  { "Feedback": { "Text": "", "Html": "" }, "Description": { "Text": "Well formatted.", "Html": "<p>Well formatted.</p>" }, "Points": null, "LevelId": 8401 },
+                  { "Feedback": { "Text": "", "Html": "" }, "Description": { "Text": "Not formatted.", "Html": "<p>Not formatted.</p>" }, "Points": null, "LevelId": 8402 }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "DropboxType": 1,
+  "GroupTypeId": 34119,
+  "DueDate": null,
+  "DisplayInCalendar": false,
+  "NotificationEmail": null,
+  "LinkAttachments": [{ "LinkId": 42, "LinkName": "Lab guide", "Href": "https://example.edu/lab-guide" }],
+  "ActivityId": "https://ids.brightspace.com/activities/dropbox/00000000-0000-0000-0000-000000000000-1",
+  "IsAnonymous": false,
+  "SubmissionType": 0,
+  "CompletionType": 0,
+  "AllowableFileType": 5,
+  "CustomAllowableFileTypes": ["pdf", "docx"],
+  "GradeItemId": 9001,
+  "AllowOnlyUsersWithSpecialAccess": null,
+  "SubmissionsRule": 2
+}
