@@ -5,6 +5,7 @@ import { getTopicFileSchema } from '@/mcp/schemas.js';
 import { expandPath } from '@/shared-kernel/path/expandPath.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { extractDocxText, extractXlsxText } from '@/shared-kernel/zip/extractZipEntry.js';
+import { stripHtmlPreservingLinks } from '@/shared-kernel/text/stripHtml.js';
 import { PDFParse } from 'pdf-parse';
 
 export interface GetTopicFileDeps { contentRepo: ContentRepository; }
@@ -17,7 +18,7 @@ function bufToText(buf: Buffer, contentType: string): string {
   if (contentType.includes('spreadsheetml')) return extractXlsxText(buf);
   if (contentType.includes('presentationml')) return `[PowerPoint — ${buf.length} bytes]`;
   if (contentType.includes('zip')) return `[ZIP — ${buf.length} bytes]`;
-  if (contentType.includes('text') || contentType.includes('html')) return buf.toString('utf8').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 5000);
+  if (contentType.includes('text') || contentType.includes('html')) return stripHtmlPreservingLinks(buf.toString('utf8')).slice(0, 5000);
   return `[${contentType} — ${buf.length} bytes]`;
 }
 

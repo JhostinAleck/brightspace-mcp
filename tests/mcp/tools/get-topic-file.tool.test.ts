@@ -68,4 +68,12 @@ describe('get_topic_file tool', () => {
     const r = await handleGetTopicFile({ contentRepo: repo }, { course_id: 1, topic_id: 5 });
     expect(r.content[0]?.text).toContain('plain text content');
   });
+
+  it('keeps the href of an embedded link instead of discarding it (e.g. "check the syllabus here")', async () => {
+    const html = '<!DOCTYPE html><html><body><a href="1_RECURSOS/Welcome/ISIS3510-syllabus.pdf?ou=486307">¡¡ CHECK THE SYLLABUS HERE !!</a></body></html>';
+    const repo = makeRepo(Buffer.from(html));
+    const r = await handleGetTopicFile({ contentRepo: repo }, { course_id: 486307, topic_id: 3396113 });
+    expect(r.content[0]?.text).toContain('¡¡ CHECK THE SYLLABUS HERE !!');
+    expect(r.content[0]?.text).toContain('1_RECURSOS/Welcome/ISIS3510-syllabus.pdf?ou=486307');
+  });
 });

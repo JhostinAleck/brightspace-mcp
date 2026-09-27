@@ -169,8 +169,12 @@ export function courseContentToText(
     for (const m of mods) {
       lines.push(`${'  '.repeat(level)}- ${ctx.md.bold(m.title)}`);
       for (const topic of m.topics) {
+        // D2L classifies some quicklinks (e.g. a Zoom link dropped into a
+        // module) as 'other' rather than 'link', but the Url field is still
+        // populated — show it whenever it's present, not just for kind='link'.
+        const urlSuffix = topic.url ? ` — ${topic.url}` : '';
         lines.push(
-          `${'  '.repeat(level + 1)}- ${topic.title} ${ctx.md.italic(`[${topic.kind}]`)} (id=${topic.id})`,
+          `${'  '.repeat(level + 1)}- ${topic.title} ${ctx.md.italic(`[${topic.kind}]`)} (id=${topic.id})${urlSuffix}`,
         );
       }
       if (level < depth) walk(m.submodules, level + 1);

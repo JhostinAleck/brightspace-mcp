@@ -13,6 +13,8 @@ import {
   calendarEventsToText,
 } from '@/mcp/tool-helpers.js';
 import { testOutputContext } from '../helpers/test-output-context.js';
+import { Module } from '@/contexts/content/domain/Module.js';
+import { Topic } from '@/contexts/content/domain/Topic.js';
 
 const ctx = testOutputContext({ locale: 'en-US' });
 const ctxEs = testOutputContext({ locale: 'es-419' });
@@ -56,6 +58,40 @@ describe('tool-helpers after refactor', () => {
 
   it('courseContentToText empty', () => {
     expect(courseContentToText([], 2, ctx)).toBe('No course content posted yet.');
+  });
+
+  it('courseContentToText includes the URL for link-kind topics (e.g. a Zoom link)', () => {
+    const modules = [
+      new Module({
+        id: 1,
+        title: 'Enlaces y grabaciones sesiones sincrónicas',
+        topics: [
+          new Topic({ id: 10, title: 'Zoom', kind: 'link', url: 'https://uniandes.zoom.us/j/12345', fileExtension: null }),
+          new Topic({ id: 11, title: 'Syllabus.pdf', kind: 'file', url: null, fileExtension: 'pdf' }),
+        ],
+        submodules: [],
+      }),
+    ];
+    const text = courseContentToText(modules, 2, ctx);
+    expect(text).toContain('Zoom');
+    expect(text).toContain('https://uniandes.zoom.us/j/12345');
+    // A file-kind topic with no url must not grow a stray " — " suffix.
+    expect(text).not.toContain('Syllabus.pdf — ');
+  });
+
+  it('courseContentToText also shows the URL when D2L classified the quicklink as "other" (observed for some Zoom links)', () => {
+    const modules = [
+      new Module({
+        id: 1,
+        title: 'Sala Zoom y grabaciones',
+        topics: [
+          new Topic({ id: 20, title: 'Zoom', kind: 'other', url: 'https://uniandes.zoom.us/j/99999', fileExtension: null }),
+        ],
+        submodules: [],
+      }),
+    ];
+    const text = courseContentToText(modules, 2, ctx);
+    expect(text).toContain('https://uniandes.zoom.us/j/99999');
   });
 
   it('announcementsToText en empty', () => {
