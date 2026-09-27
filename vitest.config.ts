@@ -20,6 +20,7 @@ export default defineConfig({
         'src/cli/main.ts',
         'src/cli/commands/**',
         'src/composition-root.ts',
+        'src/composition/**',
         'src/mcp/registry.ts',
         'src/mcp/server.ts',
         'src/mcp/tools/**',
