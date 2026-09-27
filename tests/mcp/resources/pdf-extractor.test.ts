@@ -1,38 +1,44 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import { extractTextFromBuffer } from '@/mcp/resources/pdf-extractor.js';
+import { TINY_PNG, buildDocx, buildPdf } from '@tests/helpers/zip.js';
+
+const URI = 'brightspace://1/content/topics/2';
 
 describe('pdf-extractor', () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
-
-  afterEach(() => {
-    vi.unmock('pdf-parse');
-  });
-
-  it('returns text/plain when pdf-parse yields >= 50 chars', async () => {
-    vi.doMock('pdf-parse', () => ({ default: () => Promise.resolve({ text: 'A'.repeat(60) }) }));
-    const { extractTextFromBuffer } = await import('@/mcp/resources/pdf-extractor.js');
-    const result = await extractTextFromBuffer(Buffer.from('%PDF-fake'), 'brightspace://1/content/topics/2');
-    expect(result.contents[0]).toMatchObject({ mimeType: 'text/plain', text: 'A'.repeat(60) });
+  it('returns text/plain for a real PDF with enough text (pdf-parse v2)', async () => {
+    const buf = buildPdf(['Programa del curso ISIS 1234', 'Evaluacion: parciales, talleres y proyecto final']);
+    const result = await extractTextFromBuffer(buf, URI);
     expect(result.contents).toHaveLength(1);
+    expect(result.contents[0]).toMatchObject({ uri: URI, mimeType: 'text/plain' });
+    const first = result.contents[0];
+    expect(first && 'text' in first ? first.text : '').toContain('Programa del curso ISIS 1234');
   });
 
-  it('falls back to base64 when text < 50 chars', async () => {
-    vi.doMock('pdf-parse', () => ({ default: () => Promise.resolve({ text: 'short' }) }));
-    const { extractTextFromBuffer } = await import('@/mcp/resources/pdf-extractor.js');
-    const buf = Buffer.from('%PDF-small');
+  it('falls back to base64 when the PDF yields < 50 chars (scanned PDFs)', async () => {
+    const buf = buildPdf(['short']);
     const result = await extractTextFromBuffer(buf, 'brightspace://1/content/topics/3');
     expect(result.contents).toHaveLength(2);
     expect(result.contents[0]).toMatchObject({ mimeType: 'text/plain' });
     expect(result.contents[1]).toMatchObject({ mimeType: 'application/pdf', blob: buf.toString('base64') });
   });
 
-  it('falls back to base64 when pdf-parse throws', async () => {
-    vi.doMock('pdf-parse', () => ({ default: () => Promise.reject(new Error('not a pdf')) }));
-    const { extractTextFromBuffer } = await import('@/mcp/resources/pdf-extractor.js');
-    const buf = Buffer.from('not-a-pdf');
+  it('falls back to base64 when the PDF cannot be parsed', async () => {
+    const buf = Buffer.from('%PDF-1.4 garbage');
     const result = await extractTextFromBuffer(buf, 'brightspace://1/content/topics/4');
     expect(result.contents).toHaveLength(2);
-    expect(result.contents[1]).toMatchObject({ mimeType: 'application/pdf' });
+    expect(result.contents[1]).toMatchObject({ mimeType: 'application/pdf', blob: buf.toString('base64') });
+  });
+
+  it('extracts text from non-PDF documents (DOCX)', async () => {
+    const result = await extractTextFromBuffer(buildDocx(['Instrucciones del taller']), `${URI}/Taller.docx`);
+    expect(result.contents).toHaveLength(1);
+    expect(result.contents[0]).toMatchObject({ mimeType: 'text/plain', text: expect.stringContaining('Instrucciones del taller') });
+  });
+
+  it('returns images as a blob with their own mime type', async () => {
+    const result = await extractTextFromBuffer(TINY_PNG, `${URI}/diagram.png`);
+    expect(result.contents).toHaveLength(1);
+    expect(result.contents[0]).toMatchObject({ mimeType: 'image/png', blob: TINY_PNG.toString('base64') });
   });
 });
