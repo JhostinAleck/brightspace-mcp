@@ -1,0 +1,145 @@
+{
+  "_comment": "Sanitized shape of GET /d2l/api/le/{v}/{ou}/content/toc for a course whose syllabus lives in content (real Brightspace 2026 layouts, names/ids/tokens replaced).",
+  "Modules": [
+    {
+      "IsHidden": false,
+      "SortOrder": 1,
+      "StartDateTime": null,
+      "EndDateTime": null,
+      "IsLocked": false,
+      "PacingStartDate": null,
+      "PacingEndDate": null,
+      "DefaultPath": "/content/enforced/101-202620_TEST1010_1/",
+      "ModuleId": 900,
+      "Title": "Welcome",
+      "Modules": [],
+      "Topics": [
+        {
+          "IsExempt": false,
+          "IsHidden": false,
+          "SortOrder": 2,
+          "StartDateTime": null,
+          "EndDateTime": null,
+          "IsLocked": false,
+          "IsBroken": false,
+          "ActivityId": "https://ids.brightspace.com/activities/contenttopic/FAKE-9001",
+          "CompletionType": 2,
+          "TopicId": 9001,
+          "Identifier": "9001",
+          "TypeIdentifier": "File",
+          "Title": "Welcome",
+          "Bookmarked": false,
+          "Unread": false,
+          "Url": "/content/enforced/101-202620_TEST1010_1/Welcome.html",
+          "ToolId": null,
+          "ToolItemId": null,
+          "ActivityType": 1,
+          "GradeItemId": null,
+          "LastModifiedDate": "2026-01-16T19:58:42.143Z",
+          "Description": {
+            "Text": "",
+            "Html": ""
+          }
+        }
+      ],
+      "LastModifiedDate": "2026-01-16T19:58:42.127Z",
+      "Description": {
+        "Text": "\r\n",
+        "Html": "<div class=\"banner\"><img src=\"/content/enforced/101-202620_TEST1010_1/assets/banner%20completo.png?_&amp;d2lSessionVal=FAKESESSION1\" width=\"100%\"/></div>\r\n<div class=\"welcome\">\r\n<h4></h4>\r\n</div>"
+      }
+    },
+    {
+      "IsHidden": false,
+      "SortOrder": 2,
+      "StartDateTime": null,
+      "EndDateTime": null,
+      "IsLocked": false,
+      "PacingStartDate": null,
+      "PacingEndDate": null,
+      "DefaultPath": "/content/enforced/101-202620_TEST1010_1/",
+      "ModuleId": 901,
+      "Title": "Introducción al curso",
+      "Modules": [],
+      "Topics": [],
+      "LastModifiedDate": "2026-01-16T19:58:42.127Z",
+      "Description": {
+        "Text": "\r\n",
+        "Html": "<p><strong>Introducci&#243;n:</strong></p>\r\n<ul>\r\n<li><a rel=\"noopener\" href=\"https://school.brightspace.test/d2l/common/dialogs/quickLink/quickLink.d2l?ou=101&amp;type=coursefile&amp;fileId=TEST-1010-2026-20_Rev.pdf\" target=\"_blank\">Programa Curso 2026-20</a></li>\r\n<li><a rel=\"noopener\" href=\"https://meet.example.test/j/123\" target=\"_blank\">Link reuniones virtuales</a></li>\r\n</ul>"
+      }
+    },
+    {
+      "IsHidden": false,
+      "SortOrder": 3,
+      "StartDateTime": null,
+      "EndDateTime": null,
+      "IsLocked": false,
+      "PacingStartDate": null,
+      "PacingEndDate": null,
+      "DefaultPath": "/content/enforced/101-202620_TEST1010_1/",
+      "ModuleId": 902,
+      "Title": "Slides",
+      "Modules": [],
+      "Topics": [
+        {
+          "IsExempt": false,
+          "IsHidden": false,
+          "SortOrder": 1,
+          "StartDateTime": null,
+          "EndDateTime": null,
+          "IsLocked": false,
+          "IsBroken": false,
+          "ActivityId": "https://ids.brightspace.com/activities/contenttopic/FAKE-9021",
+          "CompletionType": 2,
+          "TopicId": 9021,
+          "Identifier": "9021",
+          "TypeIdentifier": "File",
+          "Title": "1. Kickoff",
+          "Bookmarked": false,
+          "Unread": false,
+          "Url": "/content/enforced/101-202620_TEST1010_1/1. Kickoff.pdf",
+          "ToolId": null,
+          "ToolItemId": null,
+          "ActivityType": 1,
+          "GradeItemId": null,
+          "LastModifiedDate": "2026-01-16T19:58:42.143Z",
+          "Description": {
+            "Text": "",
+            "Html": ""
+          }
+        },
+        {
+          "IsExempt": false,
+          "IsHidden": false,
+          "SortOrder": 2,
+          "StartDateTime": null,
+          "EndDateTime": null,
+          "IsLocked": false,
+          "IsBroken": false,
+          "ActivityId": "https://ids.brightspace.com/activities/contenttopic/FAKE-9022",
+          "CompletionType": 2,
+          "TopicId": 9022,
+          "Identifier": "9022",
+          "TypeIdentifier": "File",
+          "Title": "2. Design Thinking",
+          "Bookmarked": false,
+          "Unread": false,
+          "Url": "/content/enforced/101-202620_TEST1010_1/Slides/2. DesignThinking.pdf",
+          "ToolId": null,
+          "ToolItemId": null,
+          "ActivityType": 1,
+          "GradeItemId": null,
+          "LastModifiedDate": "2026-01-16T19:58:42.143Z",
+          "Description": {
+            "Text": "",
+            "Html": ""
+          }
+        }
+      ],
+      "LastModifiedDate": "2026-01-16T19:58:42.127Z",
+      "Description": {
+        "Text": "\r\n",
+        "Html": ""
+      }
+    }
+  ]
+}

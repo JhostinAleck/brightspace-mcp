@@ -247,6 +247,8 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       title: 'Get Syllabus',
       description:
         'Return the course syllabus (overview page) as plain text.\n' +
+        'When the overview is not published, lists where the syllabus likely is in course content ' +
+        '(ranked topics, modules, linked files) with the exact get_topic_file / get_course_file / get_module call to read it.\n' +
         'Use when the user wants to know course expectations, grading scheme, or what the class covers.',
       inputSchema: getSyllabusSchema.shape,
     },
