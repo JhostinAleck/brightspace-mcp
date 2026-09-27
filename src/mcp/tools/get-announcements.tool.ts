@@ -9,8 +9,9 @@ export interface GetAnnouncementsDeps { communicationsRepo: CommunicationsReposi
 
 export async function handleGetAnnouncements(deps: GetAnnouncementsDeps, rawInput: unknown) {
   const input = getAnnouncementsSchema.parse(rawInput);
-  const items = await getAnnouncements({ repo: deps.communicationsRepo, courseId: OrgUnitId.of(input.course_id), limit: input.limit });
-  const text = announcementsToText(items, deps.output);
+  // D2L returns every announcement in one response; slice here so the header can say "N of M".
+  const all = await getAnnouncements({ repo: deps.communicationsRepo, courseId: OrgUnitId.of(input.course_id) });
+  const text = announcementsToText(all.slice(0, input.limit), deps.output, { total: all.length });
   const footer = deps.output.metaFooter();
   const body = footer ? `${text}\n\n${footer}` : text;
   return { content: [{ type: 'text' as const, text: body }] };

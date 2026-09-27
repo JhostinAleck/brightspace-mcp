@@ -110,6 +110,9 @@
   "announcements": {
     "header": "Announcements",
     "empty": "No announcements.",
+    "pinned": "Pinned",
+    "attachments": "Attachments",
+    "showing": "showing {shown} of {total}",
     "table_headers": {
       "date": "Date",
       "title": "Title",

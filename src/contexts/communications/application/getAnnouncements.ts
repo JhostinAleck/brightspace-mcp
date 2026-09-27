@@ -10,6 +10,9 @@ export interface GetAnnouncementsInput {
 
 export async function getAnnouncements(input: GetAnnouncementsInput): Promise<Announcement[]> {
   const all = await input.repo.findAnnouncements(input.courseId);
-  const sorted = all.slice().sort((a, b) => b.postedAt.getTime() - a.postedAt.getTime());
+  // Pinned first (as in the Brightspace UI), then newest first.
+  const sorted = all
+    .slice()
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.postedAt.getTime() - a.postedAt.getTime());
   return input.limit ? sorted.slice(0, input.limit) : sorted;
 }

@@ -4,6 +4,7 @@ import type { CommunicationsRepository } from '@/contexts/communications/domain/
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import type { OutputContext } from '@/shared-kernel/output/index.js';
 import { buildAnnouncementUri } from './uri-builder.js';
+import { htmlToText } from '@/shared-kernel/text/htmlLinks.js';
 
 export interface AnnouncementResourceDeps {
   communicationsRepo: CommunicationsRepository;
@@ -27,7 +28,7 @@ export function registerAnnouncementResource(server: McpServer, deps: Announceme
       if (!ann) {
         throw new Error(`Announcement ${announcementId} not found in course ${courseId}`);
       }
-      const body = (ann.html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const body = ann.html ? htmlToText(ann.html) : '';
       const author = ann.authorName ? `${ann.authorName} · ` : '';
       const date = deps.output.formatDate(ann.postedAt);
       return {

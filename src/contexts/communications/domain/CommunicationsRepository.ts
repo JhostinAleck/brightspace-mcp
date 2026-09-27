@@ -21,6 +21,9 @@ export interface MarkAnnouncementReadInput {
 
 export interface CommunicationsRepository {
   findAnnouncements(courseId: OrgUnitId, opts?: { limit?: number }): Promise<Announcement[]>;
+  /** One announcement, or null when it does not exist or is hidden. */
+  findAnnouncement(courseId: OrgUnitId, announcementId: number): Promise<Announcement | null>;
+  downloadAnnouncementAttachment(courseId: OrgUnitId, announcementId: number, attachmentId: number): Promise<Buffer>;
   findDiscussions(courseId: OrgUnitId): Promise<DiscussionForum[]>;
   postReply(input: PostReplyInput): Promise<PostReplyResult>;
   markAnnouncementRead(input: MarkAnnouncementReadInput): Promise<void>;

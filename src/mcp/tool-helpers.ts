@@ -9,7 +9,6 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import type { Classmate } from '@/contexts/courses/domain/Classmate.js';
 import type { Syllabus } from '@/contexts/content/domain/Syllabus.js';
 import type { Module } from '@/contexts/content/domain/Module.js';
-import type { Announcement } from '@/contexts/communications/domain/Announcement.js';
 import type { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import type { CalendarEvent } from '@/contexts/calendar/domain/CalendarEvent.js';
 import { rubricAssessmentsToText } from '@/mcp/rubric-helpers.js';
@@ -19,7 +18,7 @@ export function coursesToCompact(courses: Course[], ctx: OutputContext): string 
   if (courses.length === 0) return ctx.t('courses.empty');
   const items = courses.map((c) => {
     const tag = c.active ? '' : ` ${ctx.md.italic(`[${ctx.t('courses.inactive')}]`)}`;
-    return `${ctx.md.bold(c.name)} — ${c.code}${tag}`;
+    return `${ctx.md.bold(c.name)} (id=${CourseId.toNumber(c.id)}) — ${c.code}${tag}`;
   });
   return [
     ctx.md.h3(ctx.t('courses.count', { count: courses.length })),
@@ -255,27 +254,7 @@ export function courseContentToText(
   return [ctx.md.h3(ctx.t('content.header')), lines.join('\n')].join('\n\n') + footer;
 }
 
-export function announcementsToText(items: Announcement[], ctx: OutputContext): string {
-  if (items.length === 0) return ctx.t('announcements.empty');
-  const headers = [
-    ctx.t('announcements.table_headers.date'),
-    ctx.t('announcements.table_headers.title'),
-    ctx.t('announcements.table_headers.author'),
-  ];
-  const rows = items.map((a) => {
-    const body = (a.html ?? '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 100);
-    return [
-      ctx.formatDate(a.postedAt),
-      `${a.title}${body ? ` — ${ctx.md.italic(body)}` : ''}`,
-      a.authorName ?? '',
-    ];
-  });
-  return [ctx.md.h3(ctx.t('announcements.header')), ctx.md.table(headers, rows)].join('\n\n');
-}
+export { announcementsToText, announcementToText } from './announcement-helpers.js';
 
 export function discussionsToText(forums: DiscussionForum[], ctx: OutputContext): string {
   if (forums.length === 0) return ctx.t('discussions.empty');

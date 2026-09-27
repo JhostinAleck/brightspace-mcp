@@ -73,6 +73,10 @@ const modules = [
 
 const announcements = [
   {
+    id: 5,
+    courseOrgUnitId: 1,
+    pinned: false,
+    attachments: [],
     postedAt: new Date('2026-05-01T10:00:00Z'),
     title: 'Examen parcial',
     authorName: 'Prof. Rodríguez',
@@ -153,7 +157,11 @@ for (const locale of LOCALES) {
       expect(courseContentToText(modules, 2, ctx)).toMatchSnapshot();
     });
     it('announcementsToText', () => {
-      expect(announcementsToText(announcements, ctx)).toMatchSnapshot();
+      // toContain, not a snapshot — the date is Intl-formatted (varies by ICU version)
+      const result = announcementsToText(announcements, ctx);
+      expect(result).toContain('**Examen parcial** (id=5)');
+      expect(result).toContain('Prof. Rodríguez');
+      expect(result).toContain('El examen será el viernes a las 9am.');
     });
     it('discussionsToText', () => {
       expect(discussionsToText(discussions, ctx)).toMatchSnapshot();

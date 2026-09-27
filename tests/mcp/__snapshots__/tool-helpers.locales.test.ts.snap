@@ -1,13 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`tool-helpers @ en-US > announcementsToText 1`] = `
-"### Announcements
-
-| Date | Title | Author |
-|---|---|---|
-| May 1, 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
-`;
-
 exports[`tool-helpers @ en-US > courseContentToText 1`] = `
 "### Course content
 
@@ -18,8 +10,8 @@ exports[`tool-helpers @ en-US > courseContentToText 1`] = `
 exports[`tool-helpers @ en-US > coursesToCompact 1`] = `
 "### You have 2 courses:
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inactive]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inactive]_"
 `;
 
 exports[`tool-helpers @ en-US > coursesToDetailed 1`] = `
@@ -80,14 +72,6 @@ _Updated: Jan 10, 2026_
 Este curso cubre cálculo diferencial e integral."
 `;
 
-exports[`tool-helpers @ es-419 > announcementsToText 1`] = `
-"### Anuncios
-
-| Fecha | Título | Autor |
-|---|---|---|
-| 1 may 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
-`;
-
 exports[`tool-helpers @ es-419 > courseContentToText 1`] = `
 "### Contenido del curso
 
@@ -98,8 +82,8 @@ exports[`tool-helpers @ es-419 > courseContentToText 1`] = `
 exports[`tool-helpers @ es-419 > coursesToCompact 1`] = `
 "### Tienes 2 cursos:
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inactivo]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inactivo]_"
 `;
 
 exports[`tool-helpers @ es-419 > coursesToDetailed 1`] = `
@@ -160,14 +144,6 @@ _Actualizado: 10 ene 2026_
 Este curso cubre cálculo diferencial e integral."
 `;
 
-exports[`tool-helpers @ fr-CA > announcementsToText 1`] = `
-"### Annonces
-
-| Date | Titre | Auteur |
-|---|---|---|
-| 1 mai 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
-`;
-
 exports[`tool-helpers @ fr-CA > courseContentToText 1`] = `
 "### Contenu du cours
 
@@ -178,8 +154,8 @@ exports[`tool-helpers @ fr-CA > courseContentToText 1`] = `
 exports[`tool-helpers @ fr-CA > coursesToCompact 1`] = `
 "### Vous avez 2 cours :
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inactif]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inactif]_"
 `;
 
 exports[`tool-helpers @ fr-CA > coursesToDetailed 1`] = `
@@ -240,14 +216,6 @@ _Mis à jour : 10 janv. 2026_
 Este curso cubre cálculo diferencial e integral."
 `;
 
-exports[`tool-helpers @ pt-BR > announcementsToText 1`] = `
-"### Avisos
-
-| Data | Título | Autor |
-|---|---|---|
-| 1 de mai. de 2026 | Examen parcial — _El examen será el viernes a las 9am._ | Prof. Rodríguez |"
-`;
-
 exports[`tool-helpers @ pt-BR > courseContentToText 1`] = `
 "### Conteúdo do curso
 
@@ -258,8 +226,8 @@ exports[`tool-helpers @ pt-BR > courseContentToText 1`] = `
 exports[`tool-helpers @ pt-BR > coursesToCompact 1`] = `
 "### Você tem 2 cursos:
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inativo]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inativo]_"
 `;
 
 exports[`tool-helpers @ pt-BR > coursesToDetailed 1`] = `

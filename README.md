@@ -375,7 +375,8 @@ All write operations:
 | `get_syllabus` | Fetch the course syllabus |
 | `get_course_content` | Browse modules and topics (includes topic IDs) |
 | `get_topic_file` | Download and read a content topic file (DOCX, PDF, HTML, plain text) |
-| `get_announcements` | List course announcements |
+| `get_announcements` | List course announcements (excerpt, author, attachments) |
+| `get_announcement` | Read one announcement in full, or one of its attachments |
 | `get_discussions` | Browse discussion forums and threads |
 | `get_calendar_events` | List calendar events in a date range |
 | `get_roster` | Get the full course roster |
