@@ -10,6 +10,10 @@ import { CourseId } from '@/contexts/courses/domain/CourseId.js';
 const BASE = 'https://x.com';
 const fixturePath = resolve(__dirname, '../../../fixtures/enrollments/happy-path.json');
 const fixture = JSON.parse(readFileSync(fixturePath, 'utf-8'));
+const currentTermFixture = JSON.parse(
+  readFileSync(resolve(__dirname, '../../../fixtures/enrollments/current-term.json'), 'utf-8'),
+);
+const NOW = new Date('2026-09-27T12:00:00Z');
 const rosterFixture = JSON.parse(readFileSync(resolve(__dirname, '../../../fixtures/roster/happy-path.json'), 'utf-8'));
 
 afterEach(() => nock.cleanAll());
@@ -28,10 +32,31 @@ describe('D2lCourseRepository.findMyCourses', () => {
   it('filters by activeOnly', async () => {
     nock(BASE).get(/\/d2l\/api\/lp\/1\.56\/enrollments\/myenrollments\/.*/).reply(200, fixture);
     const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
-    const repo = new D2lCourseRepository(client, { le: '1.91', lp: '1.56' });
+    const repo = new D2lCourseRepository(client, { le: '1.91', lp: '1.56', now: () => new Date('2026-03-01T00:00:00Z') });
     const courses = await repo.findMyCourses({ activeOnly: true });
     expect(courses).toHaveLength(1);
     expect(courses[0]?.name).toBe('ECE 264');
+  });
+
+  it('activeOnly keeps only current courses even though IsActive is true for all of them', async () => {
+    nock(BASE).get('/d2l/api/lp/1.63/enrollments/myenrollments/').reply(200, currentTermFixture);
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lCourseRepository(client, { le: '1.99', lp: '1.63', now: () => NOW });
+    const courses = await repo.findMyCourses({ activeOnly: true });
+    expect(courses.map((c) => CourseId.toNumber(c.id)).sort()).toEqual([5003, 5004, 5006]);
+  });
+
+  it('without activeOnly returns every course offering, flagging past ones inactive', async () => {
+    nock(BASE).get('/d2l/api/lp/1.63/enrollments/myenrollments/').reply(200, currentTermFixture);
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lCourseRepository(client, { le: '1.99', lp: '1.63', now: () => NOW });
+    const courses = await repo.findMyCourses();
+    expect(courses).toHaveLength(5);
+    const byId = new Map(courses.map((c) => [CourseId.toNumber(c.id), c]));
+    expect(byId.get(5001)?.active).toBe(false);
+    expect(byId.get(5002)?.active).toBe(false);
+    expect(byId.get(5003)?.active).toBe(true);
+    expect(byId.get(5003)?.endDate?.toISOString()).toBe('2026-12-18T05:00:00.000Z');
   });
 
   it('findRoster parses classlist users into Classmate entities with roles', async () => {

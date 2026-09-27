@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `get_course_content` shows a topic's URL whenever D2L provides one (e.g. Zoom quicklinks classified as `other`).
 
 ### Changed
+- `list_my_courses` compact format shows the course id (`**Name** (id=N) — code`).
 - Course content is loaded with one `GET /content/toc` call instead of one `/structure/` call per module (the old walk remains as a fallback).
 - `get_course_content` shows module description excerpts with their links, a `module_id` for described modules, and `[broken]` topics.
 - `get_topic_file` returns images as MCP image content, audio/video as metadata, renders notebooks as cells, keeps newlines in text/CSV, raises the text limit to 40,000 characters and always reports truncation.
@@ -31,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dependencies: fixed all high-severity advisories in production deps; CI `npm audit` now gates on production dependencies only.
 
 ### Fixed
+- `list_my_courses` with `active_only` (the default) returned every course back to years ago because D2L's `Access.IsActive` is true for all enrollments. Current courses are now picked from the enrollment access dates, recent access and term code (rule in `docs/tools.md`); past courses are tagged inactive. This also narrows `get_upcoming_due_dates` and the TUI to current courses.
 - `get_assignment_files` could write outside `save_to`: attachment names come from D2L (sometimes scraped from HTML) and were joined verbatim, so a name like `../../x` escaped the folder. Only the final path segment is used now.
 - Assignment attachments (PDF, XLSX/XLSM, PPTX, …) returned `[PDF — N bytes]` placeholders; they now go through the shared extraction module and return their text.
 - `get_feedback` never returned feedback: it called `/dropbox/folders/{id}/feedback/me`, which is not a Valence route (always 404). Feedback now comes from the grade item value and the rubric assessment.

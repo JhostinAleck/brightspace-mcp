@@ -19,7 +19,7 @@ export function coursesToCompact(courses: Course[], ctx: OutputContext): string 
   if (courses.length === 0) return ctx.t('courses.empty');
   const items = courses.map((c) => {
     const tag = c.active ? '' : ` ${ctx.md.italic(`[${ctx.t('courses.inactive')}]`)}`;
-    return `${ctx.md.bold(c.name)} — ${c.code}${tag}`;
+    return `${ctx.md.bold(c.name)} (id=${CourseId.toNumber(c.id)}) — ${c.code}${tag}`;
   });
   return [
     ctx.md.h3(ctx.t('courses.count', { count: courses.length })),

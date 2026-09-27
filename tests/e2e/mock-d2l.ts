@@ -60,8 +60,15 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
           JSON.stringify({
             Items: [
               {
-                OrgUnit: { Id: 1, Name: 'Smoke 101', Code: 'SMK', Type: { Id: 3, Code: 'Course' } },
-                Access: { IsActive: true },
+                OrgUnit: { Id: 1, Name: 'Smoke 101', Code: 'SMK', Type: { Id: 3, Code: 'Course Offering' } },
+                // Real shape: IsActive is true even for past terms; the access window decides "current".
+                Access: {
+                  IsActive: true,
+                  StartDate: new Date(Date.now() - 30 * 86400000).toISOString(),
+                  EndDate: new Date(Date.now() + 90 * 86400000).toISOString(),
+                  CanAccess: true,
+                  LastAccessed: null,
+                },
               },
             ],
           }),

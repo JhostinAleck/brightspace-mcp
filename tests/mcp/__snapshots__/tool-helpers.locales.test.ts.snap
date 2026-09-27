@@ -18,8 +18,8 @@ exports[`tool-helpers @ en-US > courseContentToText 1`] = `
 exports[`tool-helpers @ en-US > coursesToCompact 1`] = `
 "### You have 2 courses:
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inactive]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inactive]_"
 `;
 
 exports[`tool-helpers @ en-US > coursesToDetailed 1`] = `
@@ -98,8 +98,8 @@ exports[`tool-helpers @ es-419 > courseContentToText 1`] = `
 exports[`tool-helpers @ es-419 > coursesToCompact 1`] = `
 "### Tienes 2 cursos:
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inactivo]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inactivo]_"
 `;
 
 exports[`tool-helpers @ es-419 > coursesToDetailed 1`] = `
@@ -178,8 +178,8 @@ exports[`tool-helpers @ fr-CA > courseContentToText 1`] = `
 exports[`tool-helpers @ fr-CA > coursesToCompact 1`] = `
 "### Vous avez 2 cours :
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inactif]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inactif]_"
 `;
 
 exports[`tool-helpers @ fr-CA > coursesToDetailed 1`] = `
@@ -258,8 +258,8 @@ exports[`tool-helpers @ pt-BR > courseContentToText 1`] = `
 exports[`tool-helpers @ pt-BR > coursesToCompact 1`] = `
 "### Você tem 2 cursos:
 
-- **Cálculo I** — MATE-1101
-- **Programación** — ISIS-1221 _[inativo]_"
+- **Cálculo I** (id=1) — MATE-1101
+- **Programación** (id=2) — ISIS-1221 _[inativo]_"
 `;
 
 exports[`tool-helpers @ pt-BR > coursesToDetailed 1`] = `

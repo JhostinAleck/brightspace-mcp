@@ -124,7 +124,8 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       description:
         'List enrolled courses.\n' +
         'Use when the user asks about their classes, semester, or what they are taking.\n' +
-        'Defaults to active courses only.',
+        'Defaults to current courses only (access window not yet ended, or undated but opened recently / same term code);\n' +
+        'pass active_only=false for the full history. Each course shows its id for use with other tools.',
       inputSchema: listMyCoursesSchema.shape,
     },
     async (input: unknown) => handleListMyCourses(deps, input),

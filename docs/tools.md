@@ -11,12 +11,18 @@ Verify the server can talk to Brightspace.
 **Returns:** `Authenticated as <name>. Source: <strategy>. Expires in ~<n> min.`
 
 ### `list_my_courses`
-List enrolled courses.
+List enrolled courses. Both formats show each course's `id` (needed by every other course tool).
 
 **Args:**
-- `active_only` *(boolean, default `true`)*
+- `active_only` *(boolean, default `true`)* — only current courses; `false` lists the full history with past courses tagged inactive.
 - `format` *(`"compact" | "detailed"`, default `"compact"`)*
 - `limit` *(integer, 1–200, default 50)*
+
+D2L reports `IsActive: true` for every past enrollment and does not let students read course-offering or semester dates, so "current" is decided from the enrollment itself:
+
+1. Access end date set → current if it has not passed (and the start is no more than 30 days away).
+2. Only a start date → current if it started within the last ~6 months (or starts within 30 days).
+3. No dates → current if you opened the course in the last 45 days, or its code shares a term token (5+ digits, e.g. `202620`) with a dated current course.
 
 ### `get_my_grades`
 Final grades for a course.

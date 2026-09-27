@@ -15,6 +15,14 @@ describe('list_my_courses tool', () => {
     expect(result.content[0]?.text).toContain('1 course');
   });
 
+  it('compact format includes the course id other tools need', async () => {
+    const repo = new FakeCourseRepository([
+      new Course({ id: CourseId.of(482179), name: 'ECE 264', code: 'ECE26400', active: true }),
+    ]);
+    const result = await handleListMyCourses({ courseRepo: repo, output: testOutputContext() }, {});
+    expect(result.content[0]?.text).toContain('**ECE 264** (id=482179) — ECE26400');
+  });
+
   it('returns detailed when format=detailed', async () => {
     const repo = new FakeCourseRepository([
       new Course({
