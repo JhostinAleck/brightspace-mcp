@@ -97,4 +97,22 @@ describe('handleGetAssignmentFiles — save_to', () => {
     // The successful one is still on disk
     expect(existsSync(join(saveDir, 'template.docx'))).toBe(true);
   });
+
+  it('never writes outside save_to, even for attachment names with path segments', async () => {
+    const saveDir = join(tmp, 'traversal');
+    const evil = fakeRepo({
+      findFiles: async () => ({
+        assignmentId: '42', assignmentName: 'Lab', instructions: '',
+        files: [{ name: '../../escaped.txt', url: '/x' }],
+        fileContents: {},
+      }),
+    });
+    const result = await handleGetAssignmentFiles(
+      { assignmentRepo: evil, contentRepo: fakeContentRepo },
+      { course_id: 100, assignment_id: 42, save_to: saveDir },
+    );
+    expect(existsSync(join(tmp, 'escaped.txt'))).toBe(false);
+    expect(existsSync(join(saveDir, 'escaped.txt'))).toBe(true);
+    expect(result.content[0]?.text ?? '').toContain(join(saveDir, 'escaped.txt'));
+  });
 });

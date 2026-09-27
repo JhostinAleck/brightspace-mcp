@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { resolve, join, basename } from 'node:path';
 
 import type { AssignmentRepository } from '@/contexts/assignments/domain/AssignmentRepository.js';
 import type { ContentRepository } from '@/contexts/content/domain/ContentRepository.js';
@@ -8,7 +8,7 @@ import { getAssignmentFilesSchema } from '@/mcp/schemas.js';
 import { expandPath } from '@/shared-kernel/path/expandPath.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
-import { extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
+import { extractFileContent, extractedToText } from '@/shared-kernel/extract/extractFileContent.js';
 
 export interface GetAssignmentFilesDeps {
   assignmentRepo: AssignmentRepository;
@@ -31,10 +31,17 @@ function collectAllTopics(modules: readonly Module[], out: TopicRef[] = []): Top
   return out;
 }
 
-function topicToText(buf: Buffer, ext: string | null): string {
-  const e = (ext ?? '').toLowerCase().replace('.', '');
-  if (e === 'docx') return extractDocxText(buf);
-  return `[${e.toUpperCase() || 'binary'} — ${buf.length} bytes]`;
+async function topicToText(buf: Buffer, title: string, ext: string | null): Promise<string> {
+  return extractedToText(await extractFileContent(buf, { filename: `${title}${ext ?? ''}` }));
+}
+
+/**
+ * Attachment names come from D2L (sometimes scraped from HTML), so they are
+ * untrusted: keep only the final path segment so a save never escapes save_to.
+ */
+function safeFileName(name: string): string {
+  const base = basename(name.replace(/\\/g, '/')).replace(/^\.+$/, '');
+  return base || 'attachment';
 }
 
 export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, rawInput: unknown) {
@@ -64,7 +71,7 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
       if (saveDir) {
         try {
           const bin = await deps.assignmentRepo.findFileBinary(courseId, f);
-          const out = join(saveDir, f.name);
+          const out = join(saveDir, safeFileName(f.name));
           writeFileSync(out, bin);
           lines.push(`[Saved to: ${out}]`);
         } catch (err) {
@@ -91,7 +98,7 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
         matches.map(async (topic) => {
           try {
             const buf = await deps.contentRepo.findTopicFile(courseId, topic.id);
-            return { topic, body: topicToText(buf, topic.ext), buf };
+            return { topic, body: await topicToText(buf, topic.title, topic.ext), buf };
           } catch {
             return { topic, body: '[download failed]', buf: null as Buffer | null };
           }
@@ -102,7 +109,7 @@ export async function handleGetAssignmentFiles(deps: GetAssignmentFilesDeps, raw
         lines.push(body);
         if (saveDir && buf) {
           // Use topic title + extension; sanitize slashes from the title.
-          const safe = topic.title.replace(/[/\\]/g, '_') + (topic.ext ?? '');
+          const safe = safeFileName(topic.title.replace(/[/\\]/g, '_') + (topic.ext ?? ''));
           try {
             const out = join(saveDir, safe);
             writeFileSync(out, buf);

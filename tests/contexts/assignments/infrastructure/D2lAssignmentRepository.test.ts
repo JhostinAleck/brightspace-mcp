@@ -1,3 +1,4 @@
+import { buildPdf, buildXlsx } from '@tests/helpers/zip';
 import { describe, it, expect, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -66,6 +67,26 @@ describe('D2lAssignmentRepository', () => {
     expect(result.files).toHaveLength(1);
     expect(result.files[0]?.name).toBe('rubric.pdf');
     expect(result.fileContents['rubric.pdf']).toMatch(/PDF/);
+  });
+
+  it('findFiles extracts the text of PDF and XLSX attachments', async () => {
+    const folders = [{
+      Id: 5001, Name: 'Lab 4', CustomInstructions: { Html: '' }, DueDate: null, Submissions: [],
+      Attachments: [
+        { FileId: 'p1', FileName: 'LabCS_4.pdf', Size: 1 },
+        { FileId: 'x1', FileName: 'datos.xlsx', Size: 1 },
+      ],
+    }];
+    nock(BASE).get('/d2l/api/le/1.91/101/dropbox/folders/').reply(200, folders);
+    nock(BASE).get('/d2l/api/le/1.91/101/dropbox/folders/5001/attachments/p1').reply(200, buildPdf(['Objetivo del laboratorio']));
+    nock(BASE).get('/d2l/api/le/1.91/101/dropbox/folders/5001/attachments/x1').reply(200, buildXlsx([['col', 'valor'], ['a', '42']]));
+
+    const client = new D2lApiClient({ baseUrl: BASE, getToken: async () => AccessToken.bearer('t') });
+    const repo = new D2lAssignmentRepository(client, { le: '1.91' });
+    const result = await repo.findFiles(OrgUnitId.of(101), AssignmentId.of(5001));
+
+    expect(result.fileContents['LabCS_4.pdf']).toContain('Objetivo del laboratorio');
+    expect(result.fileContents['datos.xlsx']).toContain('42');
   });
 
   it('findFiles falls back to dedicated attachments endpoint when list has none', async () => {
@@ -192,6 +213,6 @@ describe('D2lAssignmentRepository', () => {
 
     // Should not throw — corrupted ZIP/DOCX should return graceful fallback
     const result = await repo.findFiles(OrgUnitId.of(101), AssignmentId.of(5001));
-    expect(result.fileContents['hw.docx']).toMatch(/failed|DOCX/i);
+    expect(result.fileContents['hw.docx']).toMatch(/failed|DOCX|ZIP/i);
   });
 });

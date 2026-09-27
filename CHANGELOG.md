@@ -31,6 +31,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dependencies: fixed all high-severity advisories in production deps; CI `npm audit` now gates on production dependencies only.
 
 ### Fixed
+- `get_assignment_files` could write outside `save_to`: attachment names come from D2L (sometimes scraped from HTML) and were joined verbatim, so a name like `../../x` escaped the folder. Only the final path segment is used now.
+- Assignment attachments (PDF, XLSX/XLSM, PPTX, …) returned `[PDF — N bytes]` placeholders; they now go through the shared extraction module and return their text.
 - `get_feedback` never returned feedback: it called `/dropbox/folders/{id}/feedback/me`, which is not a Valence route (always 404). Feedback now comes from the grade item value and the rubric assessment.
 - Group and closed assignments were reported as "not submitted" when Brightspace refused the `mysubmissions` request (403/404); they now show "status unavailable".
 - Assignments with no due date but an availability end date now show the close date instead of "no due date".

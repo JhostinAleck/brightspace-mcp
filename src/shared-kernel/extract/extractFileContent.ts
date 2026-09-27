@@ -177,3 +177,15 @@ export async function extractFileContent(buf: Buffer, opts: ExtractOptions = {})
       return binary('unrecognised binary format');
   }
 }
+
+/**
+ * Plain-text rendering for callers that can only return a string (e.g. a
+ * repository filling a name → text map). Images and binaries become a
+ * one-line placeholder; truncation is always stated.
+ */
+export function extractedToText(x: ExtractedContent): string {
+  if (x.kind === 'image') return `[Image — ${x.mimeType}, ${x.bytes} bytes]`;
+  if (x.kind === 'binary') return `[${x.format.toUpperCase()} — ${x.mimeType}, ${x.bytes} bytes] ${x.reason}.`;
+  if (!x.truncated) return x.text;
+  return `${x.text}\n\n[Truncated: showing the first ${x.text.length} of ${x.totalChars} characters.]`;
+}

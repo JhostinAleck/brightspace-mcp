@@ -29,7 +29,7 @@ import type { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { D2lApiError } from '@/contexts/http-api/errors.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
-import { extractDocxText } from '@/shared-kernel/zip/extractZipEntry.js';
+import { extractFileContent, extractedToText } from '@/shared-kernel/extract/extractFileContent.js';
 import { parseValidDate } from '@/shared-kernel/date/parseValidDate.js';
 import type { D2lUiSubmitter } from './D2lUiSubmitter.js';
 
@@ -406,17 +406,8 @@ export class D2lAssignmentRepository implements AssignmentRepository {
     const fileContents: Record<string, string> = {};
     for (const file of files) {
       try {
-        const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
         const buf = await this.client.getRaw(file.url);
-        if (ext === 'docx' || ext === 'doc') {
-          fileContents[file.name] = extractDocxText(buf);
-        } else if (ext === 'pdf') {
-          fileContents[file.name] = `[PDF — ${buf.length} bytes]`;
-        } else if (ext === 'xlsx' || ext === 'xls') {
-          fileContents[file.name] = `[Excel — ${buf.length} bytes]`;
-        } else {
-          fileContents[file.name] = `[${ext.toUpperCase() || 'file'} — ${buf.length} bytes]`;
-        }
+        fileContents[file.name] = extractedToText(await extractFileContent(buf, { filename: file.name }));
       } catch {
         fileContents[file.name] = '[download failed]';
       }
