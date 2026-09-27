@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `get_announcement(course_id, announcement_id)` — one announcement in full (text with paragraphs, list items and links kept) and its attachments; with `attachment_id` it returns the attachment's extracted content (optionally saved with `save_to`).
 - `get_course_file(course_id, path)` — download and read files stored under the course's own `/content/enforced/{ou}-…/` area (PDFs/slides linked or embedded in HTML topics and module descriptions). Accepts paths, tenant URLs, or relative links plus the `topic_id` they came from; other courses, other hosts and path traversal are refused.
 - `get_module(course_id, module_id)` — full module description text, every link/embedded file, topics and submodules.
 - Reusable file extraction module (`shared-kernel/extract`): PDF, DOCX, XLSX/XLSM, PPTX (new), HTML, plain text, CSV, JSON and Jupyter notebooks to text; images to base64; media to metadata.
@@ -19,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `get_course_content` shows a topic's URL whenever D2L provides one (e.g. Zoom quicklinks classified as `other`).
 
 ### Changed
+- `get_announcements` lists pinned items first and shows each announcement's id, a ~300 character excerpt (marked when truncated, with the `get_announcement` call for the full text) and its attachments; `limit` now goes up to 200 (D2L returns all announcements at once; the header says "showing N of M").
 - `list_my_courses` compact format shows the course id (`**Name** (id=N) — code`).
 - Course content is loaded with one `GET /content/toc` call instead of one `/structure/` call per module (the old walk remains as a fallback).
 - `get_course_content` shows module description excerpts with their links, a `module_id` for described modules, and `[broken]` topics.
@@ -32,6 +34,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dependencies: fixed all high-severity advisories in production deps; CI `npm audit` now gates on production dependencies only.
 
 ### Fixed
+- Announcement bodies were cut to 100 characters with HTML entities left encoded (`&oacute;`).
+- Announcement authors were always empty: the code read `Author.DisplayName`, which D2L never sends. The `CreatedBy` user id is now resolved through the course classlist; no author is shown when that fails or the instructor hid author info (never a raw id).
+- Announcement attachments were ignored and hidden announcements were not filtered out.
+- The `brightspace://{courseId}/announcements/{id}` resource decodes entities and keeps links and line breaks.
 - `list_my_courses` with `active_only` (the default) returned every course back to years ago because D2L's `Access.IsActive` is true for all enrollments. Current courses are now picked from the enrollment access dates, recent access and term code (rule in `docs/tools.md`); past courses are tagged inactive. This also narrows `get_upcoming_due_dates` and the TUI to current courses.
 - `get_assignment_files` could write outside `save_to`: attachment names come from D2L (sometimes scraped from HTML) and were joined verbatim, so a name like `../../x` escaped the folder. Only the final path segment is used now.
 - Assignment attachments (PDF, XLSX/XLSM, PPTX, …) returned `[PDF — N bytes]` placeholders; they now go through the shared extraction module and return their text.

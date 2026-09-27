@@ -109,9 +109,31 @@ export function startMockD2l(): Promise<{ url: string; close: () => Promise<void
         res.end(JSON.stringify({ Description: { Html: '<p>Smoke syllabus body</p>' } }));
         return;
       }
+      // Real LE news shape: the author is only a user id (CreatedBy), resolved via the LE classlist.
+      const smokeNews = {
+        PinnedDate: null, Id: 900, IsHidden: false,
+        Attachments: [{ FileId: 9001, FileName: 'smoke.txt', Size: 11 }],
+        CreatedBy: 7, CreatedDate: new Date().toISOString(), LastModifiedBy: null, LastModifiedDate: new Date().toISOString(),
+        Title: 'Smoke Announcement', Body: { Text: 'hi', Html: '<p>hi</p>' },
+        StartDate: new Date().toISOString(), EndDate: null, IsGlobal: false, IsPublished: true,
+        ShowOnlyInCourseOfferings: false, IsAuthorInfoShown: true, IsPinned: false, IsStartDateShown: true, SortOrder: 0,
+      };
       if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/news\/$/)) {
+        res.end(JSON.stringify([smokeNews]));
+        return;
+      }
+      if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/news\/900$/)) {
+        res.end(JSON.stringify(smokeNews));
+        return;
+      }
+      if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/news\/900\/attachments\/9001$/)) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.end('smoke file\n');
+        return;
+      }
+      if (req.url?.match(/\/d2l\/api\/le\/1\.91\/1\/classlist\/$/)) {
         res.end(JSON.stringify([
-          { Id: 900, Title: 'Smoke Announcement', Body: { Html: '<p>hi</p>' }, Author: { DisplayName: 'Prof' }, StartDate: new Date().toISOString() },
+          { Identifier: '7', ProfileIdentifier: 'p7', DisplayName: 'Smoke Instructor', Username: 'si', OrgDefinedId: null, Email: null, FirstName: 'Smoke', LastName: 'Instructor', RoleId: 103, LastAccessed: null, IsOnline: false, ClasslistRoleDisplayName: 'Instructor', Pronouns: null },
         ]));
         return;
       }

@@ -92,8 +92,18 @@ profiles:
 
   it('exposes get_announcements and get_calendar_events', async () => {
     const a = await client.callTool({ name: 'get_announcements', arguments: { course_id: 1 } });
-    expect(((a.content as Array<{ text: string }>)[0])?.text ?? '').toContain('Smoke Announcement');
-    const c = await client.callTool({ name: 'get_calendar_events', arguments: { course_id: 1 } });
+    const aText = ((a.content as Array<{ text: string }>)[0])?.text ?? '';
+    expect(aText).toContain('Smoke Announcement');
+    expect(aText).toContain('Smoke Instructor');
+    expect(aText).toContain('smoke.txt');
+    const one = await client.callTool({ name: 'get_announcement', arguments: { course_id: 1, announcement_id: 900 } });
+    expect(((one.content as Array<{ text: string }>)[0])?.text ?? '').toContain('attachment_id=9001');
+    const file = await client.callTool({
+      name: 'get_announcement',
+      arguments: { course_id: 1, announcement_id: 900, attachment_id: 9001 },
+    });
+    expect(((file.content as Array<{ text: string }>)[0])?.text ?? '').toContain('smoke file');
+    const c =await client.callTool({ name: 'get_calendar_events', arguments: { course_id: 1 } });
     expect(((c.content as Array<{ text: string }>)[0])?.text ?? '').toContain('Smoke Midterm');
   });
 });

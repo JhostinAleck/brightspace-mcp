@@ -4,11 +4,7 @@ import type { TuiDeps } from '../types.js';
 import type { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { useAsyncData } from '../shared/useAsyncData.js';
 import { Spinner } from '../shared/Spinner.js';
-import { decodeHtmlEntities } from '@/shared-kernel/text/decodeHtmlEntities.js';
-
-function stripHtml(html: string): string {
-  return decodeHtmlEntities(html.replace(/<[^>]+>/g, '')).trim();
-}
+import { htmlToPlainText } from '@/shared-kernel/text/htmlLinks.js';
 
 export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; deps: TuiDeps }) {
   const t = deps.output.t;
@@ -31,7 +27,7 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
     <Box flexDirection="column">
       {sorted.length === 0 && <Text color="gray">  {t('tui.ann_curso.empty')}</Text>}
       {sorted.map((a) => {
-        const body = a.html ? stripHtml(a.html) : null;
+        const body = a.html ? htmlToPlainText(a.html) : null;
         return (
           <Box key={a.id} flexDirection="column" marginBottom={1}>
             <Text bold>{a.title}</Text>
@@ -43,6 +39,9 @@ export function AnunciosCursoView({ orgUnitId, deps }: { orgUnitId: OrgUnitId; d
               <Text color="white" dimColor>
                 {'  '}{body.slice(0, 120)}{body.length > 120 ? '…' : ''}
               </Text>
+            )}
+            {a.attachments.length > 0 && (
+              <Text color="gray">{'  '}{t('announcements.attachments')}: {a.attachments.map((f) => f.name).join(', ')}</Text>
             )}
           </Box>
         );

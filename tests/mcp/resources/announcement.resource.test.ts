@@ -10,7 +10,7 @@ const mockAnnouncements = [{
   id: 456,
   courseOrgUnitId: 123,
   title: 'Parcial 1 — instrucciones',
-  html: '<p>El parcial será el viernes a las 9am.</p>',
+  html: '<p>El parcial ser&aacute; el viernes a las 9am.</p><p>Salones <a href="https://example.edu/salones">aqu&iacute;</a>.</p>',
   authorName: 'Prof. García',
   postedAt: new Date('2026-05-01T10:00:00Z'),
 }];
@@ -29,6 +29,7 @@ describe('announcement.resource', () => {
     expect(result.contents[0].text).toContain('Parcial 1');
     expect(result.contents[0].text).not.toContain('<p>');
     expect(result.contents[0].text).toContain('Prof. García');
+    expect(result.contents[0].text).toContain('El parcial será el viernes a las 9am.\nSalones aquí (https://example.edu/salones).');
   });
 
   it('throws when announcement not found', async () => {

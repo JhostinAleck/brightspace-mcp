@@ -39,6 +39,7 @@ import { handleGetClasslistEmails, type GetClasslistEmailsDeps } from './tools/g
 import { handleGetSyllabus, type GetSyllabusDeps } from './tools/get-syllabus.tool.js';
 import { handleGetCourseContent, type GetCourseContentDeps } from './tools/get-course-content.tool.js';
 import { handleGetAnnouncements, type GetAnnouncementsDeps } from './tools/get-announcements.tool.js';
+import { handleGetAnnouncement, getAnnouncementSchema } from './tools/get-announcement.tool.js';
 import { handleGetDiscussions, type GetDiscussionsDeps } from './tools/get-discussions.tool.js';
 import { handleGetCalendarEvents, type GetCalendarEventsDeps } from './tools/get-calendar-events.tool.js';
 import { handleGetAssignmentFiles, type GetAssignmentFilesDeps } from './tools/get-assignment-files.tool.js';
@@ -274,11 +275,26 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
     {
       title: 'Get Announcements',
       description:
-        'Return recent course announcements in reverse chronological order.\n' +
-        'Use when the user asks "what did the professor post" or wants recent news from a class.',
+        'Return course announcements, pinned first then newest first, each with its id, date, author, ' +
+        'a ~300 character excerpt and its attachments.\n' +
+        'Use when the user asks "what did the professor post" or wants recent news from a class. ' +
+        'Read a truncated announcement in full with get_announcement.',
       inputSchema: getAnnouncementsSchema.shape,
     },
     async (input: unknown) => handleGetAnnouncements(deps, input),
+  );
+
+  server.registerTool(
+    'get_announcement',
+    {
+      title: 'Get Announcement',
+      description:
+        'Return one announcement in full (body as text with links kept) and its attachments; ' +
+        'with attachment_id, return that attachment\'s content (PDF/Office/text extracted), optionally saving it to save_to.\n' +
+        'Use after get_announcements when an excerpt is truncated or an announcement has attachments.',
+      inputSchema: getAnnouncementSchema.shape,
+    },
+    async (input: unknown) => handleGetAnnouncement(deps, input),
   );
 
   server.registerTool(

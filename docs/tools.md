@@ -95,9 +95,22 @@ Download and read a file stored in the course content area — the PDFs, slides 
 Only files of that same course are served: other courses' folders, other hosts, `..`/encoded traversal and non-`/content/enforced/` paths are refused with an error. Uses the same text extraction as `get_topic_file`. If Brightspace answers with an HTML page instead of the requested binary (typically an expired session), an explicit error is returned.
 
 ### `get_announcements`
-News feed.
+News feed: pinned announcements first, then newest first. Each entry shows its `id`, date, author, a ~300 character excerpt (HTML entities decoded; when cut it says so and gives the `get_announcement` call for the full text) and its attachments (name, size, `attachment_id`). Hidden announcements are not shown.
 
-**Args:** `course_id`, `limit`.
+**Args:**
+- `course_id` *(integer, required)*
+- `limit` *(integer, 1–200, default 10)* — D2L returns all of a course's announcements in one response; the header says "showing N of M" when `limit` cuts the list.
+
+The author comes from the course classlist (announcements only carry the author's user id). If the classlist is unavailable, or the instructor hid author info, no author is shown.
+
+### `get_announcement`
+One announcement in full: body as readable text (paragraphs and list items on their own lines, links kept as `label (url)`), plus its attachments.
+
+**Args:**
+- `course_id` *(integer, required)*
+- `announcement_id` *(integer, required)* — from `get_announcements`
+- `attachment_id` *(integer, optional)* — return that attachment's content instead (PDF, Office, text… extracted like `get_topic_file`; images as image content). Downloaded from `/d2l/api/le/{v}/{ou}/news/{id}/attachments/{fileId}`.
+- `save_to` *(string, optional, requires `attachment_id`)* — also save the attachment to this file path.
 
 ### `get_discussions`
 Forum threads.

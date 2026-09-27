@@ -86,7 +86,8 @@ export type GetCourseContentInputSchema = z.infer<typeof getCourseContentSchema>
 
 export const getAnnouncementsSchema = z.object({
   course_id: z.number().int().positive(),
-  limit: z.number().int().positive().max(50).default(10),
+  // D2L returns all of a course's announcements at once (some courses have 60+).
+  limit: z.number().int().positive().max(200).default(10),
 }).strict();
 export type GetAnnouncementsInputSchema = z.infer<typeof getAnnouncementsSchema>;
 

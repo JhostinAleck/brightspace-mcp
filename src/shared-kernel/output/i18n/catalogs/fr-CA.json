@@ -110,6 +110,9 @@
   "announcements": {
     "header": "Annonces",
     "empty": "Aucune annonce.",
+    "pinned": "Épinglé",
+    "attachments": "Pièces jointes",
+    "showing": "{shown} sur {total} affichées",
     "table_headers": {
       "date": "Date",
       "title": "Titre",
