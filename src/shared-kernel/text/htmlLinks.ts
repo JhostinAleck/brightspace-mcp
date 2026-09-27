@@ -106,6 +106,11 @@ export function extractHtmlLinks(html: string, opts: HtmlLinkOptions = {}): Html
   return out;
 }
 
+/** Visible text only (no link targets), whitespace collapsed to single spaces. */
+export function htmlToPlainText(html: string): string {
+  return labelText(removeCode(html));
+}
+
 const BLOCK_BREAK_RE = /<(?:br|hr)\b[^>]*>|<\/(?:p|div|li|h[1-6]|tr|table|ul|ol|blockquote|pre|section|article|header|footer|dt|dd|center)\s*>/gi;
 
 /**

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   extractHtmlLinks,
+  htmlToPlainText,
   htmlToText,
   resolveContentUrl,
   stripD2lSessionParams,
@@ -76,6 +77,13 @@ describe('extractHtmlLinks', () => {
   it('decodes entities in labels and hrefs', () => {
     const links = extractHtmlLinks('<a href="/a?x=1&amp;y=2">Cap&#237;tulo 1</a>');
     expect(links).toEqual([{ label: 'Capítulo 1', url: '/a?x=1&y=2', kind: 'link' }]);
+  });
+});
+
+describe('htmlToPlainText', () => {
+  it('returns visible text only, collapsed', () => {
+    expect(htmlToPlainText('<p>Cap&iacute;tulo <a href="/x.pdf">uno</a></p>\n<style>p{}</style><p>dos</p>'))
+      .toBe('Capítulo uno dos');
   });
 });
 

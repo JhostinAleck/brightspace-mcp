@@ -12,6 +12,7 @@ import type { Module } from '@/contexts/content/domain/Module.js';
 import type { Announcement } from '@/contexts/communications/domain/Announcement.js';
 import type { DiscussionForum } from '@/contexts/communications/domain/DiscussionForum.js';
 import type { CalendarEvent } from '@/contexts/calendar/domain/CalendarEvent.js';
+import { summarizeDescription } from './module-description.js';
 
 export function coursesToCompact(courses: Course[], ctx: OutputContext): string {
   if (courses.length === 0) return ctx.t('courses.empty');
@@ -162,26 +163,46 @@ export function courseContentToText(
   modules: readonly Module[],
   depth: number,
   ctx: OutputContext,
+  courseId?: number,
 ): string {
   if (modules.length === 0) return ctx.t('content.empty');
   const lines: string[] = [];
+  const courseIdHint = courseId !== undefined ? `course_id=${courseId}, ` : '';
+  let describedModules = 0;
   const walk = (mods: readonly Module[], level: number): void => {
     for (const m of mods) {
-      lines.push(`${'  '.repeat(level)}- ${ctx.md.bold(m.title)}`);
+      const indent = '  '.repeat(level + 1);
+      // Module descriptions often hold the actual material (links to PDFs,
+      // embedded videos): show a short excerpt + the links they contain.
+      const desc = summarizeDescription(m.descriptionHtml);
+      lines.push(`${'  '.repeat(level)}- ${ctx.md.bold(m.title)}${desc ? ` (module_id=${m.id})` : ''}`);
+      if (desc) {
+        describedModules++;
+        if (desc.excerpt) lines.push(`${indent}${ctx.md.italic(desc.excerpt)}`);
+        for (const link of desc.links) lines.push(`${indent}↳ ${link}`);
+        if (desc.excerptTruncated || desc.hiddenLinks > 0) {
+          const more = desc.hiddenLinks > 0 ? `+${desc.hiddenLinks} more link(s); ` : '';
+          lines.push(`${indent}↳ (${more}full text: get_module(${courseIdHint}module_id=${m.id}))`);
+        }
+      }
       for (const topic of m.topics) {
         // D2L classifies some quicklinks (e.g. a Zoom link dropped into a
         // module) as 'other' rather than 'link', but the Url field is still
         // populated — show it whenever it's present, not just for kind='link'.
         const urlSuffix = topic.url ? ` — ${topic.url}` : '';
+        const broken = topic.isBroken ? ' [broken]' : '';
         lines.push(
-          `${'  '.repeat(level + 1)}- ${topic.title} ${ctx.md.italic(`[${topic.kind}]`)} (id=${topic.id})${urlSuffix}`,
+          `${indent}- ${topic.title} ${ctx.md.italic(`[${topic.kind}]`)} (id=${topic.id})${broken}${urlSuffix}`,
         );
       }
       if (level < depth) walk(m.submodules, level + 1);
     }
   };
   walk(modules, 0);
-  return [ctx.md.h3(ctx.t('content.header')), lines.join('\n')].join('\n\n');
+  const footer = describedModules > 0
+    ? '\n\n_Read a module description in full with get_module(course_id, module_id); download linked /content/enforced/... files with get_course_file(course_id, path)._'
+    : '';
+  return [ctx.md.h3(ctx.t('content.header')), lines.join('\n')].join('\n\n') + footer;
 }
 
 export function announcementsToText(items: Announcement[], ctx: OutputContext): string {
