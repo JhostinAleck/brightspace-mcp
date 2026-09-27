@@ -5,7 +5,8 @@ import { Paths } from '@/shared-kernel/config/paths.js';
 import { buildDependencies } from '@/composition-root.js';
 import { startServer } from '@/mcp/server.js';
 import { TransportPolicy } from '@/contexts/http-api/transport/TransportPolicy.js';
-import { isNewerVersion } from './upgrade.js';
+import { type UpdateChecker, formatUpdateNotice } from '@/shared-kernel/updates/UpdateChecker.js';
+import { readPackageVersion } from '@/shared-kernel/updates/packageVersion.js';
 
 export interface ServeOptions {
   profile?: string;
@@ -14,39 +15,14 @@ export interface ServeOptions {
   enableWrites?: boolean;
 }
 
-export async function checkForUpdate(): Promise<void> {
-  if (process.env['BRIGHTSPACE_NO_UPDATE_CHECK'] === '1') return;
-  try {
-    const { readFileSync: rfs, existsSync: es } = await import('node:fs');
-    const { dirname: dn, join: jn } = await import('node:path');
-    const { fileURLToPath: ftu } = await import('node:url');
-    const __f = ftu(import.meta.url);
-    const __d = dn(__f);
-    const candidates = [jn(__d, '..', '..', '..', 'package.json'), jn(__d, '..', '..', 'package.json')];
-    let current = '0.0.0';
-    for (const p of candidates) {
-      if (es(p)) {
-        current = (JSON.parse(rfs(p, 'utf8')) as { version: string }).version;
-        break;
-      }
-    }
-    const signal = AbortSignal.timeout(3000);
-    const res = await fetch('https://registry.npmjs.org/brightspace-mcp/latest', { signal });
-    if (!res.ok) return;
-    const data = (await res.json()) as { version: string };
-    if (data.version && isNewerVersion(data.version, current)) {
-      process.stderr.write(
-        `\n  ⬆  New version available: v${data.version} (you have v${current})\n` +
-        `     Run: brightspace-mcp upgrade\n\n`,
-      );
-    }
-  } catch {
-    // Never break startup for an update check failure
-  }
+/** Logs the update notice to stderr for terminal users; MCP clients get it via the tool-result notice. */
+export async function checkForUpdate(checker: UpdateChecker): Promise<void> {
+  const status = await checker.check();
+  const notice = status ? formatUpdateNotice(status) : null;
+  if (notice) process.stderr.write(`\n${notice}\n\n`);
 }
 
 export async function runServe(opts: ServeOptions): Promise<void> {
-  void checkForUpdate(); // fire-and-forget; never await
   const path = opts.config ?? Paths.configYaml();
   const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
 
@@ -84,5 +60,10 @@ export async function runServe(opts: ServeOptions): Promise<void> {
   process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
   process.on('SIGINT', () => { void shutdown('SIGINT'); });
 
-  await startServer(deps);
+  void checkForUpdate(deps.updateChecker); // fire-and-forget; never await
+  await startServer({
+    ...deps,
+    version: readPackageVersion(),
+    updateNotice: () => (deps.updateChecker.status ? formatUpdateNotice(deps.updateChecker.status) : null),
+  });
 }

@@ -15,6 +15,8 @@ import { HttpResponseCache } from '@/contexts/http-api/cache/HttpResponseCache.j
 import { PlaywrightPageRenderer } from '@/contexts/http-api/PlaywrightPageRenderer.js';
 import type { TransportPolicy } from '@/contexts/http-api/transport/TransportPolicy.js';
 import { discoverVersions } from '@/contexts/http-api/VersionDiscovery.js';
+import { UpdateChecker } from '@/shared-kernel/updates/UpdateChecker.js';
+import { readPackageVersion } from '@/shared-kernel/updates/packageVersion.js';
 import type { ToolDeps } from '@/mcp/registry.js';
 import {
   buildCredentialStore,
@@ -40,6 +42,7 @@ export interface BuildDependenciesInput {
 
 export interface BuiltDependencies extends ToolDeps {
   disposables: Disposables;
+  updateChecker: UpdateChecker;
 }
 
 /**
@@ -119,6 +122,13 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     ?? `${Paths.rootDir()}/audit.log`;
   const auditLogger = new AuditLogger({ logger, filePath: auditLogPath });
 
+  // Lazy: nothing hits the network until serve (or doctor) calls check().
+  const updateChecker = new UpdateChecker({
+    currentVersion: readPackageVersion(),
+    cachePath: `${Paths.rootDir()}/update-check.json`,
+    disabled: process.env['BRIGHTSPACE_NO_UPDATE_CHECK'] === '1',
+  });
+
   const output = buildOutputContext({
     ...(config.output?.tz !== undefined ? { tz: config.output.tz } : {}),
     ...(config.output?.locale !== undefined ? { locale: config.output.locale } : {}),
@@ -148,5 +158,6 @@ export async function buildDependencies(input: BuildDependenciesInput): Promise<
     auditLogPath,
     output,
     disposables,
+    updateChecker,
   };
 }

@@ -6,7 +6,7 @@ import type { PlaywrightPageRenderer } from '@/contexts/http-api/PlaywrightPageR
 import type { TransportPolicy } from '@/contexts/http-api/transport/TransportPolicy.js';
 import { RequestCoalescer } from '@/contexts/http-api/resilience/RequestCoalescer.js';
 import { Bulkhead } from '@/contexts/http-api/resilience/Bulkhead.js';
-import { readPackageVersion } from './package-version.js';
+import { readPackageVersion } from '@/shared-kernel/updates/packageVersion.js';
 
 export interface ApiClientInput {
   baseUrl: string;

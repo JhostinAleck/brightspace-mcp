@@ -30,4 +30,14 @@ describe('get_diagnostics tool', () => {
     expect(parsed.counters).toEqual({});
     expect(parsed.durations).toEqual({});
   });
+
+  it('includes the last update-check result when available', async () => {
+    const update = { current: '1.1.1', latest: '1.2.0', updateAvailable: true, deprecated: null, checkedAt: 1 };
+    const result = await handleGetDiagnostics({
+      metrics: new MetricsRegistry(),
+      staticInfo: { profile: 'p', baseUrl: 'https://x', versions: { lp: '1', le: '1' } },
+      updateChecker: { status: update },
+    }, {});
+    expect(JSON.parse(result.content[0]?.text ?? '{}').update).toEqual(update);
+  });
 });

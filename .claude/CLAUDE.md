@@ -96,6 +96,14 @@ CI workflows triggered:
 - `release-github.yml` — creates GitHub Release with SBOM
 - `release-docker.yml` — builds and pushes Docker image
 
+### 10b. Security releases: deprecate vulnerable versions
+
+If the release fixes a vulnerability, deprecate the affected range once the fix is on npm. Running servers read this flag and show users a ⚠️ upgrade notice in their next tool response:
+
+```bash
+npm deprecate "brightspace-mcp@<X.Y.Z" "Security fix in vX.Y.Z (<short description>). Please upgrade."
+```
+
 ### 11. Register with MCP registry (after npm publishes)
 
 ```bash

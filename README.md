@@ -98,6 +98,14 @@ node build/cli/main.js serve
 
 **Requirements**: Node.js ≥ 20.
 
+### Staying up to date
+
+- **npx (recommended)** — the MCP client config written by `setup` runs `npx --yes brightspace-mcp@latest serve`, so every client restart picks up the newest release. Nothing else to do.
+- **Global install** — run `brightspace-mcp upgrade`.
+- **Docker** — `docker pull` the latest image and recreate the container.
+
+The server checks npm at most once a day (3 s timeout, cached in `~/.brightspace-mcp/update-check.json`). When a newer version exists — or when your installed version has been **deprecated** because of a security fix — the notice is appended to the first tool response of the session, so your assistant tells you about it. It also shows up under `update` in `get_diagnostics`. Set `BRIGHTSPACE_NO_UPDATE_CHECK=1` to opt out.
+
 ---
 
 ## Authentication strategies

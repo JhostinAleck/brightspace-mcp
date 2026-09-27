@@ -1,34 +1,7 @@
-import { readFileSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { isNewerVersion } from '@/shared-kernel/updates/UpdateChecker.js';
+import { readPackageVersion } from '@/shared-kernel/updates/packageVersion.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-function readCurrentVersion(): string {
-  const candidates = [
-    join(__dirname, '..', '..', '..', 'package.json'),
-    join(__dirname, '..', '..', 'package.json'),
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) {
-      return (JSON.parse(readFileSync(p, 'utf8')) as { version: string }).version;
-    }
-  }
-  return '0.0.0';
-}
-
-export function isNewerVersion(remote: string, local: string): boolean {
-  const parse = (v: string): [number, number, number] => {
-    const parts = v.replace(/[^0-9.]/g, '').split('.').map(Number);
-    return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
-  };
-  const [rMaj, rMin, rPat] = parse(remote);
-  const [lMaj, lMin, lPat] = parse(local);
-  if (rMaj !== lMaj) return rMaj > lMaj;
-  if (rMin !== lMin) return rMin > lMin;
-  return rPat > lPat;
-}
+export { isNewerVersion };
 
 async function fetchLatestVersion(): Promise<string | null> {
   try {
@@ -43,7 +16,7 @@ async function fetchLatestVersion(): Promise<string | null> {
 }
 
 export async function runUpgrade(): Promise<void> {
-  const current = readCurrentVersion();
+  const current = readPackageVersion();
   process.stdout.write(`Checking latest version of brightspace-mcp...\n`);
 
   const latest = await fetchLatestVersion();

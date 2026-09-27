@@ -1,4 +1,5 @@
 import type { MetricsRegistry } from '@/shared-kernel/observability/MetricsRegistry.js';
+import type { UpdateStatus } from '@/shared-kernel/updates/UpdateChecker.js';
 
 export interface DiagnosticsStaticInfo {
   profile: string;
@@ -9,6 +10,7 @@ export interface DiagnosticsStaticInfo {
 export interface GetDiagnosticsDeps {
   metrics: MetricsRegistry;
   staticInfo: DiagnosticsStaticInfo;
+  updateChecker?: { readonly status: UpdateStatus | null };
 }
 
 export async function handleGetDiagnostics(deps: GetDiagnosticsDeps, _rawInput: unknown) {
@@ -17,6 +19,7 @@ export async function handleGetDiagnostics(deps: GetDiagnosticsDeps, _rawInput: 
     profile: deps.staticInfo.profile,
     baseUrl: deps.staticInfo.baseUrl,
     versions: deps.staticInfo.versions,
+    update: deps.updateChecker?.status ?? null,
     counters: snap.counters,
     durations: snap.durations,
   };
