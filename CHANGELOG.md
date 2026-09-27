@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Update notices reach MCP users: the server checks npm at most once a day and appends a one-time notice to the first tool response when a newer version exists or the installed version is deprecated (security releases). Status also appears under `update` in `get_diagnostics`. Opt out with `BRIGHTSPACE_NO_UPDATE_CHECK=1`.
 - HTML-to-text conversion keeps link targets (`label (href)`), decodes HTML entities in a single pass and drops `javascript:` links and `<script>`/`<style>` bodies.
 - `get_course_content` shows a topic's URL whenever D2L provides one (e.g. Zoom quicklinks classified as `other`).
+- `get_syllabus` helps find a syllabus uploaded to course content: when the course overview is not published (404) or empty it says so and lists up to 5 ranked candidates (topics/files whose title or file name matches multilingual syllabus keywords, matching links in module descriptions and intro pages, syllabus-titled modules, welcome pages) with the exact `get_topic_file` / `get_course_file` / `get_module` call; otherwise it suggests `search_course` / `get_course_content`. Nothing is downloaded beyond at most two small intro HTML pages.
 
 ### Changed
 - Course content is loaded with one `GET /content/toc` call instead of one `/structure/` call per module (the old walk remains as a fallback).
@@ -38,6 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Assignments with no due date but an availability end date now show the close date instead of "no due date".
 - `SubmissionType` sent as a bare number (LE 1.99) was ignored, so the submission mode was always `unknown`.
 - The assignment cache dropped `submissionMode`.
+- MCP resources `brightspace://…/content/topics/{id}` and `…/assignments/{id}/files` always fell back to base64: they still used the default export removed in `pdf-parse` v2. They now use the shared extraction module (PDF, Office, HTML, text; images as blobs).
 - `get_calendar_events` always returned nothing: the adapter expected `Name`/`StartDate` and sent `rangeStart`/`rangeEnd`. It now reads the real D2L shape (`Title`, `StartDateTime`/`EndDateTime`, `LocationName`, all-day `StartDay`/`EndDay`), queries `calendar/events/myEvents/` with `startDateTime`/`endDateTime` following every page (falls back to `calendar/events/` with client-side filtering), strips HTML from descriptions, and no longer prints a redundant end time for zero-length events.
 - `list_quizzes` only returned the first 20 quizzes; it now follows `Next`/bookmark pagination.
 - `list_quizzes` showed every quiz as "(unlimited)" and "0 taken": attempts come from `AttemptsAllowed.{IsUnlimited, NumberOfAttemptsAllowed}`, and the unknown per-student count is shown as "N attempts allowed" instead of a fake 0. Time limits come from `SubmissionTimeLimit`, auto-grade from `IsAutoSetGraded`.

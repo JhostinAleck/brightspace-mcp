@@ -62,9 +62,18 @@ Classmates and their emails.
 **Args:** `course_id`.
 
 ### `get_syllabus`
-Course syllabus (parsed from D2L's first-content-topic heuristic).
+The course overview (`GET /overview`) as plain text when the instructor published one.
 
 **Args:** `course_id`.
+
+Many instructors never publish the overview (it returns 404) and upload the syllabus into course content instead. In that case the tool says so explicitly (`Brightspace course overview not published (404 or empty description)`) and lists up to 5 likely places, best first, each with the exact call that reads it:
+
+- topics or linked files whose **title or file name** contains a syllabus keyword (`syllabus`, `sílabo`, `programa del curso`, `programa`, `course outline`, `plan de curso`, `guía del curso`, `programme`, … — accents and case ignored, whole words only, so "programación" does not match) → `get_topic_file(course_id, topic_id)` / `get_course_file(course_id, path)`;
+- links whose **anchor text** matches (e.g. "Programa Curso 2026-20" → `quickLink … type=coursefile` resolved to its `/content/enforced/…` path, "CHECK THE SYLLABUS HERE");
+- documents linked from a module titled like a syllabus, and such modules themselves → `get_module(course_id, module_id)`;
+- generic welcome/intro pages and modules ("Welcome", "Bienvenida", "Información general", "Presentación") as a last resort.
+
+Links are read from module descriptions and from at most two small intro/syllabus HTML topics (downloaded to find the links); the syllabus file itself is **not** downloaded. Links into other courses are ignored; links to other sites (SharePoint, Drive) are listed as external. When nothing matches, the tool suggests `search_course` and `get_course_content`.
 
 ### `get_course_content`
 Module tree with topics, loaded with a single `GET /content/toc` call. Use this to find topic IDs.
@@ -251,7 +260,7 @@ In addition to tools, the server exposes Brightspace content as MCP Resources wi
 | Resource name | URI pattern | Returns |
 |---|---|---|
 | brightspace-syllabus | `brightspace://{courseId}/syllabus` | `text/plain` — HTML stripped, date formatted |
-| brightspace-content-topic | `brightspace://{courseId}/content/topics/{topicId}` | `text/plain` from pdf-parse, or `application/pdf` base64 fallback |
+| brightspace-content-topic | `brightspace://{courseId}/content/topics/{topicId}` | `text/plain` extracted with the shared extractor (PDF, Office, HTML, text), images as blobs, base64 fallback when there is no text (e.g. scanned PDFs) |
 | brightspace-assignment-files | `brightspace://{courseId}/assignments/{assignmentId}/files` | All attachments as text (one per file) |
 | brightspace-announcement | `brightspace://{courseId}/announcements/{announcementId}` | `text/plain` — HTML stripped |
 
