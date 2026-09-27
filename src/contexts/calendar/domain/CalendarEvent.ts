@@ -6,6 +6,8 @@ export interface CalendarEventProps {
   startAt: Date;
   endAt: Date | null;
   location: string | null;
+  /** All-day events carry a calendar day, not a time; defaults to false. */
+  isAllDay?: boolean;
 }
 
 export class CalendarEvent {
@@ -17,4 +19,5 @@ export class CalendarEvent {
   get startAt(): Date { return this.props.startAt; }
   get endAt(): Date | null { return this.props.endAt; }
   get location(): string | null { return this.props.location; }
+  get isAllDay(): boolean { return this.props.isAllDay ?? false; }
 }

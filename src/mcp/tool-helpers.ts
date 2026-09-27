@@ -230,12 +230,24 @@ export function calendarEventsToText(
 ): string {
   if (events.length === 0) return ctx.t('calendar.empty_window', { days });
   const items = events.map((e) => {
-    const start = ctx.formatDate(e.startAt, 'datetime');
-    const end = e.endAt
-      ? ` → ${ctx.formatDate(e.endAt, 'datetime').split(',').slice(-1)[0]?.trim() ?? ''}`
-      : '';
+    const hasRange = e.endAt !== null && e.endAt.getTime() !== e.startAt.getTime();
+    let when: string;
+    if (e.isAllDay) {
+      const startDay = ctx.formatDate(e.startAt, 'short');
+      const endDay = hasRange && e.endAt ? ctx.formatDate(e.endAt, 'short') : startDay;
+      when = endDay !== startDay ? `${startDay} → ${endDay}` : startDay;
+    } else {
+      const start = ctx.formatDate(e.startAt, 'datetime');
+      const end = hasRange && e.endAt
+        ? ` → ${ctx.formatDate(e.endAt, 'datetime').split(',').slice(-1)[0]?.trim() ?? ''}`
+        : '';
+      when = `${start}${end}`;
+    }
     const loc = e.location ? ` @ ${e.location}` : '';
-    return `${start}${end} — ${ctx.md.bold(e.title)}${loc}`;
+    const desc = e.description
+      ? ` — ${e.description.length > 160 ? `${e.description.slice(0, 157)}...` : e.description}`
+      : '';
+    return `${when} — ${ctx.md.bold(e.title)}${loc}${desc}`;
   });
   return [ctx.md.h3(ctx.t('calendar.title_window', { days })), ctx.md.bulletList(items)].join(
     '\n\n',
