@@ -71,6 +71,7 @@ tests/                     ← Vitest mirror of src/
 
 - **DDD layering is enforced** by `dependency-cruiser`. Domain cannot import infrastructure. Run `npm run check:deps` to verify.
 - **Add a new MCP tool** by creating: domain method (if needed) → application use case → infrastructure adapter → tool handler in `src/mcp/tools/` → register in `src/mcp/registry.ts` → schema in `src/mcp/schemas.ts`. See `submit-assignment` for a writes-gated example.
+- **Reading downloaded files:** use `extractFileContent` (`src/shared-kernel/extract/`) and render with `extractedToMcpContent` (`src/mcp/file-content.ts`) — do not re-implement PDF/Office/HTML sniffing in a tool.
 - **Add a Resource:** `src/mcp/resources/<name>.resource.ts` → register in `resources/registry.ts`
 - **Add a Prompt:** `src/mcp/prompts/<name>.prompt.ts` → register in `prompts/registry.ts` → add i18n keys to all 4 catalogs
 - **Tests live in `tests/`** mirroring `src/`. Coverage threshold is 85% statements (see `vitest.config.ts`).
