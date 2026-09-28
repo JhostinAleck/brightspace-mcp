@@ -11,6 +11,12 @@ regexes = [
   '''idem-[a-z0-9-]+''',
   '''e2e-[a-z0-9-]+-[0-9]+''',
 ]
+# Older docs examples of idempotency_key values (not secrets), flagged by
+# full-history scans; current docs use the allowlisted idem-* form.
+commits = [
+  '''a2ca25f31d40b819b5dabbd03428e84aad3b2957''',
+  '''084d2474365f60cd30e7647ea1d0508b2d59bc1e''',
+]
 paths = [
   '''tests/.*''',
   '''docs/superpowers/.*''',
