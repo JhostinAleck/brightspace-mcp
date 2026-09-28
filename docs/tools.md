@@ -62,6 +62,14 @@ The grading rubric attached to an assignment, rendered as one markdown table per
 
 **Args:** `course_id` *(integer)*, `assignment_id` *(integer)*.
 
+### `get_my_submissions`
+What you (or your group) turned in to an assignment, newest first: submission id, date, submitter, comment, and each file with its size. Works for open **and closed** folders: while a folder is open it reads `mysubmissions`; once it closes students get 403 there, so it reads the web UI submission history instead (`folders_history.d2l`, located through the folder list link).
+
+- `file_name` returns the content of that submitted file (newest version; pick an older one with `submission_id`) — PDF, DOCX, XLSX, PPTX, text, images, etc.
+- `save_to` downloads to a local directory. Without filters it saves only the latest submission; repeated names from older submissions are prefixed with their submission id instead of overwriting.
+
+**Args:** `course_id` *(integer)*, `assignment_id` *(integer)*, `submission_id` *(string, optional)*, `file_name` *(string, optional)*, `save_to` *(directory, optional)*.
+
 ### `get_roster` / `get_classlist_emails`
 Classmates and their emails.
 

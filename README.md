@@ -372,6 +372,7 @@ All write operations:
 | `get_upcoming_due_dates` | List assignments due in the next N days |
 | `get_feedback` | Read the grade, instructor comments and per-criterion rubric results for an assignment |
 | `get_assignment_rubric` | Show an assignment's grading rubric (criteria, levels, points, descriptions) |
+| `get_my_submissions` | List and download the files you (or your group) submitted, even after the folder closes |
 | `get_syllabus` | Fetch the course syllabus |
 | `get_course_content` | Browse modules and topics (includes topic IDs) |
 | `get_topic_file` | Download and read a content topic file (DOCX, PDF, HTML, plain text) |

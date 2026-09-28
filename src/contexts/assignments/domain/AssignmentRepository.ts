@@ -3,6 +3,7 @@ import type { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import type { Assignment } from './Assignment.js';
 import type { AssignmentId } from './AssignmentId.js';
 import type { Feedback } from './Feedback.js';
+import type { MySubmission } from './MySubmission.js';
 import type { Rubric } from './Rubric.js';
 import type { SubmissionDraft } from './SubmissionDraft.js';
 
@@ -42,5 +43,10 @@ export interface AssignmentRepository {
    * for AI consumption.
    */
   findFileBinary(courseId: OrgUnitId, file: AssignmentFile): Promise<Buffer>;
+  /**
+   * Submissions the current user (or their group) made to a folder, newest
+   * first. Each file carries a `url` downloadable with `findFileBinary`.
+   */
+  findMySubmissions(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<MySubmission[]>;
   submit(input: SubmitInput): Promise<SubmitResult>;
 }

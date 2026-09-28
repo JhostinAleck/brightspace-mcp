@@ -24,6 +24,7 @@ import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId.js';
 import { DueDate } from '@/contexts/assignments/domain/DueDate.js';
 import { Submission } from '@/contexts/assignments/domain/Submission.js';
 import { Feedback } from '@/contexts/assignments/domain/Feedback.js';
+import { sortNewestFirst, type MySubmission } from '@/contexts/assignments/domain/MySubmission.js';
 import type { RubricAssessment } from '@/contexts/assignments/domain/RubricAssessment.js';
 import type { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { D2lApiError } from '@/contexts/http-api/errors.js';
@@ -32,6 +33,7 @@ import { UserId } from '@/shared-kernel/types/UserId.js';
 import { extractFileContent, extractedToText } from '@/shared-kernel/extract/extractFileContent.js';
 import { parseValidDate } from '@/shared-kernel/date/parseValidDate.js';
 import type { D2lUiSubmitter } from './D2lUiSubmitter.js';
+import { findHistoryGroupId, parseSubmissionHistory } from './parseSubmissionHistory.js';
 
 interface SubmissionDto {
   Submitter?: { Identifier?: string | null } | null;
@@ -50,7 +52,7 @@ interface SubmissionsByEntityDto {
     SubmittedBy?: { Identifier?: string | null; DisplayName?: string | null };
     SubmissionDate?: string | null;
     Comment?: { Text?: string | null };
-    Files?: Array<{ FileId?: number; FileName?: string; Size?: number }>;
+    Files?: Array<{ FileId?: number; FileName?: string; Size?: number; IsDeleted?: boolean }>;
   }>;
 }
 
@@ -418,6 +420,68 @@ export class D2lAssignmentRepository implements AssignmentRepository {
 
   async findFileBinary(_courseId: OrgUnitId, file: { url: string }): Promise<Buffer> {
     return this.client.getRaw(file.url);
+  }
+
+  /**
+   * `mysubmissions` works while a folder is open but answers 403 once it
+   * closes (and for some group folders), so fall back to the web UI history
+   * page, which students can always see.
+   */
+  async findMySubmissions(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<MySubmission[]> {
+    const orgUnit = OrgUnitId.toNumber(courseId);
+    const folderId = AssignmentId.toNumber(assignmentId);
+    let fromApi: MySubmission[];
+    try {
+      fromApi = await this.findMySubmissionsViaApi(orgUnit, folderId);
+    } catch (err) {
+      if (!(err instanceof D2lApiError && (err.status === 403 || err.status === 404))) throw err;
+      return this.findMySubmissionsViaHistory(orgUnit, folderId);
+    }
+    if (fromApi.length > 0) return fromApi;
+    // An empty API answer is cross-checked once against the UI history.
+    try {
+      return await this.findMySubmissionsViaHistory(orgUnit, folderId);
+    } catch {
+      return [];
+    }
+  }
+
+  private async findMySubmissionsViaApi(orgUnit: number, folderId: number): Promise<MySubmission[]> {
+    const base = `/d2l/api/le/${this.versions.le}/${orgUnit}/dropbox/folders/${folderId}/submissions`;
+    const entities = await this.client.get<SubmissionsByEntityDto[]>(`${base}/mysubmissions/`);
+    const subs: MySubmission[] = [];
+    for (const entity of Array.isArray(entities) ? entities : []) {
+      for (const s of entity.Submissions ?? []) {
+        if (s.Id === undefined) continue;
+        subs.push({
+          id: String(s.Id),
+          submittedAt: parseValidDate(s.SubmissionDate),
+          submittedAtLabel: null,
+          submittedBy: s.SubmittedBy?.DisplayName?.trim() || null,
+          comment: s.Comment?.Text?.trim() || null,
+          files: (s.Files ?? [])
+            .filter((f) => f.FileId !== undefined && !f.IsDeleted)
+            .map((f) => ({
+              name: f.FileName ?? String(f.FileId),
+              sizeBytes: f.Size ?? null,
+              sizeLabel: null,
+              url: `${base}/${s.Id}/files/${f.FileId}`,
+            })),
+        });
+      }
+    }
+    return sortNewestFirst(subs);
+  }
+
+  private async findMySubmissionsViaHistory(orgUnit: number, folderId: number): Promise<MySubmission[]> {
+    const list = (await this.client.getRaw(`/d2l/lms/dropbox/user/folders_list.d2l?ou=${orgUnit}`)).toString('utf8');
+    const groupId = findHistoryGroupId(list, folderId);
+    // No history link = nothing submitted yet.
+    if (groupId === null) return [];
+    const history = await this.client.getRaw(
+      `/d2l/lms/dropbox/user/folders_history.d2l?db=${folderId}&grpid=${groupId}&isprv=0&bp=0&ou=${orgUnit}`,
+    );
+    return sortNewestFirst(parseSubmissionHistory(history.toString('utf8')));
   }
 
   /**

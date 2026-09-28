@@ -21,6 +21,7 @@ import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { UserId } from '@/shared-kernel/types/UserId.js';
 import { parseValidDate } from '@/shared-kernel/date/parseValidDate.js';
 import type { Cache } from '@/shared-kernel/cache/Cache.js';
+import type { MySubmission } from '@/contexts/assignments/domain/MySubmission.js';
 
 export interface CachedAssignmentRepositoryTtls {
   listTtlMs: number;
@@ -172,6 +173,11 @@ export class CachedAssignmentRepository implements AssignmentRepository {
     // (Redis especially) is expensive. The HTTP client already has its own
     // cache layer for upstream responses.
     return this.inner.findFileBinary(courseId, file);
+  }
+
+  /** Never cached: callers need to see a submission they just made. */
+  async findMySubmissions(courseId: OrgUnitId, assignmentId: AssignmentId): Promise<MySubmission[]> {
+    return this.inner.findMySubmissions(courseId, assignmentId);
   }
 
   async submit(input: SubmitInput): Promise<SubmitResult> {

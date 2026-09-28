@@ -34,6 +34,7 @@ import {
   getAssignmentRubricSchema,
   type GetAssignmentRubricDeps,
 } from './tools/get-assignment-rubric.tool.js';
+import { getMySubmissionsSchema, handleGetMySubmissions } from './tools/get-my-submissions.tool.js';
 import { handleGetRoster, type GetRosterDeps } from './tools/get-roster.tool.js';
 import { handleGetClasslistEmails, type GetClasslistEmailsDeps } from './tools/get-classlist-emails.tool.js';
 import { handleGetSyllabus, type GetSyllabusDeps } from './tools/get-syllabus.tool.js';
@@ -216,6 +217,19 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
       inputSchema: getAssignmentRubricSchema.shape,
     },
     async (input: unknown) => handleGetAssignmentRubric(deps, input),
+  );
+
+  server.registerTool(
+    'get_my_submissions',
+    {
+      title: 'Get My Submissions',
+      description:
+        'List the files the user (or their group) submitted to an assignment, newest first — works for open and closed folders.\n' +
+        'With file_name, returns the content of that submitted file; with save_to, downloads the files to a local directory.\n' +
+        'Use when the user wants to check, re-read or recover something they already turned in.',
+      inputSchema: getMySubmissionsSchema.shape,
+    },
+    async (input: unknown) => handleGetMySubmissions(deps, input),
   );
 
   server.registerTool(
