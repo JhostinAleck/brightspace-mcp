@@ -13,15 +13,20 @@ src/                       ← TypeScript sources (DDD layout)
     {ctx}/domain/          ← Pure types & repository interfaces
     {ctx}/application/     ← Use cases (orchestrate domain)
     {ctx}/infrastructure/  ← D2L API + cache adapters
+  composition-root.ts      ← buildDependencies: sequences the builders below
+  composition/             ← Wiring per concern (auth, redis, storage, http, repositories)
   mcp/                     ← MCP tool registry & schemas
     resources/             ← MCP Resource handlers (brightspace:// URIs)
     prompts/               ← MCP Prompt templates
+    update-notice.ts       ← Appends the "update available" notice to a tool response
   shared-kernel/           ← Cross-cutting (config, types, audit, writes gate)
     output/                ← i18n, timezone formatting, markdown builder
+    extract/               ← File → text/image extraction (PDF, Office, HTML, notebooks)
+    text/                  ← HTML → text with links preserved, entity decoding
+    updates/               ← npm update/deprecation checker, package version
   cli/                     ← Commander entry points (serve, setup, auth, config)
-    commands/ui.ts         ← brightspace-mcp ui (Hono HTTP server)
+    commands/tui/          ← brightspace-mcp tui (Ink terminal dashboard)
     commands/init.ts       ← brightspace-mcp init (non-interactive config)
-  ui/                      ← Web dashboard static files (HTML + Alpine.js)
 build/                     ← tsc output (do not edit)
 docs/                      ← Detailed documentation (see docs/README.md)
 tests/                     ← Vitest mirror of src/
@@ -51,7 +56,7 @@ tests/                     ← Vitest mirror of src/
 | Find what each MCP tool does | [`docs/tools.md`](./docs/tools.md) |
 | Use MCP Resources (`brightspace://` URIs) | [`docs/tools.md#mcp-resources`](./docs/tools.md#mcp-resources) |
 | Use MCP Prompts (weekly_briefing, grade_audit, …) | [`docs/tools.md#mcp-prompts`](./docs/tools.md#mcp-prompts) |
-| Open the web dashboard | [`docs/setup-guide.md#web-ui-dashboard`](./docs/setup-guide.md#web-ui-dashboard) |
+| Open the terminal dashboard | `brightspace-mcp tui` (see [`README.md#tui-dashboard`](./README.md#tui-dashboard)) |
 | Fix a stuck setup | [`docs/troubleshooting.md`](./docs/troubleshooting.md) |
 | Understand the codebase | [`docs/architecture.md`](./docs/architecture.md) |
 | Register with Claude Desktop / Cursor / Windsurf | [`docs/clients.md`](./docs/clients.md) |
@@ -77,7 +82,8 @@ tests/                     ← Vitest mirror of src/
 - **Tests live in `tests/`** mirroring `src/`. Coverage threshold is 85% statements (see `vitest.config.ts`).
 - **Never commit secrets**. `~/.brightspace-mcp/config.yaml` lives outside the repo; the wizard writes it with mode 0600.
 - **Run before pushing**: `npm run check` (lint + typecheck + tests + depcruise).
-- **Releases**: `npm version <patch|minor|major>` → CHANGELOG entry → push tag → CI builds Docker image.
+- **D2L response shapes:** verify field names against a real tenant before mapping them — several past bugs came from invented DTO fields (calendar `Name`/`StartDate`, quiz `AttemptsAllowed.Type`, classlist `UserName`). Students get 403 on many routes; model that as "unknown", never as "none".
+- **Releases**: follow the checklist in `.claude/CLAUDE.md` (CHANGELOG → docs → version bump → CI green → tag). Security fixes: `npm deprecate` the vulnerable range so running servers warn users.
 
 ## License & contribution
 

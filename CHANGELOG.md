@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-27
+
 ### Added
 - `get_announcement(course_id, announcement_id)` — one announcement in full (text with paragraphs, list items and links kept) and its attachments; with `attachment_id` it returns the attachment's extracted content (optionally saved with `save_to`).
 - `get_course_file(course_id, path)` — download and read files stored under the course's own `/content/enforced/{ou}-…/` area (PDFs/slides linked or embedded in HTML topics and module descriptions). Accepts paths, tenant URLs, or relative links plus the `topic_id` they came from; other courses, other hosts and path traversal are refused.
@@ -33,6 +35,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Composition root split into focused builders under `src/composition/` (no behavior change).
 - Docker base image moved to `node:24-alpine`.
 - Dependencies: fixed all high-severity advisories in production deps; CI `npm audit` now gates on production dependencies only.
+
+### Deprecated
+- `brightspace-mcp ui`: the Hono + Alpine.js web dashboard was replaced by `brightspace-mcp tui`. The `ui` command (and its `--port`/`--open` flags, now ignored) remains as an alias that opens the TUI with a deprecation notice, and will be removed in 2.0.
 
 ### Fixed
 - `get_roster` / `get_classlist_emails` / group member names used the LP classlist route, which is 404 on real tenants; they now use the LE classlist. Roles are classified by `ClasslistRoleDisplayName` (role ids are tenant-specific: on Uniandes 109 is "Profesor", previously shown as a student). The emails tool explains when the course hides addresses.
@@ -66,9 +71,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `get_topic_file` requested `/topics/{id}/file` for links, quiz quicklinks and LTI topics (404); it now returns the URL with a hint, and broken topics get an explicit message.
 - Images and other media fell back to the browser-rendered D2L page, returning the navigation chrome and the user's name.
 - `d2lSessionVal` session tokens embedded in content links are no longer echoed back.
-
-### Removed
-- `brightspace-mcp ui` command and the Hono + Alpine.js web dashboard. Replaced by `brightspace-mcp tui`.
 
 ## [1.1.0] - 2026-05-12
 

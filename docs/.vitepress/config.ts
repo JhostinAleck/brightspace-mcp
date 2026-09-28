@@ -37,7 +37,7 @@ export default withMermaid(
           ],
         },
         {
-          text: 'v1.1.0',
+          text: 'v1.2.0',
           items: [
             { text: 'Changelog', link: 'https://github.com/JhostinAleck/brightspace-mcp/blob/main/CHANGELOG.md' },
             { text: 'Releases', link: 'https://github.com/JhostinAleck/brightspace-mcp/releases' },

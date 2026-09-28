@@ -19,7 +19,7 @@ Detailed guides for `brightspace-mcp`. The top-level [`README.md`](../README.md)
 | Look up an MCP tool's args | [tools.md](./tools.md) |
 | Use MCP Resources (stable URIs for syllabi, PDFs) | [tools.md §MCP Resources](./tools.md#mcp-resources) |
 | Use MCP Prompts (weekly briefing, grade audit, etc.) | [tools.md §MCP Prompts](./tools.md#mcp-prompts) |
-| Open the web dashboard | [setup-guide.md §Web UI](./setup-guide.md#web-ui-dashboard) |
+| Open the terminal dashboard | `brightspace-mcp tui` ([README §TUI](../README.md#tui-dashboard)) |
 | Troubleshoot a broken setup | [troubleshooting.md](./troubleshooting.md) |
 | Register with Claude Desktop / Cursor / Windsurf | [clients.md](./clients.md) |
 | Understand the code structure | [architecture.md](./architecture.md) |
