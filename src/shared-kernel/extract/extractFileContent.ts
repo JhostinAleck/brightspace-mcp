@@ -1,4 +1,4 @@
-import { PDFParse } from 'pdf-parse';
+import type { PDFParse } from 'pdf-parse';
 
 import { htmlToText } from '@/shared-kernel/text/htmlLinks.js';
 import {
@@ -54,7 +54,10 @@ function tidyLines(s: string): string {
 async function pdfToText(buf: Buffer): Promise<string | null> {
   let parser: PDFParse | null = null;
   try {
-    parser = new PDFParse({ data: new Uint8Array(buf) });
+    // Loaded on demand: pdfjs throws at import time when its optional canvas
+    // binding is missing (`npm i --omit=optional`), which would crash startup.
+    const { PDFParse: Parser } = await import('pdf-parse');
+    parser = new Parser({ data: new Uint8Array(buf) });
     const result = await parser.getText();
     // pdf-parse separates pages with "-- N of M --" markers; keep them, they help navigation.
     const text = tidyLines(result.text.replace(/[ \t]{2,}/g, ' '));

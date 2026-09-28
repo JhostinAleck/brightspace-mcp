@@ -9,7 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `get_my_submissions(course_id, assignment_id)` — list what you (or your group) submitted to an assignment, newest first, and read (`file_name`) or download (`save_to`) the submitted files. Uses `mysubmissions` while the folder is open and falls back to the web UI submission history once it closes (the API answers 403 then).
 
+### Changed
+- `ink` and `react` (only used by `brightspace-mcp tui`) are now optional dependencies, so the MCP server's required dependency tree no longer includes the dashboard's packages. Installs with `--omit=optional` keep a working server; `tui` then explains how to install the dashboard.
+
 ### Fixed
+- The CLI crashed at startup when installed with `--omit=optional` (pdfjs throws on import without its optional canvas binding); `pdf-parse` is now loaded only when a PDF is extracted.
 - `submit_assignment` UI fallback failed on some tenants: it queried the upload dialog before its document was ready ("My Computer link not found") and waited a fixed 2.5 s for the upload button (filechooser timeout). It now waits for each element, retries the "My Computer" click until the upload button appears, and sets the file on the dialog's file input if no chooser event fires.
 - The UI submit flow only confirmed submissions through `mysubmissions`, which students can be refused (403 on group folders once they close). It now also confirms from the dropbox folder list's submission counter.
 
