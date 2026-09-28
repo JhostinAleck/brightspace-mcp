@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- `submit_assignment` UI fallback failed on some tenants: it queried the upload dialog before its document was ready ("My Computer link not found") and waited a fixed 2.5 s for the upload button (filechooser timeout). It now waits for each element, retries the "My Computer" click until the upload button appears, and sets the file on the dialog's file input if no chooser event fires.
+- The UI submit flow only confirmed submissions through `mysubmissions`, which students can be refused (403 on group folders once they close). It now also confirms from the dropbox folder list's submission counter.
+
 ## [1.2.0] - 2026-09-27
 
 ### Added

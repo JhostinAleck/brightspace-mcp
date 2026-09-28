@@ -186,6 +186,10 @@ export class D2lUiSubmitter {
       // `grpid` if the assignment is grouped, omits it otherwise.
       const folderListUrl = `${this.opts.baseUrl}/d2l/lms/dropbox/user/folders_list.d2l?ou=${courseId}`;
       await page.goto(folderListUrl, { waitUntil: 'networkidle', timeout: this.pageLoadMs });
+      // The API can refuse to list submissions (mysubmissions is 403 on group
+      // folders once they close), so also snapshot the submission count the
+      // folder list shows for this folder as a second source of truth.
+      const baselineUiCount = await this.readUiSubmissionCount(page, folderIdNum);
 
       const submitUrl: string | null = await page.evaluate((fid: number) => {
         const links = Array.from(document.querySelectorAll('a')) as HTMLAnchorElement[];
@@ -212,31 +216,66 @@ export class D2lUiSubmitter {
       const dialogFrame = await this.waitForDialogFrame(page);
       if (!dialogFrame) throw new Error('Upload dialog iframe did not load');
 
-      // Step 5: switch the dialog to "upload from local computer".
-      // The link is a11y-offscreen so we click it via JS dispatch.
+      // Step 5: switch the dialog to "upload from local computer", then wait
+      // for the upload button. The iframe URL and even the link appear before
+      // D2L wires the link's handlers, so a single early click can be a no-op:
+      // wait for the frame to settle and retry the click until the button shows.
       const myCompSelector = this.selectors.myComputerLink;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const clicked = await (dialogFrame as any).evaluate((sel: string) => {
-        const link = document.querySelector(sel) as HTMLElement | null;
-        if (link) { link.click(); return true; }
-        return false;
-      }, myCompSelector);
-      if (!clicked) throw new Error(`"My Computer" link not found (selector: ${myCompSelector})`);
-      await page.waitForTimeout(2_500);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (dialogFrame as any).waitForLoadState?.('networkidle', { timeout: 15_000 });
+      } catch { /* best-effort */ }
+      let linkFound = false;
+      let uploadReady = false;
+      for (let attempt = 0; attempt < 4 && !uploadReady; attempt++) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (dialogFrame as any).waitForSelector(myCompSelector, { state: 'attached', timeout: attempt === 0 ? 20_000 : 5_000 });
+        } catch { /* checked via the click result */ }
+        // The link is a11y-offscreen so we click it via JS dispatch.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const clicked = await (dialogFrame as any).evaluate((sel: string) => {
+          const link = document.querySelector(sel) as HTMLElement | null;
+          if (link) { link.click(); return true; }
+          return false;
+        }, myCompSelector);
+        linkFound = linkFound || clicked;
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (dialogFrame as any).waitForSelector(this.selectors.uploadButton, { state: 'visible', timeout: 6_000 });
+          uploadReady = true;
+        } catch { /* retry the link click */ }
+      }
+      if (!linkFound) throw new Error(`"My Computer" link not found (selector: ${myCompSelector})`);
 
       // Step 6: trigger the OS file dialog and intercept it via filechooser.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const uploadClick = (dialogFrame as any).click(this.selectors.uploadButton);
-      const [fileChooser] = await Promise.all([
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (page as any).waitForEvent('filechooser', { timeout: 10_000 }),
-        uploadClick,
-      ]);
-      await fileChooser.setFiles({
+      const filePayload = {
         name: input.draft.filename,
         mimeType: input.draft.mimeType ?? 'application/octet-stream',
         buffer: Buffer.from(input.draft.content),
-      });
+      };
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const uploadClick = (dialogFrame as any).click(this.selectors.uploadButton, { timeout: 10_000 });
+        const [fileChooser] = await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (page as any).waitForEvent('filechooser', { timeout: 20_000 }),
+          uploadClick,
+        ]);
+        await fileChooser.setFiles(filePayload);
+      } catch (err) {
+        // Fallback: the dialog creates an <input type=file> on demand — set
+        // the file on it directly instead of relying on the chooser event.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fileInput = await (dialogFrame as any).$('input[type=file]').catch(() => null);
+        if (!fileInput) {
+          throw new Error(
+            `Could not open the file picker in the upload dialog: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`,
+            { cause: err },
+          );
+        }
+        await fileInput.setInputFiles(filePayload);
+      }
 
       // Step 7: wait for the file to appear in the dialog (upload complete).
       const escapedName = input.draft.filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -297,6 +336,15 @@ export class D2lUiSubmitter {
           const latest = newOnes.reduce((a, b) => (a.submittedAt > b.submittedAt ? a : b));
           return { submissionId: String(latest.id), submittedAt: latest.submittedAt };
         }
+        // When the API refuses or lags, trust the folder list's submission
+        // counter going up instead.
+        if (baselineUiCount !== null) {
+          await page.goto(folderListUrl, { waitUntil: 'networkidle', timeout: this.pageLoadMs });
+          const uiCount = await this.readUiSubmissionCount(page, folderIdNum);
+          if (uiCount !== null && uiCount > baselineUiCount) {
+            return { submissionId: `folder-${folderIdNum}-submission-${uiCount}`, submittedAt: new Date() };
+          }
+        }
         await page.waitForTimeout(2_000);
       }
       throw new Error('Submission did not appear in /submissions/mysubmissions/ within timeout — UI flow likely failed silently');
@@ -332,6 +380,34 @@ export class D2lUiSubmitter {
       return out;
     } catch {
       return [];
+    }
+  }
+
+  /**
+   * Number of submissions the dropbox folder list shows for a folder
+   * ("2 materiales enviados, 2 archivos" / "2 Submissions, 2 Files"), 0 when
+   * it says not submitted, or null when the row can't be read. Works even
+   * when the API refuses to list submissions (e.g. closed group folders).
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async readUiSubmissionCount(page: any, folderId: number): Promise<number | null> {
+    try {
+      const rowText: unknown = await page.evaluate((fid: number) => {
+        for (const tr of Array.from(document.querySelectorAll('tr'))) {
+          const hrefs = Array.from(tr.querySelectorAll('a')).map((a) => (a as HTMLAnchorElement).href);
+          if (hrefs.some((h) => new RegExp(`[?&]db=${fid}(&|$)`).test(h))) {
+            return { innerText: (tr as HTMLElement).innerText, hasHistory: hrefs.some((h) => h.includes('folders_history.d2l')) };
+          }
+        }
+        return null;
+      }, folderId);
+      if (!rowText || typeof rowText !== 'object') return null;
+      const { innerText, hasHistory } = rowText as { innerText: string; hasHistory: boolean };
+      const m = innerText.match(/(\d+)\s+(?:materiales? enviados?|submissions?|env[ií]os?|trabalhos? enviados?|soumissions?|envois?)/i);
+      if (m) return Number(m[1]);
+      return hasHistory ? 1 : 0;
+    } catch {
+      return null;
     }
   }
 

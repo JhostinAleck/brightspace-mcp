@@ -32,7 +32,7 @@ describe('get_calendar_events tool', () => {
     const start = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
     start.setUTCHours(4, 59, 59, 0);
     const e = new CalendarEvent({
-      id: 2, courseOrgUnitId: 101, title: 'Laboratorio 4', description: null,
+      id: 2, courseOrgUnitId: 101, title: 'Assignment 4', description: null,
       startAt: start, endAt: start, location: null,
     });
     const repo = new FakeCalendarRepository(new Map([[101, [e]]]));
@@ -41,7 +41,7 @@ describe('get_calendar_events tool', () => {
       { course_id: 101 },
     );
     const text = r.content[0]?.text ?? '';
-    expect(text).toContain('Laboratorio 4');
+    expect(text).toContain('Assignment 4');
     expect(text).toContain('11:59');
     expect(text).not.toContain('4:59');
     // Zero-length events (start === end) do not render a redundant "→ end".

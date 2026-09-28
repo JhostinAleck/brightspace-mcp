@@ -24,6 +24,9 @@ function makeStubs(opts: {
   fetchSubmissionsResponses?: Array<unknown[]>;
   filechooserShouldThrow?: boolean;
   hasDialogFrame?: boolean;
+  /** Successive folder-list rows returned for the target folder (group verification). */
+  uiRows?: Array<{ innerText: string; hasHistory: boolean } | null>;
+  fileInput?: { setInputFiles: ReturnType<typeof vi.fn> } | null;
 }): { browser: { newContext: () => Promise<unknown>; close: () => Promise<void> }; page: PageStub; closed: () => boolean } {
   let closed = false;
   const fetchResponses = [...(opts.fetchSubmissionsResponses ?? [[]])];
@@ -32,7 +35,9 @@ function makeStubs(opts: {
     click: vi.fn().mockResolvedValue(undefined),
     evaluate: vi.fn().mockResolvedValue(true),
     waitForSelector: vi.fn().mockResolvedValue(undefined),
+    $: vi.fn().mockResolvedValue(opts.fileInput ?? null),
   } : null;
+  const uiRows = [...(opts.uiRows ?? [])];
 
   const page: PageStub = {
     goto: vi.fn().mockResolvedValue(undefined),
@@ -47,6 +52,9 @@ function makeStubs(opts: {
         const src = (fnOrPath as () => unknown).toString();
         if (src.includes('fetch(')) {
           return fetchResponses.length > 0 ? fetchResponses.shift() : [];
+        }
+        if (src.includes('hasHistory')) {
+          return uiRows.length > 0 ? uiRows.shift() : null;
         }
         if (src.includes('querySelectorAll')) {
           return opts.submitUrl ?? null;
@@ -153,5 +161,50 @@ describe('D2lUiSubmitter', () => {
       timeouts: { confirmationMs: 200 }, // short so the test stays fast
     });
     await expect(submitter.submit(submitInput)).rejects.toThrow(/did not appear/);
+  });
+
+  it('confirms the submission from the folder list counter when the API does not list it', async () => {
+    // e.g. mysubmissions is 403 on group folders once they close.
+    const { browser } = makeStubs({
+      submitUrl: 'https://example.com/d2l/lms/dropbox/user/folder_submit_files.d2l?db=405350&grpid=438848&ou=424258',
+      fetchSubmissionsResponses: [[], [], [], []],
+      uiRows: [
+        { innerText: 'Group A: Assignment 1 Due Jan 1, 2030 Not Submitted - / 10', hasHistory: false },
+        { innerText: 'Group A: Assignment 1 Due Jan 1, 2030 1 Submission, 1 File - / 10', hasHistory: true },
+      ],
+    });
+    const submitter = new D2lUiSubmitter({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      playwrightLoader: async () => ({ chromium: { launch: async () => browser } } as any),
+      baseUrl: 'https://example.com',
+      le: '1.93',
+      getToken: async () => AccessToken.cookie('d2lSessionVal=abc'),
+      headless: true,
+      timeouts: { confirmationMs: 5_000 },
+    });
+    const result = await submitter.submit(submitInput);
+    expect(result.submissionId).toBe('folder-405350-submission-1');
+  });
+
+  it('sets the file on the dialog input directly when no filechooser event fires', async () => {
+    const fileInput = { setInputFiles: vi.fn().mockResolvedValue(undefined) };
+    const { browser } = makeStubs({
+      submitUrl: 'https://example.com/d2l/lms/dropbox/user/folder_submit_files.d2l?db=405350&ou=424258',
+      filechooserShouldThrow: true,
+      fileInput,
+      fetchSubmissionsResponses: [[], [{ Submissions: [{ Id: 7, SubmissionDate: '2026-09-27T23:00:00.000Z' }] }]],
+    });
+    const submitter = new D2lUiSubmitter({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      playwrightLoader: async () => ({ chromium: { launch: async () => browser } } as any),
+      baseUrl: 'https://example.com',
+      le: '1.93',
+      getToken: async () => AccessToken.cookie('d2lSessionVal=abc'),
+      headless: true,
+      timeouts: { confirmationMs: 5_000 },
+    });
+    const result = await submitter.submit(submitInput);
+    expect(fileInput.setInputFiles).toHaveBeenCalledWith(expect.objectContaining({ name: 'lab.zip' }));
+    expect(result.submissionId).toBe('7');
   });
 });
