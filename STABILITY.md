@@ -6,7 +6,7 @@
 
 Changing any of the following is a **MAJOR** (breaking) change:
 
-- CLI command names and their flags (`setup`, `serve`, `init`, `ui`, `auth`, `doctor`, `record-auth`, `upgrade`, `profile`, `config`, `cache`)
+- CLI command names and their flags (`setup`, `serve`, `init`, `tui`, `ui` — deprecated alias of `tui` until 2.0, `auth`, `doctor`, `record-auth`, `upgrade`, `profile`, `config`, `cache`)
 - MCP tool names and their input schemas (e.g. `list_my_courses`, `get_my_grades`)
 - MCP Resource URI patterns (`brightspace://{courseId}/...`)
 - MCP Prompt names (`weekly_briefing`, `grade_audit`, `study_planner`, `course_summary`)
@@ -22,7 +22,7 @@ The following may change in **MINOR** releases:
 - New tools, resources, or prompts added — always additive
 - New config keys — always additive, backward-compatible with defaults
 - New CLI flags on existing commands — always additive
-- Web UI layout and design (`brightspace-mcp ui`)
+- Terminal dashboard layout and design (`brightspace-mcp tui`)
 
 **PATCH** releases: bug fixes, performance improvements, dependency updates.
 

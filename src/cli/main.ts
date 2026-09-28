@@ -101,30 +101,46 @@ program
     }
   });
 
+async function launchTui(opts: { profile?: string; config?: string }): Promise<void> {
+  try {
+    const { existsSync } = await import('node:fs');
+    const { loadConfig } = await import('@/shared-kernel/config/loader.js');
+    const { buildDependencies } = await import('@/composition-root.js');
+    const { Paths } = await import('@/shared-kernel/config/paths.js');
+    const path = opts.config ?? Paths.configYaml();
+    const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
+    const cliOverrides: Record<string, unknown> = {};
+    if (opts.profile) cliOverrides['default_profile'] = opts.profile;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config = loadConfig({ fileContent, env: process.env, cliOverrides: cliOverrides as any });
+    const deps = await buildDependencies({ config, enableWrites: false });
+    const { runTui } = await import('./commands/tui.js');
+    await runTui({ ...deps, configPath: path });
+  } catch (err) {
+    process.stderr.write(`tui failed: ${err instanceof Error ? err.message : String(err)}\n`);
+    process.exit(1);
+  }
+}
+
 program
   .command('tui')
   .description('Start interactive terminal dashboard')
   .option('--profile <name>', 'Profile to load')
   .option('--config <path>', 'Config file path')
-  .action(async (opts) => {
-    try {
-      const { existsSync } = await import('node:fs');
-      const { loadConfig } = await import('@/shared-kernel/config/loader.js');
-      const { buildDependencies } = await import('@/composition-root.js');
-      const { Paths } = await import('@/shared-kernel/config/paths.js');
-      const path = opts.config ?? Paths.configYaml();
-      const fileContent = existsSync(path) ? readFileSync(path, 'utf-8') : null;
-      const cliOverrides: Record<string, unknown> = {};
-      if (opts.profile) cliOverrides['default_profile'] = opts.profile;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config = loadConfig({ fileContent, env: process.env, cliOverrides: cliOverrides as any });
-      const deps = await buildDependencies({ config, enableWrites: false });
-      const { runTui } = await import('./commands/tui.js');
-      await runTui({ ...deps, configPath: path });
-    } catch (err) {
-      process.stderr.write(`tui failed: ${err instanceof Error ? err.message : String(err)}\n`);
-      process.exit(1);
-    }
+  .action(launchTui);
+
+// `ui` is public API (STABILITY.md) until 2.0: the web dashboard was replaced
+// by the TUI, so keep the command and its flags as a deprecated alias.
+program
+  .command('ui')
+  .description('[deprecated — use `tui`] Opens the terminal dashboard; removed in 2.0')
+  .option('--port <number>', 'Ignored (the web dashboard was replaced by the TUI)')
+  .option('--profile <name>', 'Profile to load')
+  .option('--config <path>', 'Config file path')
+  .option('--open', 'Ignored (the web dashboard was replaced by the TUI)')
+  .action(async (opts: { profile?: string; config?: string }) => {
+    process.stderr.write('`brightspace-mcp ui` is deprecated: the web dashboard was replaced by `brightspace-mcp tui`. Opening the TUI…\n');
+    await launchTui(opts);
   });
 
 program
