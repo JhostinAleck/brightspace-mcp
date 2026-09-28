@@ -23,6 +23,7 @@ src/                       ← TypeScript sources (DDD layout)
     output/                ← i18n, timezone formatting, markdown builder
     extract/               ← File → text/image extraction (PDF, Office, HTML, notebooks)
     text/                  ← HTML → text with links preserved, entity decoding
+    fs/                    ← atomicWrite, withFileLock (cross-process <file>.lock mutex)
     updates/               ← npm update/deprecation checker, package version
   cli/                     ← Commander entry points (serve, setup, auth, config)
     commands/tui/          ← brightspace-mcp tui (Ink terminal dashboard)

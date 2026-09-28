@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-27
+
 ### Added
 - `get_my_submissions(course_id, assignment_id)` — list what you (or your group) submitted to an assignment, newest first, and read (`file_name`) or download (`save_to`) the submitted files. Uses `mysubmissions` while the folder is open and falls back to the web UI submission history once it closes (the API answers 403 then).
 

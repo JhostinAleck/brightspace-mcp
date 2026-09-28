@@ -4,7 +4,7 @@ layout: home
 hero:
   name: brightspace-mcp
   text: Talk to D2L Brightspace from any MCP client
-  tagline: Multi-auth, opt-in writes, rubrics & real feedback, course files in any format, MCP Resources & Prompts, i18n. 1018 tests · 91% coverage.
+  tagline: Multi-auth, opt-in writes, rubrics & real feedback, course files in any format, MCP Resources & Prompts, i18n. 1048 tests · 91% coverage.
   image:
     src: /logo.svg
     alt: brightspace-mcp
@@ -26,8 +26,8 @@ features:
     link: /auth-strategies
     linkText: Choose your strategy
   - icon: 📚
-    title: 30 MCP tools + Resources + Prompts
-    details: Courses, grades, assignments with rubrics and real feedback, content (PDF, Office, notebooks, images, module descriptions), syllabus finder, quizzes, calendar, announcements. Plus stable brightspace:// URIs and prompt templates.
+    title: 31 MCP tools + Resources + Prompts
+    details: Courses, grades, assignments with rubrics and real feedback, content (PDF, Office, notebooks, images, module descriptions), syllabus finder, your own submitted files, quizzes, calendar, announcements. Plus stable brightspace:// URIs and prompt templates.
     link: /tools
     linkText: Browse the catalog
   - icon: ✍️
@@ -47,7 +47,7 @@ features:
     linkText: Open the TUI
   - icon: 🧱
     title: DDD-clean architecture
-    details: Bounded contexts enforced by dependency-cruiser. Domain layer is pure TypeScript, no infra leakage. 1018 tests, 91% line coverage.
+    details: Bounded contexts enforced by dependency-cruiser. Domain layer is pure TypeScript, no infra leakage. 1048 tests, 91% line coverage.
     link: /architecture
     linkText: Read architecture
 ---
@@ -79,8 +79,8 @@ It's a portable alternative to scripting against Valence by hand — it tells yo
 
 | | |
 |---|---|
-| Latest version | [v1.2.0](https://github.com/JhostinAleck/brightspace-mcp/releases/tag/v1.2.0) |
-| Tests | 1018/1018 passing |
+| Latest version | [v1.3.0](https://github.com/JhostinAleck/brightspace-mcp/releases/tag/v1.3.0) |
+| Tests | 1048/1048 passing |
 | Coverage | 91% lines / 91% functions |
 | Node | ≥ 20 (tested 20, 22) |
 | OS | macOS, Linux, Windows |
