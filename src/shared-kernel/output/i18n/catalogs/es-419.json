@@ -275,9 +275,10 @@
     },
     "config": {
       "edit_form": "Editar con formulario (e)",
-      "edit_editor": "Editar en $EDITOR (E)",
+      "edit_editor": "Editar en tu editor (E)",
       "saved": "✓ Config guardado — reinicia el TUI para aplicar los cambios.",
-      "editor_saved": "✓ Config válido — reinicia el TUI para aplicar los cambios.",
+      "editor_hint": "Edita este archivo en tu editor: {path}\nLuego ejecuta `brightspace-mcp config validate` y reinicia el TUI.",
+      "editor_valid": "✓ La config actual es válida.",
       "back": "Enter para volver",
       "form_hint": "Tab: siguiente campo · Ctrl+S: guardar · Esc: cancelar"
     },

@@ -3,7 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import type { TuiDeps } from '../types.js';
 import { ConfigSummary } from '../config/ConfigSummary.js';
 import { ConfigForm } from '../config/ConfigForm.js';
-import { openInEditor } from '../config/openInEditor.js';
+import { validateConfigFile } from '../config/externalEdit.js';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseDocument } from 'yaml';
 
@@ -53,11 +53,12 @@ export function ConfigView({ deps }: { deps: TuiDeps }) {
   }
 
   function handleExternalEdit() {
-    const result = openInEditor(deps.configPath);
+    const hint = t('tui.config.editor_hint', { path: deps.configPath });
+    const result = validateConfigFile(deps.configPath);
     if (result.ok) {
-      setMessage({ text: t('tui.config.editor_saved'), ok: true });
+      setMessage({ text: `${hint}\n${t('tui.config.editor_valid')}`, ok: true });
     } else {
-      setMessage({ text: `✗ YAML inválido: ${result.error}`, ok: false });
+      setMessage({ text: `${hint}\n✗ YAML inválido: ${result.error}`, ok: false });
     }
     setMode('message');
   }

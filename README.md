@@ -101,7 +101,7 @@ node build/cli/main.js serve
 ### Staying up to date
 
 - **npx (recommended)** — the MCP client config written by `setup` runs `npx --yes brightspace-mcp@latest serve`, so every client restart picks up the newest release. Nothing else to do.
-- **Global install** — run `brightspace-mcp upgrade`.
+- **Global install** — `npm install -g brightspace-mcp@latest` (`brightspace-mcp upgrade` checks npm and prints the right command).
 - **Docker** — `docker pull` the latest image and recreate the container.
 
 The server checks npm at most once a day (3 s timeout, cached in `~/.brightspace-mcp/update-check.json`). When a newer version exists — or when your installed version has been **deprecated** because of a security fix — the notice is appended to the first tool response of the session, so your assistant tells you about it. It also shows up under `update` in `get_diagnostics`. Set `BRIGHTSPACE_NO_UPDATE_CHECK=1` to opt out.
@@ -443,7 +443,7 @@ Full-screen interactive terminal UI (Ink + React). Six tabs navigated with `Tab`
 | **Inicio** | 3-column dashboard: upcoming assignments, 7-day calendar agenda, recent announcements |
 | **Cursos** | Live-search course list → drill into a course → sub-tabs Tareas / Notas / Anuncios |
 | **Calendario** | 30-day event agenda across all active courses |
-| **Config** | Profile summary, field-by-field form editor (dropdowns from schema) or `$EDITOR` |
+| **Config** | Profile summary, field-by-field form editor (dropdowns from schema), or the config path to edit in your own editor + validation |
 | **Caché** | Hit rate, miss count, clear button |
 | **Logs** | Audit log (last 50 entries, `/` to filter by tool name) |
 
@@ -492,7 +492,7 @@ npx brightspace-mcp@latest config validate            Validate config schema wit
 npx brightspace-mcp@latest config set <path> <value>  Edit a nested config value
 npx brightspace-mcp@latest cache clear                Clear memory + file/Redis cache
 npx brightspace-mcp@latest cache clear --context <n>  Clear a specific cache context
-npx brightspace-mcp@latest upgrade                    Upgrade brightspace-mcp to the latest version
+npx brightspace-mcp@latest upgrade                    Check npm and print the upgrade command
 ```
 
 ---

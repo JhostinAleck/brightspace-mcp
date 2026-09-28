@@ -194,4 +194,4 @@ Once configured, launch the terminal dashboard:
 npx brightspace-mcp@latest tui         # full-screen terminal dashboard
 ```
 
-The dashboard shows upcoming due dates, grades, announcements, and calendar events across all your active courses. Use the Config tab to edit your profile — either field-by-field with guided dropdowns or directly in your `$EDITOR`. Cache stats, audit logs, and diagnostics are also available.
+The dashboard shows upcoming due dates, grades, announcements, and calendar events across all your active courses. Use the Config tab to edit your profile — either field-by-field with guided dropdowns or by editing the file shown there in your own editor (the TUI validates it). Cache stats, audit logs, and diagnostics are also available.

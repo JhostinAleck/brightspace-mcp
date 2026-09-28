@@ -30,29 +30,12 @@ export async function runUpgrade(): Promise<void> {
     return;
   }
 
-  process.stdout.write(`Upgrading v${current} → v${latest}...\n\n`);
-
-  const argv1 = process.argv[1] ?? '';
-  const isGlobal =
-    process.env['npm_config_global'] === 'true' ||
-    argv1.includes('node_modules/.bin') ||
-    argv1.includes('/bin/brightspace-mcp');
-
-  if (isGlobal) {
-    const { execSync } = await import('node:child_process');
-    try {
-      execSync('npm install -g brightspace-mcp@latest', { stdio: 'inherit' });
-      process.stdout.write(`\n✓ Upgraded to v${latest}\n`);
-    } catch {
-      process.stderr.write(`npm install failed. Try manually: npm install -g brightspace-mcp@latest\n`);
-      process.exit(1);
-    }
-  } else {
-    process.stdout.write(
-      `Not installed globally. Choose your update method:\n\n` +
-      `  npx (auto):    npx brightspace-mcp@latest [command]\n` +
-      `  Global:        npm install -g brightspace-mcp@latest\n` +
-      `  From source:   git pull && npm install && npm run build\n`,
-    );
-  }
+  // Printed, not executed: running npm from here would give the package
+  // shell access, and the right command depends on how it was installed.
+  process.stdout.write(
+    `New version available: v${current} → v${latest}\n\n` +
+    `  Global install:  npm install -g brightspace-mcp@latest\n` +
+    `  npx:             npx brightspace-mcp@latest [command]  (MCP configs from setup already use @latest)\n` +
+    `  From source:     git pull && npm install && npm run build\n`,
+  );
 }

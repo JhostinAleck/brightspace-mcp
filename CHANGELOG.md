@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- The package no longer spawns processes, so it needs no shell access: `brightspace-mcp upgrade` checks npm and prints the upgrade command instead of running `npm install -g` itself, and the TUI Config tab shows the config file path to edit in your own editor (and validates it) instead of launching `$EDITOR`.
+
+### Fixed
+- The v1.3.0 Docker image build hung in the emulated arm64 `npm ci`; the JS is now compiled once on the build platform and jobs have time limits. Existing tags can be re-published with the workflow's `tag` input.
+
 ## [1.3.0] - 2026-09-27
 
 ### Added

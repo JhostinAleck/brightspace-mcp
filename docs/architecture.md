@@ -107,7 +107,7 @@ Run `npm run check` before pushing. Coverage threshold is 85% statements.
 - `auth` — manual re-auth, useful when sessions expire
 - `record-auth` — opens a real browser, you log in manually, cookies captured into `session_cookie` strategy
 - `doctor` — end-to-end smoke test: config → auth → API → `list_my_courses`
-- `upgrade` — upgrade brightspace-mcp to the latest version with a version notification on next serve
+- `upgrade` — check npm for a newer version and print the command to upgrade (it never runs npm itself)
 - `profile list / use <name>` — list and switch profiles
 - `config show / validate / set` — inspect / edit YAML
 - `cache clear / status` — cache management

@@ -1,17 +1,16 @@
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { loadConfig } from '@/shared-kernel/config/loader.js';
 
-export interface EditorResult {
+export interface ConfigCheck {
   ok: boolean;
   error?: string;
 }
 
-export function openInEditor(configPath: string): EditorResult {
-  const editor = process.env['EDITOR'] ?? process.env['VISUAL'] ?? 'nano';
-  const result = spawnSync(editor, [configPath], { stdio: 'inherit' });
-  if (result.error) return { ok: false, error: result.error.message };
-
+/**
+ * The TUI no longer launches $EDITOR: spawning processes would give the
+ * package shell access. Users edit the file themselves; this re-validates it.
+ */
+export function validateConfigFile(configPath: string): ConfigCheck {
   try {
     const content = readFileSync(configPath, 'utf8');
     loadConfig({ fileContent: content, env: process.env as Record<string, string>, cliOverrides: {} });
