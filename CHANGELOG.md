@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-09-28
+
 ### Changed
 - The package no longer spawns processes, so it needs no shell access: `brightspace-mcp upgrade` checks npm and prints the upgrade command instead of running `npm install -g` itself, and the TUI Config tab shows the config file path to edit in your own editor (and validates it) instead of launching `$EDITOR`.
 

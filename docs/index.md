@@ -4,7 +4,7 @@ layout: home
 hero:
   name: brightspace-mcp
   text: Talk to D2L Brightspace from any MCP client
-  tagline: Multi-auth, opt-in writes, rubrics & real feedback, course files in any format, MCP Resources & Prompts, i18n. 1048 tests · 91% coverage.
+  tagline: Multi-auth, opt-in writes, rubrics & real feedback, course files in any format, MCP Resources & Prompts, i18n. 1051 tests · 92% coverage.
   image:
     src: /logo.svg
     alt: brightspace-mcp
@@ -47,7 +47,7 @@ features:
     linkText: Open the TUI
   - icon: 🧱
     title: DDD-clean architecture
-    details: Bounded contexts enforced by dependency-cruiser. Domain layer is pure TypeScript, no infra leakage. 1048 tests, 91% line coverage.
+    details: Bounded contexts enforced by dependency-cruiser. Domain layer is pure TypeScript, no infra leakage. 1051 tests, 92% line coverage.
     link: /architecture
     linkText: Read architecture
 ---
@@ -79,9 +79,9 @@ It's a portable alternative to scripting against Valence by hand — it tells yo
 
 | | |
 |---|---|
-| Latest version | [v1.3.0](https://github.com/JhostinAleck/brightspace-mcp/releases/tag/v1.3.0) |
-| Tests | 1048/1048 passing |
-| Coverage | 91% lines / 91% functions |
+| Latest version | [v1.3.1](https://github.com/JhostinAleck/brightspace-mcp/releases/tag/v1.3.1) |
+| Tests | 1051/1051 passing |
+| Coverage | 92% lines / 91% functions |
 | Node | ≥ 20 (tested 20, 22) |
 | OS | macOS, Linux, Windows |
 | License | MIT |
