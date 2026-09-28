@@ -3,10 +3,17 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  # Re-publish an existing tag (e.g. after a failed publish) with the current workflow.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to publish (e.g. v1.2.0)'
+        required: true
+        type: string
 
 permissions:
   contents: read
-  id-token: write  # OIDC for npm provenance
+  id-token: write  # OIDC: npm trusted publishing + provenance
 
 jobs:
   publish:
@@ -15,6 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v6
@@ -23,9 +31,15 @@ jobs:
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
+      # Trusted publishing (OIDC, no long-lived token) needs npm >= 11.5.1;
+      # Node 22 bundles npm 10.
+      - run: npm install -g npm@latest
+
       - name: Verify tag matches package.json version
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
+          TAG="${RELEASE_TAG#v}"
           PKG=$(node -p "require('./package.json').version")
           echo "Tag: $TAG  Package: $PKG"
           if [ "$TAG" != "$PKG" ]; then
@@ -37,7 +51,7 @@ jobs:
       - run: npm run check
       - run: npm run build:clean
 
+      # Authenticates via the trusted publisher configured on npmjs.com
+      # (JhostinAleck/brightspace-mcp, release-npm.yml) — no NPM_TOKEN.
       - name: Publish to npm with provenance
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
