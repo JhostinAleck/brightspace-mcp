@@ -27,7 +27,8 @@ describe('withFileLock', () => {
     };
     const results = await Promise.all([withFileLock(target, op('a')), withFileLock(target, op('b'))]);
     expect(results).toEqual(['a', 'b']);
-    expect(events).toEqual(['a:start', 'a:end', 'b:start', 'b:end']);
+    // Whoever wins the race, the two critical sections never interleave.
+    expect([['a:start', 'a:end', 'b:start', 'b:end'], ['b:start', 'b:end', 'a:start', 'a:end']]).toContainEqual(events);
     expect(existsSync(`${target}.lock`)).toBe(false);
   });
 
