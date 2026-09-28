@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
+import { warmPdfParser } from '@tests/helpers/zip';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import nock from 'nock';
@@ -8,6 +9,8 @@ import { CourseFilePath } from '@/contexts/content/domain/CourseFilePath.js';
 import { D2lApiClient } from '@/contexts/http-api/D2lApiClient.js';
 import { AccessToken } from '@/contexts/authentication/domain/AccessToken.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
+
+beforeAll(warmPdfParser, 60_000);
 
 const BASE = 'https://x.com';
 const toc = JSON.parse(readFileSync(resolve(__dirname, '../../../fixtures/content/toc.json'), 'utf-8'));

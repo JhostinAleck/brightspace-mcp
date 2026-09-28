@@ -141,3 +141,11 @@ export const TINY_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
   'base64',
 );
+
+/**
+ * pdf-parse is imported lazily by the extractor; loading pdfjs can take
+ * several seconds on slow CI runners, so warm it outside the per-test timeout.
+ */
+export async function warmPdfParser(): Promise<void> {
+  await import('pdf-parse');
+}

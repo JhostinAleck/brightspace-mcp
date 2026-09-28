@@ -1,5 +1,5 @@
-import { buildPdf, buildXlsx } from '@tests/helpers/zip';
-import { describe, it, expect, afterEach } from 'vitest';
+import { buildPdf, buildXlsx, warmPdfParser } from '@tests/helpers/zip';
+import { describe, it, expect, afterEach, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import nock from 'nock';
@@ -8,6 +8,8 @@ import { D2lApiClient } from '@/contexts/http-api/D2lApiClient';
 import { AccessToken } from '@/contexts/authentication/domain/AccessToken';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId';
 import { AssignmentId } from '@/contexts/assignments/domain/AssignmentId';
+
+beforeAll(warmPdfParser, 60_000);
 
 const BASE = 'https://x.com';
 const foldersFixture = JSON.parse(readFileSync(resolve(__dirname, '../../../fixtures/assignments/folders.json'), 'utf-8'));

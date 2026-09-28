@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
+import { warmPdfParser } from '@tests/helpers/zip';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+beforeAll(warmPdfParser, 60_000);
 
 function makeServer() { return new McpServer({ name: 'test', version: '0.0.0' }); }
 

@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
+import { warmPdfParser } from '@tests/helpers/zip';
 
 import { readTopic } from '@/contexts/content/application/readTopic.js';
 import { getCourseFile } from '@/contexts/content/application/getCourseFile.js';
@@ -8,6 +9,8 @@ import { Module } from '@/contexts/content/domain/Module.js';
 import { Topic, type TopicProps } from '@/contexts/content/domain/Topic.js';
 import { OrgUnitId } from '@/shared-kernel/types/OrgUnitId.js';
 import { FakeContentRepository } from '@tests/helpers/fakes/FakeContentRepository.js';
+
+beforeAll(warmPdfParser, 60_000);
 
 const COURSE = 101;
 const t = (p: Partial<TopicProps> & { id: number }): Topic =>

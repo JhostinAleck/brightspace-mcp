@@ -1,9 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { handleGetTopicFile } from '@/mcp/tools/get-topic-file.tool';
 import { Module } from '@/contexts/content/domain/Module';
 import { Topic, type TopicProps } from '@/contexts/content/domain/Topic';
 import { FakeContentRepository } from '@tests/helpers/fakes/FakeContentRepository';
-import { TINY_PNG, buildDocx, buildPdf, buildPptx, buildXlsx } from '@tests/helpers/zip';
+import { TINY_PNG, buildDocx, buildPdf, buildPptx, buildXlsx, warmPdfParser } from '@tests/helpers/zip';
+
+beforeAll(warmPdfParser, 60_000);
 
 const COURSE = 1;
 

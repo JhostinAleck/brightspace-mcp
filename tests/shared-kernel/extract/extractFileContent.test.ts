@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 
 import { detectFileFormat } from '@/shared-kernel/extract/detectFileFormat.js';
 import { extractFileContent } from '@/shared-kernel/extract/extractFileContent.js';
-import { TINY_PNG, buildDocx, buildPdf, buildPptx, buildXlsx, buildZip } from '@tests/helpers/zip.js';
+import { TINY_PNG, buildDocx, buildPdf, buildPptx, buildXlsx, buildZip, warmPdfParser } from '@tests/helpers/zip.js';
+
+beforeAll(warmPdfParser, 60_000);
 
 describe('detectFileFormat', () => {
   it('detects Office files from the zip central directory, not the first 200 bytes', () => {

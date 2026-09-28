@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import nock from 'nock';
@@ -15,8 +15,10 @@ import { Module } from '@/contexts/content/domain/Module.js';
 import { Topic } from '@/contexts/content/domain/Topic.js';
 import type { CommunicationsRepository } from '@/contexts/communications/domain/CommunicationsRepository.js';
 import { FakeContentRepository } from '@tests/helpers/fakes/FakeContentRepository.js';
-import { buildPdf } from '@tests/helpers/zip.js';
+import { buildPdf, warmPdfParser } from '@tests/helpers/zip.js';
 import { testOutputContext } from '../../helpers/test-output-context.js';
+
+beforeAll(warmPdfParser, 60_000);
 
 const BASE = 'https://school.test';
 const COURSE = 101;

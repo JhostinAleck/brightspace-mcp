@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 
 import { extractTextFromBuffer } from '@/mcp/resources/pdf-extractor.js';
-import { TINY_PNG, buildDocx, buildPdf } from '@tests/helpers/zip.js';
+import { TINY_PNG, buildDocx, buildPdf, warmPdfParser } from '@tests/helpers/zip.js';
+
+beforeAll(warmPdfParser, 60_000);
 
 const URI = 'brightspace://1/content/topics/2';
 
