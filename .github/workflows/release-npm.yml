@@ -32,8 +32,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       # Trusted publishing (OIDC, no long-lived token) needs npm >= 11.5.1;
-      # Node 22 bundles npm 10.
-      - run: npm install -g npm@latest
+      # Node 22 bundles npm 10. Pinned to 11 so a new npm major can't change
+      # release behavior unannounced (npm 12 changed `npm pack --json` output).
+      - run: npm install -g npm@^11.5.1
 
       - name: Verify tag matches package.json version
         env:

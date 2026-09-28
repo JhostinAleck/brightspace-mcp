@@ -23,7 +23,10 @@ describeUnix('npm pack smoke test', () => {
       encoding: 'utf8',
       cwd: process.cwd(),
     });
-    const entries = JSON.parse(json) as Array<{ filename: string; files: Array<{ path: string }> }>;
+    type PackEntry = { filename: string; files: Array<{ path: string }> };
+    // npm <= 11 prints an array of entries; newer npm prints an object keyed by package name.
+    const parsed = JSON.parse(json) as PackEntry[] | Record<string, PackEntry>;
+    const entries = Array.isArray(parsed) ? parsed : Object.values(parsed);
     expect(entries).toHaveLength(1);
     const paths = entries[0]!.files.map((f) => f.path);
 
