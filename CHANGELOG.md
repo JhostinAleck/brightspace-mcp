@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - `ink` and `react` (only used by `brightspace-mcp tui`) are now optional dependencies, so the MCP server's required dependency tree no longer includes the dashboard's packages. Installs with `--omit=optional` keep a working server; `tui` then explains how to install the dashboard.
+- Replaced `proper-lockfile` (unmaintained since 2021; pulled `retry`, `signal-exit@3`, `graceful-fs`) with a small built-in cross-process file lock using the same `<file>.lock` protocol, so it still excludes processes running older versions.
 
 ### Fixed
 - The CLI crashed at startup when installed with `--omit=optional` (pdfjs throws on import without its optional canvas binding); `pdf-parse` is now loaded only when a PDF is extracted.

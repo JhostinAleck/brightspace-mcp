@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname } from 'node:path';
-import lockfile from 'proper-lockfile';
+import { withFileLock } from '@/shared-kernel/fs/fileLock.js';
 import { atomicWrite } from '@/shared-kernel/fs/atomicWrite.js';
 import type { SessionCache } from '@/contexts/authentication/domain/SessionCache.js';
 import type { Session } from '@/contexts/authentication/domain/Session.js';
@@ -83,7 +83,7 @@ export class FileSessionCache implements SessionCache {
 
   private async withLock<T>(op: () => Promise<T>): Promise<T> {
     await mkdir(dirname(this.opts.path), { recursive: true });
-    // proper-lockfile needs an existing file to lock. Create empty placeholder if missing.
+    // Older versions lock via proper-lockfile, which needs an existing file: keep a placeholder.
     if (!existsSync(this.opts.path)) {
       await writeFile(
         this.opts.path,
@@ -92,15 +92,7 @@ export class FileSessionCache implements SessionCache {
       );
       if (process.platform !== 'win32') await chmod(this.opts.path, 0o600);
     }
-    const release = await lockfile.lock(this.opts.path, {
-      realpath: false,
-      retries: { retries: 10, factor: 1.2, minTimeout: 20, maxTimeout: 200 },
-    });
-    try {
-      return await op();
-    } finally {
-      await release();
-    }
+    return withFileLock(this.opts.path, op);
   }
 
   /**

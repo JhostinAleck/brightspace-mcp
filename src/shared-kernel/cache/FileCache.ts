@@ -1,7 +1,7 @@
 import { readFile, mkdir, chmod } from 'node:fs/promises';
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import lockfile from 'proper-lockfile';
+import { withFileLock } from '@/shared-kernel/fs/fileLock.js';
 import type { Cache } from './Cache.js';
 import { atomicWrite } from '@/shared-kernel/fs/atomicWrite.js';
 
@@ -42,11 +42,7 @@ export class FileCache implements Cache {
 
   private async withLock<T>(op: () => Promise<T>): Promise<T> {
     await this.ensureExists();
-    const release = await lockfile.lock(this.opts.path, {
-      realpath: false,
-      retries: { retries: 10, factor: 1.2, minTimeout: 20, maxTimeout: 200 },
-    });
-    try { return await op(); } finally { await release(); }
+    return withFileLock(this.opts.path, op);
   }
 
   /**

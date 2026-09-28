@@ -2,7 +2,7 @@ import { readFile, mkdir, chmod } from 'node:fs/promises';
 import { existsSync, writeFileSync } from 'node:fs';
 import { randomBytes, scryptSync, createCipheriv, createDecipheriv } from 'node:crypto';
 import { dirname } from 'node:path';
-import lockfile from 'proper-lockfile';
+import { withFileLock } from '@/shared-kernel/fs/fileLock.js';
 import { atomicWrite } from '@/shared-kernel/fs/atomicWrite.js';
 import type {
   CredentialStore,
@@ -31,7 +31,7 @@ const SCRYPT_PARAMS = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 } as co
 /**
  * AES-256-GCM encrypted on-disk credential store.
  *
- * Concurrency: file-locked via proper-lockfile. Read/write/delete operations
+ * Concurrency: file-locked via withFileLock. Read/write/delete operations
  * acquire an exclusive lock so concurrent MCP processes (setup wizard +
  * running server, OAuth refresh contention, etc.) cannot corrupt the file.
  *
@@ -56,8 +56,8 @@ export class EncryptedFileCredentialStore implements CredentialStore {
 
   private async withLock<T>(op: () => Promise<T>): Promise<T> {
     await mkdir(dirname(this.opts.path), { recursive: true });
-    // proper-lockfile needs an existing file to lock. Initialise with an
-    // empty container so concurrent first-time writers all see the same
+    // Older versions lock via proper-lockfile, which needs an existing file.
+    // Initialise with an empty container so concurrent first-time writers all see the same
     // lockable target.
     if (!existsSync(this.opts.path)) {
       const empty: EncryptedFile = {
@@ -68,15 +68,7 @@ export class EncryptedFileCredentialStore implements CredentialStore {
       writeFileSync(this.opts.path, JSON.stringify(empty), 'utf8');
       if (process.platform !== 'win32') await chmod(this.opts.path, 0o600);
     }
-    const release = await lockfile.lock(this.opts.path, {
-      realpath: false,
-      retries: { retries: 10, factor: 1.2, minTimeout: 20, maxTimeout: 200 },
-    });
-    try {
-      return await op();
-    } finally {
-      await release();
-    }
+    return withFileLock(this.opts.path, op);
   }
 
   private async loadFile(): Promise<EncryptedFile> {
@@ -173,9 +165,8 @@ export class EncryptedFileCredentialStore implements CredentialStore {
       if (!(logical in file.entries)) return;
       delete file.entries[logical];
       if (Object.keys(file.entries).length === 0) {
-        // Cannot unlink while we hold the lock on the same file — proper-lockfile
-        // tracks the inode. Truncate to an empty container instead so the next
-        // get() returns nothing and we keep the lock release semantics intact.
+        // Truncate to an empty container instead of unlinking: older versions
+        // lock via proper-lockfile, which needs the file to exist.
         await this.saveFile({ version: 1, salt: file.salt, entries: {} });
         return;
       }
