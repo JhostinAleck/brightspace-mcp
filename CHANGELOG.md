@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-05
+
 ### Security
 - Raise the minimum MCP SDK, Zod, Vitest, and coverage provider versions to their patched releases; refresh transitive dependencies to remove the reported production and development advisories.
 - Override Minimatch to 11.x, VitePress's Vite to the patched 6.4.x line, and Mermaid's KaTeX to 0.18.x while upstream dependency ranges still select vulnerable releases. Keep these overrides until upstream supports the patched versions; retain Node 20 support without adopting the unrelated major upgrades in Dependabot's grouped PRs.
